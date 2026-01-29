@@ -90,6 +90,7 @@ com.android.shell
 com.android1500.androidfaker
 com.android1500.gpssetter
 com.anony.keyguardrotation
+com.aoya.telegami
 com.api.yandexmusicxposed
 com.app.catsmoker
 com.asameer.killappnow
@@ -138,6 +139,7 @@ com.dorian15.greendothide
 com.douban.fuckad
 com.dr8.xposed.saax
 com.droserasprout.healergram
+com.dszsu.tss
 com.dualguard
 com.duolingo.kill
 com.easy.tgPlus
@@ -261,6 +263,7 @@ com.luigivampa92.xlogger
 com.ma.bitchgiveitbackrunningservices
 com.ma.juicesshbypass
 com.makino.cslyric
+com.mantle
 com.maxkiller.xposedhook
 com.metris.xposed.bluetoothtoolkitfree
 com.metris.xposed.castenabler
@@ -433,6 +436,7 @@ de.buttercookie.rocketplayerdefuser
 dev.arktic.installerrestrictor
 dev.coderpwh.fuck_shake
 dev.device.emulator
+dev.fzer0x.fucksolidexplorer
 dev.lackluster.mihelper
 dev.rushii.xspoofsignatures
 dev.sora.extractor
@@ -440,7 +444,9 @@ dialog.box
 es.chiteroman.bootloaderspoofer
 es.rafagale.biometricbypass
 eu.faircode.xlua
+eu.hxreborn.cleanshare
 eu.hxreborn.gboardmaterialexpressiveblack
+eu.hxreborn.phdp
 eu.hxreborn.qsboundlesstiles
 eu.hxreborn.remembermysort
 eu.rafareborn.biometricbypass
@@ -539,12 +545,14 @@ junzi.xposed.hook
 kz.enpf.enabler
 lialh4.ldf
 lin.xposed
+lk.thiwak.fdia
 lozn.hookui
 lsposed.orange
 ltd.nextalone.pkginstallerplus
 lzlnb.cnm.hook
 ma.wanam.youtubeadaway
 master.alarmshell.android
+mba.vm.onhit
 me.bingyue.IceCore
 me.bingyue.fuckbiliads
 me.bingyue.fuckqishui
@@ -659,6 +667,7 @@ tech.oliet.hcefunlocker
 tn.amin.keyboard_gpt
 tn.amin.mpro2
 tn.amin.phantom_mic
+tn.eluea.kgpt
 tn.payoneer.loukious
 top.canyie.settingsfirewall
 top.galqq

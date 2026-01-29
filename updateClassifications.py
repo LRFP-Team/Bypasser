@@ -9,7 +9,7 @@ from zipfile import ZipFile
 try:
 	from requests import get
 except:
-	def get(url:str, *parameters:None) -> None:
+	def get(url:str, *args:tuple, **kwargs:dict) -> None:
 		return None
 	print("Cannot import ``get`` from the ``requests`` library. Fetching from URLs will be unavailable. ")
 	print("Please try to install the ``requests`` library correctly via ``python -m pip install requests`` or ``apt-get install python3-requests``. ")
@@ -287,7 +287,7 @@ def main() -> int:
 	fileNameB, fileNameC, fileNameD = "classificationB.txt", "classificationC.txt", "classificationD.txt"
 	filePathB, filePathC, filePathD = os.path.join(folderPath, fileNameB), os.path.join(folderPath, fileNameC), os.path.join(folderPath, fileNameD)
 	urlB = "https://modules.lsposed.org/modules.json"
-	urlCD = "https://raw.githubusercontent.com/LRFP-Team/LRFP-Detectors-and-Bypassers/main/Detectors/README.json"
+	urlCD = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
 	srcFolderPath = "src"
 	webrootName = "webroot"
 	webrootFolderPath = os.path.join(srcFolderPath, webrootName)
