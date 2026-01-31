@@ -175,6 +175,7 @@ com.gauravssnl.mobileradioadaway
 com.gauravssnl.radiobox
 com.gauravssnl.simpleradioadaway
 com.ghhccghk.xiaomibluetoothdiy
+com.github.capntrips.kernelflasher
 com.github.dan.nostoragerestrict
 com.github.droserasprout.lockscreencamera
 com.github.hank9999.chargeprotectsetter
@@ -271,6 +272,7 @@ com.metris.xposed.pmods
 com.mhook.dialog.beta
 com.mihuashi.paybyfinger
 com.miui.break.sim
+com.mixfold.splithook
 com.mln.momoxposed
 com.modisk.dawn
 com.my.televip
@@ -338,7 +340,9 @@ com.strawing.fuckdevicepolicy
 com.suisho.disablescreenshotsound
 com.suisho.pixelposed
 com.sukisu.ultra
+com.sumver.fdtune
 com.sumver.fixmiaod
+com.sumver.kalinba
 com.sumver.keepaod
 com.suqi8.oshin
 com.surcumference.fingerprintpay
