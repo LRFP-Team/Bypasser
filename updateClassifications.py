@@ -424,6 +424,7 @@ def main() -> int:
 	trickyStoreTarget.update(labelLRFP)
 	trickyStoreTarget.update(labelDetector)
 	trickyStoreTarget.update(labelApplication)
+	print("Gathered {0} package(s) for the Tricky Store target from the LRFP, detector, and application labels. ".format(len(trickyStoreTarget)))
 	delta, d = trickyStoreTarget.removeFromFiles(trickyStoreAvoidanceFilePath)
 	if d:
 		flag = False
@@ -431,7 +432,7 @@ def main() -> int:
 		for key, value in d.items():
 			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
 	else:
-		print("Successfully removed {0} package(s) from the Tricky Store target file from the Tricky Store avoidance file \"{1}\" with the following exception(s). ".format(	\
+		print("Successfully removed {0} package(s) from the Tricky Store target file according to the Tricky Store avoidance file \"{1}\". ".format(	\
 			-delta, trickyStoreAvoidanceFilePath																																\
 		))
 	countTrickyStoreTarget = trickyStoreTarget.saveTo(trickyStoreTargetFilePath)
