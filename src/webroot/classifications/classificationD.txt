@@ -181,3 +181,6 @@ ph.com.gotyme
 us.zoom.videomeetings
 windinfo.android
 youqu.android.todesk
+com.google.android.gsf
+com.google.android.gms
+com.android.vending

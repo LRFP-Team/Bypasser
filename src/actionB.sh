@@ -970,99 +970,89 @@ echo ""
 
 # Tricky Store (0b00X000) #
 echo "# Tricky Store (0b00X000) #"
-readonly trickyStoreModuleId="tricky_store"
 readonly trickyStoreConfigurationFolderPath="${adbFolder}/tricky_store"
-readonly trickyStoreTargetFileName="target.txt"
 readonly trickyStoreSecurityPatchFileName="security_patch.txt"
-readonly trickyStoreTargetFilePath="${trickyStoreConfigurationFolderPath}/${trickyStoreTargetFileName}"
 readonly trickyStoreSecurityPatchFilePath="${trickyStoreConfigurationFolderPath}/${trickyStoreSecurityPatchFileName}"
-readonly classificationS="$(echo -e -n "com.google.android.gsf\ncom.google.android.gms\ncom.android.vending")"
-readonly lengthS=$(echo "${classificationS}" | wc -l)
+readonly trickyStoreTargetCloudLibraryName="trickyStoreTarget.txt"
+readonly trickyStoreTargetCloudLibraryPath="${classificationFolderPath}/${trickyStoreTargetCloudLibraryName}"
+readonly trickyStoreTargetFileName="target.txt"
+readonly trickyStoreTargetFilePath="${trickyStoreConfigurationFolderPath}/${trickyStoreTargetFileName}"
 
-if isModuleInstalled "${trickyStoreModuleId}" > /dev/null;
+if [[ -d "${trickyStoreConfigurationFolderPath}" ]];
 then
-	echo "The Tricky Store module was installed. "
-	if [[ -d "${trickyStoreConfigurationFolderPath}" ]];
+	echo "The Tricky Store configuration folder was found at \"${trickyStoreConfigurationFolderPath}\". "
+	if [[ -f "${trickyStoreSecurityPatchFilePath}" ]];
 	then
-		echo "The Tricky Store configuration folder was found at \"${trickyStoreConfigurationFolderPath}\". "
-		if [[ -f "${trickyStoreSecurityPatchFilePath}" ]];
+		echo "The security patch file was found at \"${trickyStoreSecurityPatchFilePath}\". "
+		if mv "${trickyStoreSecurityPatchFilePath}" "${trickyStoreSecurityPatchFilePath}.bak";
 		then
-			echo "Found security patch file at \"${trickyStoreSecurityPatchFilePath}\". "
-			if mv "${trickyStoreSecurityPatchFilePath}" "${trickyStoreSecurityPatchFilePath}.bak";
-			then
-				echo "Successfully removed \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
-			else
-				exitCode=$(expr ${exitCode} \| 8)
-				echo "Failed to remove \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
-			fi
-		fi
-		abortFlag=${EXIT_SUCCESS}
-		if [[ -f "${trickyStoreTargetFilePath}" ]];
-		then
-			echo "The Tricky Store target file was found at \"${trickyStoreTargetFilePath}\". "
-			cp -fp "${trickyStoreTargetFilePath}" "${trickyStoreTargetFilePath}.bak"
-			if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}.bak" ]];
-			then
-				echo "Successfully copied \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
-			else
-				abortFlag=${EXIT_FAILURE}
-				echo "Failed to copy \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
-			fi
+			echo "Successfully removed \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		else
-			echo "The copying has been skipped since no Tricky Store target files were detected. "
-		fi
-		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
-		then
-			lines="${classificationS}"
-			if [[ -n "${classificationB}" ]];
-			then
-				lines="$(echo -e -n "${lines}\n$(echo -n "${classificationB}")")"
-			fi
-			if [[ -n "${classificationC}" ]];
-			then
-				lines="$(echo -e -n "${lines}\n$(echo -n "${classificationC}")")"
-			fi
-			if [[ -n "${classificationD}" ]];
-			then
-				lines="$(echo -e -n "${lines}\n$(echo -n "${classificationD}")")"
-			fi
-			classificationL="$(pm list packages | cut -d ':' -f 2)"
-			if [[ -n "${classificationL}" ]];
-			then
-				lengthL=$(echo "${classificationL}" | wc -l)
-				echo "Successfully fetched ${lengthL} package name(s) from the local machine. "
-			else
-				lengthL=0
-				echo "No package names were fetched from the local machine. "
-			fi
-			if [[ -n "${classificationL}" ]];
-			then
-				lines="$(echo -e -n "${lines}\n$(echo -n "${classificationL}")")"
-			fi
-			lines=$(echo -n "${lines}" | sort | uniq)
-			echo "${lines}" > "${trickyStoreTargetFilePath}"
-			if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}" ]];
-			then
-				cnt=$(cat "${trickyStoreTargetFilePath}" | wc -l)
-				echo "Successfully wrote ${cnt} target(s) to \"${trickyStoreTargetFilePath}\". "
-				expectedCount=$(expr ${lengthS} + ${lengthB} + ${lengthC} + ${lengthD} + ${lengthL})
-				if [[ ${cnt} -le ${expectedCount} ]];
-				then
-					echo "Successfully verified \"${trickyStoreTargetFilePath}\" (${cnt} <= ${expectedCount} = ${lengthS} + ${lengthB} + ${lengthC} + ${lengthD} + ${lengthL}). "
-				else
-					exitCode=$(expr ${exitCode} \| 8)
-					echo "Failed to verify \"${trickyStoreTargetFilePath}\" (${cnt} > ${expectedCount} = ${lengthS} + ${lengthB} + ${lengthC} + ${lengthD} + ${lengthL}). "
-				fi
-			else
-				exitCode=$(expr ${exitCode} \| 8)
-				echo "Failed to write to \"${trickyStoreTargetFilePath}\". "
-			fi
+			exitCode=$(expr ${exitCode} \| 8)
+			echo "Failed to remove \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		fi
 	else
-		echo "No Tricky Store configuration folders were detected. "
+		echo "The security patch file at \"${trickyStoreSecurityPatchFilePath}\" did not exist, which was proper. "
+	fi
+	if [[ -f "${trickyStoreTargetCloudLibraryPath}" ]];
+	then
+		trickyStoreTargetCloudLibrary="$(cat "${trickyStoreTargetCloudLibraryPath}")"
+		if [[ $? -eq ${EXIT_SUCCESS} ]];
+		then
+			targetApplicationCount=$(echo "${trickyStoreTargetCloudLibrary}" | wc -l)
+			echo "Successfully fetched ${targetApplicationCount} application package name(s) from the cloud library. "
+			abortFlag=${EXIT_SUCCESS}
+			if [[ -f "${trickyStoreTargetFilePath}" ]];
+			then
+				echo "The Tricky Store target file was found at \"${trickyStoreTargetFilePath}\". "
+				cp -fp "${trickyStoreTargetFilePath}" "${trickyStoreTargetFilePath}.bak"
+				if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}.bak" ]];
+				then
+					echo "Successfully copied \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+				else
+					abortFlag=${EXIT_FAILURE}
+					echo "Failed to copy \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+				fi
+			else
+				echo "The copying has been skipped since the Tricky Store target file did not exist. "
+			fi
+			if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
+			then
+				if echo "${trickyStoreTargetCloudLibrary}" > "${trickyStoreTargetFilePath}";
+				then
+					echo "Successfully wrote ${targetApplicationCount} application package name(s) from the cloud library to \"${trickyStoreTargetFilePath}\". "
+				else
+					exitCode=$(expr ${exitCode} \| 8)
+					echo "Failed to write ${targetApplicationCount} application package name(s) from the cloud library to \"${trickyStoreTargetFilePath}\". "
+					if rm -f "${trickyStoreTargetFilePath}" && mv "${trickyStoreTargetFilePath}.bak" "${trickyStoreTargetFilePath}";
+					then
+						echo "Successfully restored \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
+					else
+						echo "Failed to restore \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
+					fi
+				fi
+			fi
+		else
+			echo "Failed to fetch application package names from the cloud library. "
+		fi
+	fi
+	trickyStorePermissionOwnerSettingFlag=${EXIT_SUCCESS}
+	for filePath in "$(find "${trickyStoreConfigurationFolderPath}" -maxdepth 1 -type f)";
+	do
+		if ! chmod 644 "${filePath}" || ! chown root:root "${filePath}";
+		then
+			trickyStorePermissionOwnerSettingFlag=${EXIT_FAILURE}
+		fi
+	done
+	if [[ ${trickyStorePermissionOwnerSettingFlag} -eq ${EXIT_SUCCESS} ]];
+	then
+		echo "Successfully set the permission and the owner for the files directly under the Tricky Store configuration folder \"${trickyStoreConfigurationFolderPath}\". "
+	else
+		exitCode=$(expr ${exitCode} \| 8)
+		echo "Failed to set the permission and the owner for the files directly under the Tricky Store configuration folder \"${trickyStoreConfigurationFolderPath}\". "
 	fi
 else
-	echo "The Tricky Store module was not installed. "
+	echo "The Tricky Store configuration folder did not exist. "
 fi
 echo ""
 
