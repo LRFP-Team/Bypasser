@@ -414,6 +414,8 @@ readonly webrootFolderPath="${webrootName}"
 readonly webrootFilePath="${webrootName}.zip"
 readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/webroot.zip"
 readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/webroot.zip.sha512"
+readonly connectTime=5
+readonly maxTime=30
 readonly classificationFolderName="classifications"
 readonly classificationFolderPath="${webrootFolderPath}/${classificationFolderName}"
 readonly dataAppFolder="/data/app"
@@ -625,7 +627,7 @@ function getWhitelistScopeString
 	fi
 }
 
-webrootDigest="$(curl -s "${webrootDigestUrl}")"
+webrootDigest="$(curl -s --connect-time ${connectTime} --max-time ${maxTime} "${webrootDigestUrl}")"
 if [[ $? -eq ${EXIT_SUCCESS} && -n "${webrootDigest}" ]];
 then
 	echo "Successfully fetched the SHA-512 value of the latest ZIP file of the web UI. "
@@ -651,7 +653,7 @@ then
 		fi
 		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 		then
-			curl -s "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootFolderPath}" && rm -f "${webrootFilePath}"
+			curl -s --connect-time ${connectTime} --max-time ${maxTime} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootFolderPath}" && rm -f "${webrootFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootFolderPath}" && "$(find "${webrootFolderPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
 			then
 				echo "Successfully updated and verified the web UI. "
@@ -1307,7 +1309,7 @@ readonly targetAction="action${targetAB}.sh"
 readonly actionUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}"
 readonly actionDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}.sha512"
 
-shellDigest="$(curl -s "${actionDigestUrl}")"
+shellDigest="$(curl -s --connect-time ${connectTime} --max-time ${maxTime} "${actionDigestUrl}")"
 if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellDigest}" ]];
 then
 	echo "Successfully fetched the SHA-512 value of the latest \`\`${targetAction}\`\` from GitHub. "
