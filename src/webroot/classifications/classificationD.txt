@@ -15,6 +15,7 @@ com.adityabirlacapitaldigital.OneApp
 com.alibaba.aliyun
 com.alibaba.android.rimet
 com.amazon.appmanager
+com.android.vending
 com.anqmobileapp
 com.asw.moneyback
 com.authy.authy
@@ -56,7 +57,9 @@ com.google.android.apps.messaging
 com.google.android.apps.youtube.music
 com.google.android.contactkeys
 com.google.android.gm
+com.google.android.gms
 com.google.android.googlequicksearchbox
+com.google.android.gsf
 com.google.android.safetycore
 com.google.android.youtube
 com.happyelements.AndroidAnimal
@@ -181,6 +184,3 @@ ph.com.gotyme
 us.zoom.videomeetings
 windinfo.android
 youqu.android.todesk
-com.google.android.gsf
-com.google.android.gms
-com.android.vending

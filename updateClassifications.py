@@ -27,19 +27,14 @@ class SortedUniqueList(list):
 	def __init__(self:object, elements:tuple|list|set|str|bytes|object = None) -> object:
 		super().__init__()
 		self += elements
-		self.sort()
 	def add(self:object, elements:tuple|list|set|str|bytes|object = None) -> None:
 		self += elements
-		self.sort()
 	def append(self:object, elements:tuple|list|set|str|bytes|object = None) -> None:
 		self += elements
-		self.sort()
 	def extend(self:object, elements:tuple|list|set|str|bytes|object = None) -> None:
 		self += elements
-		self.sort()
 	def update(self:object, elements:tuple|list|set|str|bytes|object = None) -> None:
 		self += elements
-		self.sort()
 	def intersection(self:object, other:tuple|list|set|str|bytes|object) -> object:
 		return self & other
 	def remove(self:object, elements:tuple|list|set|str|bytes|object) -> None:
@@ -54,6 +49,7 @@ class SortedUniqueList(list):
 		elif isinstance(elements, (str, bytes)):
 			if elements not in self:
 				super().append(elements)
+			self.sort()
 		return self
 	def __isub__(self:object, elements:tuple|list|set|str|bytes|object) -> object:
 		if isinstance(elements, (tuple, list, set, SortedUniqueList, SortedUniquePackages)):
@@ -431,12 +427,12 @@ def main() -> int:
 	delta, d = trickyStoreTarget.removeFromFiles(trickyStoreAvoidanceFilePath)
 	if d:
 		flag = False
-		print("Removed {0} package(s) from the Tricky Store target file from the Tricky Store avoidance file \"{1}\" with the following exception(s). ".format(delta, trickyStoreAvoidanceFilePath))
+		print("Removed {0} package(s) from the Tricky Store target file from the Tricky Store avoidance file \"{1}\" with the following exception(s). ".format(-delta, trickyStoreAvoidanceFilePath))
 		for key, value in d.items():
 			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
 	else:
 		print("Successfully removed {0} package(s) from the Tricky Store target file from the Tricky Store avoidance file \"{1}\" with the following exception(s). ".format(	\
-			delta, trickyStoreAvoidanceFilePath																																	\
+			-delta, trickyStoreAvoidanceFilePath																																\
 		))
 	countTrickyStoreTarget = trickyStoreTarget.saveTo(trickyStoreTargetFilePath)
 	if isinstance(countTrickyStoreTarget, int):
@@ -451,7 +447,7 @@ def main() -> int:
 	# Git Push #
 	if flag:
 		try:
-			choice = input("Would you like to upload the files to GitHub via ``git`` [Yn]? ").upper() not in ("N", "NO", "0", "FALSE")
+			choice = input("Would you like to upload the files to GitHub via ``git`` [Yn]? ").upper() not in ("N", "NO", "0", "F", "FALSE")
 		except:
 			choice = True
 		if choice:

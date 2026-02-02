@@ -489,6 +489,7 @@ io.github.alexdonh.noaccessibilityservices
 io.github.auag0.disableaudiofocus
 io.github.auag0.hidemocklocation
 io.github.auag0.imnotadeveloper
+io.github.auag0.pokegopip
 io.github.brucezhang1993.warp_loves_play_store
 io.github.cctyl.coolmarkhook
 io.github.chipppppppppp.binnosoko
@@ -705,4 +706,3 @@ xyz.xfqlittlefan.ciwong.hello
 xyz.xfqlittlefan.notdeveloper
 yep.python.hook
 yuu.xposed
-io.github.auag0.pokegopip
