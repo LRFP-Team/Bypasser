@@ -56,7 +56,7 @@ class SortedUniqueList(list):
 				super().append(elements)
 		return self
 	def __isub__(self:object, elements:tuple|list|set|str|bytes|object) -> object:
-		if isinstance(elemenets, (tuple, list, set, SortedUniqueList, SortedUniquePackages)):
+		if isinstance(elements, (tuple, list, set, SortedUniqueList, SortedUniquePackages)):
 			for element in elements:
 				self -= element
 		elif isinstance(elements, (str, bytes)) and elements in self:
@@ -144,7 +144,10 @@ class Classification:
 				elif isinstance(vector, dict) and "Detectors" in vector and isinstance(vector["Detectors"], list):
 					if isDesktop:
 						for v in vector["Detectors"]:
-							if isinstance(v, dict) and "packageName" in v and "sourceStatus" in v and "D" in v["sourceStatus"] and "developingPurpose" in v and "D" in v["developingPurpose"]:
+							if (																									\
+								isinstance(v, dict) and "packageName" in v and "sourceStatus" in v and "D" in v["sourceStatus"]		\
+								and "developingPurpose" in v and "D" in v["developingPurpose"]										\
+							):
 								if isinstance(v["packageName"], (tuple, list, set)):
 									for package in v["packageName"]:
 										self.__packages += findall(SortedUniquePackages.Pattern, bytes(package, encoding = "utf-8"))
@@ -152,7 +155,10 @@ class Classification:
 									self.__packages += findall(SortedUniquePackages.Pattern, bytes(v["packageName"], encoding = "utf-8"))
 					else:
 						for v in vector["Detectors"]:
-							if isinstance(v, dict) and "packageName" in v and "sourceStatus" in v and "D" not in v["sourceStatus"] and "developingPurpose" in v and "D" not in v["developingPurpose"]:
+							if (																										\
+								isinstance(v, dict) and "packageName" in v and "sourceStatus" in v and "D" not in v["sourceStatus"]		\
+								and "developingPurpose" in v and "D" not in v["developingPurpose"]										\
+							):
 								if isinstance(v["packageName"], (tuple, list, set)):
 									for package in v["packageName"]:
 										self.__packages += findall(SortedUniquePackages.Pattern, bytes(package, encoding = "utf-8"))
@@ -241,7 +247,9 @@ def updateSHA512(srcFp:str, encoding:str = "utf-8") -> bool:
 				print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i + 1, filePath, digest if digest.isalnum() else digest.split("\n")))
 			except BaseException as e:
 				print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i + 1, filePath, e))
-		print("Successfully generated {0} / {1} SHA-512 value file(s) at the success rate of {2:.2f}%. ".format(successCnt, totalCnt, successCnt * 100 / totalCnt) if totalCnt else "No SHA-512 value files were generated. ")
+		print("Successfully generated {0} / {1} SHA-512 value file(s) at the success rate of {2:.2f}%. ".format(	\
+			successCnt, totalCnt, successCnt * 100 / totalCnt														\
+		) if totalCnt else "No SHA-512 value files were generated. ")
 		return successCnt == totalCnt
 	else:
 		return False
@@ -318,9 +326,9 @@ def main() -> int:
 	# Initialization #
 	webrootFolderPath = os.path.join(srcFolderPath, webrootName)
 	classificationFolderPath = os.path.join(webrootFolderPath, classificationFolderName)
-	labelLRFPFilePath, labelDetectorFilePath, labelApplicationFilePath, trickyStoreTargetFilePath, trickyStoreAvoidanceFilePath = (				\
-		os.path.join(classificationFolderPath, labelLRFPFileName), os.path.join(classificationFolderPath, labelDetectorFileName), 			\
-		os.path.join(classificationFolderPath, labelApplicationFileName), 										\
+	labelLRFPFilePath, labelDetectorFilePath, labelApplicationFilePath, trickyStoreTargetFilePath, trickyStoreAvoidanceFilePath = (					\
+		os.path.join(classificationFolderPath, labelLRFPFileName), os.path.join(classificationFolderPath, labelDetectorFileName), 					\
+		os.path.join(classificationFolderPath, labelApplicationFileName), 																			\
 		os.path.join(classificationFolderPath, trickyStoreTargetFileName), os.path.join(classificationFolderPath, trickyStoreAvoidanceFileName)		\
 	)
 	webrootFilePath = os.path.join(srcFolderPath, webrootName + ".zip")
@@ -420,7 +428,16 @@ def main() -> int:
 	trickyStoreTarget.update(labelLRFP)
 	trickyStoreTarget.update(labelDetector)
 	trickyStoreTarget.update(labelApplication)
-	trickyStoreTarget.removeFromFiles(trickyStoreAvoidanceFileName)
+	delta, d = trickyStoreTarget.removeFromFiles(trickyStoreAvoidanceFilePath)
+	if d:
+		flag = False
+		print("Removed {0} package(s) from the Tricky Store target file from the Tricky Store avoidance file \"{1}\" with the following exception(s). ".format(delta, trickyStoreAvoidanceFilePath))
+		for key, value in d.items():
+			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
+	else:
+		print("Successfully removed {0} package(s) from the Tricky Store target file from the Tricky Store avoidance file \"{1}\" with the following exception(s). ".format(	\
+			delta, trickyStoreAvoidanceFilePath																																	\
+		))
 	countTrickyStoreTarget = trickyStoreTarget.saveTo(trickyStoreTargetFilePath)
 	if isinstance(countTrickyStoreTarget, int):
 		print("Successfully wrote {0} package(s) of the Tricky Store target to the file \"{1}\". ".format(countTrickyStoreTarget, trickyStoreTargetFilePath))
