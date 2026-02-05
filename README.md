@@ -24,6 +24,9 @@ This module will not include, install, enable, disable, or uninstall any other m
 The implementation and bypassing of these environments should be challenging and complex procedures. Users should learn related knowledge before taking these actions. 
 Relying on one-key solutions or paying others for remote or onsite LRFP environment implementation, detection, or bypassing without knowing the principles is incorrect. 
 
+The updates of this module can be divided into the module update and the regular update. Unless otherwise specified, regular updates by pressing the ``action`` button in the rooting manager are adequate to keep up with the latest bypassing solutions. 
+Whether an update commit is a module update or a regular update, the time in the commit message is always based on HKT (UTC+8). 
+
 ## Compilation
 
 If you want to build the module for testing purposes on your own, please use ``git clone`` to clone this repository to your local device.
