@@ -1067,21 +1067,6 @@ then
 			echo "Failed to fetch application package names from the cloud library. "
 		fi
 	fi
-	trickyStorePermissionOwnerSettingFlag=${EXIT_SUCCESS}
-	for filePath in "$(find "${trickyStoreConfigurationFolderPath}" -maxdepth 1 -type f)";
-	do
-		if ! chmod 644 "${filePath}" || ! chown root:root "${filePath}";
-		then
-			trickyStorePermissionOwnerSettingFlag=${EXIT_FAILURE}
-		fi
-	done
-	if [[ ${EXIT_SUCCESS} -eq ${trickyStorePermissionOwnerSettingFlag} ]];
-	then
-		echo "Successfully set the permission and the owner for the files directly under the Tricky Store configuration folder \"${trickyStoreConfigurationFolderPath}\". "
-	else
-		exitCode=$(expr ${exitCode} \| 8)
-		echo "Failed to set the permission and the owner for the files directly under the Tricky Store configuration folder \"${trickyStoreConfigurationFolderPath}\". "
-	fi
 else
 	echo "The Tricky Store configuration folder did not exist. "
 fi

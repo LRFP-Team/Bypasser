@@ -17,11 +17,18 @@ jobs:
     - name: Build
       run: |
         cd "${{ github.workspace }}"
-        rm -rf ./Release
         sed '/^# Git (37) #$/,/^# Exit #$/d' build.sh | bash
     
-    - name: Upload the constructed module
+    - name: Prepare the artifact
+      id: artifact
+      run: |
+        cd "${{ github.workspace }}"
+        artifact="$(basename "$(find Release -type f | sort | tail -1)")"
+        echo "artifact=${artifact}" >> $GITHUB_OUTPUT
+    
+    - name: Upload files as separate artifacts
       uses: actions/upload-artifact@v4
       with:
-        path: ${{ github.workspace }}/Release/*
+        name: ${{ steps.artifact.outputs.artifact }}
+        path: ${{ github.workspace }}/Release/${{ steps.artifact.outputs.artifact }}
         if-no-files-found: error
