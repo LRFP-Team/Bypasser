@@ -1042,13 +1042,13 @@ then
 			if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 			then
 				trickyStoreWritingFlag=${EXIT_SUCCESS}
-				while IFS= read -r packageName || [[ -n "$packageName" ]];
+				echo "${trickyStoreTargetCloudLibrary}" | while IFS= read -r packageName || [[ -n "${packageName}" ]];
 				do
 					if ! echo "${packageName}!" >> "${trickyStoreTargetFilePath}";
 					then
 						trickyStoreWritingFlag=${EXIT_FAILURE}
 					fi
-				done <<< "${trickyStoreTargetCloudLibrary}"
+				done
 				if [[ ${EXIT_SUCCESS} -eq ${trickyStoreWritingFlag} ]];
 				then
 					echo "Successfully wrote ${targetApplicationCount} application package name(s) from the library to \"${trickyStoreTargetFilePath}\". "
