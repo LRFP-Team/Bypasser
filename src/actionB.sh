@@ -1023,7 +1023,7 @@ then
 		if [[ $? -eq ${EXIT_SUCCESS} ]];
 		then
 			targetApplicationCount=$(echo "${trickyStoreTargetCloudLibrary}" | wc -l)
-			echo "Successfully fetched ${targetApplicationCount} application package name(s) from the cloud library. "
+			echo "Successfully fetched ${targetApplicationCount} application package name(s) from the library. "
 			abortFlag=${EXIT_SUCCESS}
 			if [[ -f "${trickyStoreTargetFilePath}" ]];
 			then
@@ -1042,19 +1042,19 @@ then
 			if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 			then
 				trickyStoreWritingFlag=${EXIT_SUCCESS}
-				for packageName in "${trickyStoreTargetCloudLibrary}";
+				while IFS= read -r packageName || [[ -n "$packageName" ]];
 				do
 					if ! echo "${packageName}!" >> "${trickyStoreTargetFilePath}";
 					then
 						trickyStoreWritingFlag=${EXIT_FAILURE}
 					fi
-				done
+				done <<< "${trickyStoreTargetCloudLibrary}"
 				if [[ ${EXIT_SUCCESS} -eq ${trickyStoreWritingFlag} ]];
 				then
-					echo "Successfully wrote ${targetApplicationCount} application package name(s) from the cloud library to \"${trickyStoreTargetFilePath}\". "
+					echo "Successfully wrote ${targetApplicationCount} application package name(s) from the library to \"${trickyStoreTargetFilePath}\". "
 				else
 					exitCode=$(expr ${exitCode} \| 8)
-					echo "Failed to write ${targetApplicationCount} application package name(s) from the cloud library to \"${trickyStoreTargetFilePath}\". "
+					echo "Failed to write ${targetApplicationCount} application package name(s) from the library to \"${trickyStoreTargetFilePath}\". "
 					if rm -f "${trickyStoreTargetFilePath}" && mv -f "${trickyStoreTargetFilePath}.bak" "${trickyStoreTargetFilePath}";
 					then
 						echo "Successfully restored \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
@@ -1064,7 +1064,7 @@ then
 				fi
 			fi
 		else
-			echo "Failed to fetch application package names from the cloud library. "
+			echo "Failed to fetch application package names from the library. "
 		fi
 	fi
 else
@@ -1148,10 +1148,8 @@ done
 propertyToExistFlag=${EXIT_SUCCESS}
 for propertyToExist in ${propertiesToExist}
 do
-	if [[ -n "$(getprop "${propertyToExist}")" ]];
+	if ! getprop "${propertyToExist}" | grep -qE "[A-Za-z0-9_-]";
 	then
-		echo "- The property \"${propertyToExist}\" existed and its value was not empty, which was normal. "
-	else
 		propertyToExistFlag=${EXIT_FAILURE}
 		echo "- The property \"${propertyToExist}\" did not exist or its value was empty, which was abnormal. "
 	fi
@@ -1159,12 +1157,10 @@ done
 for propertyToBeDeleted in ${propertiesToBeDeleted}
 do
 	resetprop --delete "${propertyToBeDeleted}"
-	if [[ $? -eq ${EXIT_SUCCESS} || $? -eq 255 ]];
+	if getprop "${propertyToBeDeleted}" | grep -qE "[A-Za-z0-9_-]";
 	then
-		echo "- The execution of \`\`resetprop --delete \"${propertyToBeDeleted}\"\`\` succeeded. "
-	else
-		echo "- The execution of \`\`resetprop --delete \"${propertyToBeDeleted}\"\`\` failed. "
 		exitCode=$(expr ${exitCode} \| 16)
+		echo "- The execution of \`\`resetprop --delete \"${propertyToBeDeleted}\"\`\` failed. "
 	fi
 done
 if [[ -f "${persistentPropertyFilePath}" ]];
@@ -1174,6 +1170,7 @@ then
 	then
 		echo "- Successfully removed persistent property traces from \"${persistentPropertyFilePath}\". "
 	else
+		exitCode=$(expr ${exitCode} \| 16)
 		echo "- Failed to remove persistent property traces from \"${persistentPropertyFilePath}\". "
 	fi
 else
