@@ -13,7 +13,8 @@ This module will only take effect when users install it or click the ``action`` 
   - Remove sensitive policies. 
   - Handle properties. 
   - Enforce SELinux. 
-  - Check whether the kernel involves banned strings. 
+  - Check whether the kernel version involves banned strings. 
+  - Generate a non-root scanning shell script for specified folder detection. 
   - Patch ``/etc/compatconfig/services-platform-compat-config.xml``. 
   - Enable the feature of hiding desktop icons on devices running Android 10 or above. 
 - Update (0bX00000): Perform regular dynamic updates for ``actionA.sh``, ``actionB.sh``, and the web UI (processed in the HMA Configuration stage). Networks to GitHub are required. 

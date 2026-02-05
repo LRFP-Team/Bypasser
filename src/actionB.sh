@@ -1081,37 +1081,8 @@ readonly propertiesToExist="ro.boot.vbmeta.avb_version ro.boot.vbmeta.hash_alg r
 readonly propertiesToBeDeleted="persist.sys.vold_app_data_isolation_enabled persist.zygote.app_data_isolation ro.oem_unlock_supported"
 readonly persistentPropertyFilePath="/data/property/persistent_properties"
 readonly directoryForTesting="/data/data/com.android.settings"
-readonly plainUserExecution="$(echo -e "if [[ -n \"\${EXTERNAL_STORAGE}\" ]];\n\
-then\n\
-	readonly folders=\"/data/data /data/user/0 /data/user_de/0 \${EXTERNAL_STORAGE}/Android/data\"\n\
-	readonly wxDownloadFolderPath=\"\${EXTERNAL_STORAGE}/Download/WechatXposed\"\n\
-else\n\
-	readonly folders=\"/data/data /data/user/0 /data/user_de/0 /sdcard/Android/data\"\n\
-	readonly wxDownloadFolderPath=\"/sdcard/Download/WechatXposed\"\n\
-fi\n\
-for packageName in \$(cat \"${classificationFolderPath}/classificationB.txt\")\n\
-do\n\
-	for folder in \${folders}\n\
-	do\n\
-		leakedPath=\"\${folder}/\${packageName}\"
-		if [[ -e \"\${leakedPath}\" ]];\n\
-		then\n\
-			echo \"- Found \\\"\${leakedPath}\\\" (Classification \\\$B\\\$). \"\n\
-		fi\n\
-	done\n\
-done\n\
-for packageName in \$(cat \"${classificationFolderPath}/classificationC.txt\")\n\
-do\n\
-	for folder in \${folders}\n\
-	do\n\
-		leakedPath=\"\${folder}/\${packageName}\"
-		if [[ -e \"\${leakedPath}\" ]];\n\
-		then\n\
-			echo \"- Found \\\"\${leakedPath}\\\" (Classification \\\$C\\\$). \"\n\
-		fi\n\
-	done\n\
-done\n\
-test -e \"\${wxDownloadFolderPath}\" && echo \"- Found \\\"\${wxDownloadFolderPath}\\\". ")"
+readonly plainUserTesterFileName="plainUserTester.sh"
+readonly plainUserTesterFilePath="${downloadFolderPath}/${plainUserTesterFileName}"
 readonly bannedSubStrings="-AICP -arter97 -blu_spark -CAF -cm- -crDroid -crdroid -CyanogenMod -Deathly -EAS- -eas- -ElementalX -Elite -franco -hadesKernel -Lineage- -lineage- -LineageOS -lineageos -mokee -MoRoKernel -Noble -Optimus -SlimRoms -Sultan -sultan"
 readonly sourceXmlFilePath="/etc/compatconfig/services-platform-compat-config.xml"
 readonly replacementEntry="system"
@@ -1229,27 +1200,6 @@ else
 		echo "SELinux is not Enforcing and cannot be set to Enforcing. "
 	fi
 fi
-#su -Z u:r:untrusted_app:s0 shell -c "test -e \"${directoryForTesting}\""
-returnCode=${EOF}
-if [[ ${returnCode} -eq ${EXIT_SUCCESS} || ${returnCode} -eq ${EOF} ]];
-then
-	echo "Skipped checking the existence of applications in Classifications \$B\$ and \$C\$ that are leaked by the specified folders as a non-root user due to the unsupported environments. "
-else
-	echo "Checking the existence of applications in Classifications \$B\$ and \$C\$ leaked by the specified folders as a non-root user. "
-	plainUserContent="$(su -Z u:r:untrusted_app:s0 shell -c "${plainUserExecution}")"
-	if [[ $? -eq ${EOF} ]];
-	then
-		echo "Could not check the existence of applications in Classifications \$B\$ and \$C\$ that are leaked by the specified folders as a non-root user due to the EOF signal. "
-	else
-		echo "${plainUserContent}"
-		if [[ -n "${plainUserContent}" ]];
-		then
-			echo "Found $(echo "${plainUserContent}" | wc -l) issue(s) during checking the existence of applications in Classifications \$B\$ and \$C\$ leaked by the specified folders as a plain user. "
-		else
-			echo "Congratulations on no applications in Classifications \$B\$ and \$C\$ leaked by the specified folders. "
-		fi
-	fi
-fi
 bannedSubStringFoundFlag=${EXIT_SUCCESS}
 kernelVersion="$(uname -r)"
 for bannedSubString in ${bannedSubStrings}
@@ -1264,6 +1214,62 @@ done
 if [[ ${bannedSubStringFoundFlag} -eq ${EXIT_SUCCESS} ]];
 then
 	echo "No banned substrings were found in the kernel version \"${kernelVersion}\". "
+fi
+plainUserExecution="$(echo -e "#!/system/bin/sh\n\
+readonly EXIT_SUCCESS=0\n\
+readonly EXIT_FAILURE=1\n\n\
+errorLevel=\${EXIT_SUCCESS}\n\
+if echo \"\${EXTERNAL_STORAGE}\" | grep -qE \"^(/[A-Za-z0-9_-]+)+\\\$\";\n\
+then\n\
+	readonly folders=\"/data/data /data/user/0 /data/user_de/0 \${EXTERNAL_STORAGE}/Android/data\"\n\
+	readonly wxDownloadFolderPath=\"\${EXTERNAL_STORAGE}/Download/WechatXposed\"\n\
+else\n\
+	readonly folders=\"/data/data /data/user/0 /data/user_de/0 /sdcard/Android/data\"\n\
+	readonly wxDownloadFolderPath=\"/sdcard/Download/WechatXposed\"\n\
+fi")"
+while IFS= read -r packageName || [[ -n "${packageName}" ]];
+do
+	plainUserExecution="$(echo -e "${plainUserExecution}\n\
+for folder in \${folders}\n\
+do\n\
+	leakedPath=\"\${folder}/${packageName}\"\n\
+	if [[ -e \"\${leakedPath}\" ]];\n\
+	then\n\
+		errorLevel=\${EXIT_FAILURE}\n\
+		echo \"- Found \\\"\${leakedPath}\\\" (LRFP). \"\n\
+	fi\n\
+done")"
+done < "${classificationFolderPath}/classificationB.txt"
+plainUserExecution="$(echo -e "${plainUserExecution}\n\
+if [[ -e \"\${wxDownloadFolderPath}\" ]];\n\
+then\n\
+	errorLevel=\${EXIT_FAILURE}\n\
+	echo \"- Found \\\"\${wxDownloadFolderPath}\\\" (LRFP). \"
+fi")"
+while IFS= read -r packageName || [[ -n "${packageName}" ]];
+do
+	plainUserExecution="$(echo -e "${plainUserExecution}\n\
+for folder in \${folders}\n\
+do\n\
+	if [[ -e \"\${leakedPath}\" ]];\n\
+	then\n\
+		errorLevel=\${EXIT_FAILURE}\n\
+		echo \"- Found \\\"\${leakedPath}\\\" (Detector). \"\n\
+	fi\n\
+done")"
+done < "${classificationFolderPath}/classificationC.txt"
+plainUserExecution="$(echo -e "${plainUserExecution}\n\
+if [[ \${EXIT_SUCCESS} -eq \${errorLevel} ]];\n\
+then\n\
+	echo \"Finished scanning as a plain user. You should have bypass the detection of LRFP-related application installation traces leaked by specified folders. \"\n\
+fi\n\
+exit \${errorLevel}")"
+if echo "${plainUserExecution}" > "${plainUserTesterFilePath}";
+then
+	echo "Successfully generated \"${plainUserTesterFilePath}\". Please execute the shell script without root privileges for detection. "
+else
+	exitCode=$(expr ${exitCode} \| 16)
+	echo "Failed to generate \"${plainUserTesterFilePath}\". "
 fi
 if [[ -s "${sourceXmlFilePath}" ]];
 then
