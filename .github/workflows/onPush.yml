@@ -1,0 +1,27 @@
+name: On Push
+
+# Thanks to [https://github.com/JHUISI/charm/blob/dev/.github/workflows/ci.yml](https://github.com/JHUISI/charm/blob/dev/.github/workflows/ci.yml). 
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Build
+      run: |
+        cd "${{ github.workspace }}"
+        rm -rf ./Release
+        sed '/^# Git (37) #$/,/^# Exit #$/d' build.sh | bash
+    
+    - name: Upload the constructed module
+      uses: actions/upload-artifact@v4
+      with:
+        path: ${{ github.workspace }}/Release/*
+        if-no-files-found: error

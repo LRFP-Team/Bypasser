@@ -203,11 +203,27 @@ class Classification:
 		return len(self.__packages)
 
 
+def compress(zipFolderPath:str, zipFilePath:str, extensionsExcluded:tuple|list|set) -> bool:
+	if isinstance(zipFolderPath, str) and os.path.isdir(zipFolderPath) and isinstance(zipFilePath, str) and isinstance(extensionsExcluded, (tuple, list, set)):
+		try:
+			with ZipFile(zipFilePath, "w") as zipf:
+				for root, _, fileNames in os.walk(zipFolderPath):
+					for fileName in fileNames:
+						if os.path.splitext(fileName)[1] not in extensionsExcluded:
+							filePath = os.path.join(root, fileName)
+							zipf.write(filePath, os.path.relpath(filePath, zipFolderPath))
+			print("Successfully compressed the web UI folder \"{0}\" to \"{1}\". ".format(zipFolderPath, zipFilePath))
+			return True
+		except BaseException as e:
+			print("Failed to compress the web UI folder \"{0}\" to \"{1}\" due to \"{2}\". ".format(zipFolderPath, zipFilePath, e))
+	else:
+		return False
+
 def updateSHA512(srcFp:str, encoding:str = "utf-8") -> bool:
 	if isinstance(srcFp, str) and os.path.isdir(srcFp) and isinstance(encoding, str):
 		successCnt, filePaths = 0, []
-		for root, dirs, files in os.walk(srcFp):
-			for fileName in files:
+		for root, _, fileNames in os.walk(srcFp):
+			for fileName in fileNames:
 				filePath = os.path.join(root, fileName)
 				if os.path.splitext(fileName)[1] == ".sha512":
 					try:
@@ -220,10 +236,10 @@ def updateSHA512(srcFp:str, encoding:str = "utf-8") -> bool:
 		length = len(str(totalCnt))
 		for i, filePath in enumerate(filePaths):
 			try:
-				if filePath == os.path.join(srcFp, "webroot.zip"):
+				if os.path.join(srcFp, "webroot.zip") == filePath:
 					digests = []
-					for root, dirs, files in os.walk(os.path.join(srcFp, "webroot")):
-						for fileName in files:
+					for root, _, fileNames in os.walk(os.path.join(srcFp, "webroot")):
+						for fileName in fileNames:
 							if os.path.splitext(fileName)[1].lower() not in (".prop", ".sha512"):
 								fileP = os.path.join(root, fileName)
 								with open(fileP, "rb") as f:
@@ -250,24 +266,8 @@ def updateSHA512(srcFp:str, encoding:str = "utf-8") -> bool:
 	else:
 		return False
 
-def compress(zipFolderPath:str, zipFilePath:str, extensionsExcluded:tuple|list|set) -> bool:
-	if isinstance(zipFolderPath, str) and os.path.isdir(zipFolderPath) and isinstance(zipFilePath, str) and isinstance(extensionsExcluded, (tuple, list, set)):
-		try:
-			with ZipFile(zipFilePath, "w") as zipf:
-				for root, _, files in os.walk(zipFolderPath):
-					for fileName in files:
-						if os.path.splitext(fileName)[1] not in extensionsExcluded:
-							filePath = os.path.join(root, fileName)
-							zipf.write(filePath, os.path.relpath(filePath, zipFolderPath))
-			print("Successfully compressed the web UI folder \"{0}\" to \"{1}\". ".format(zipFolderPath, zipFilePath))
-			return True
-		except BaseException as e:
-			print("Failed to compress the web UI folder \"{0}\" to \"{1}\" due to \"{2}\". ".format(zipFolderPath, zipFilePath, e))
-	else:
-		return False
-
 def gitPush(filePathA:str, filePathB:str, encoding:str = "utf-8") -> bool:
-	commitMessage = "Regular Update ({0})".format(datetime.now().strftime("%Y%m%d%H%M%S"))
+	commitMessage = "Regular Update ({0})".format(datetime.now().strftime("%Y%m%d%H%M%S%f"))
 	print("The commit message is \"{0}\". ".format(commitMessage))
 	if __import__("platform").system().upper() == "WINDOWS":
 		commandlines = ()
@@ -442,7 +442,7 @@ def main() -> int:
 		print("Failed to write the package(s) of the Tricky Store target to the file \"{0}\" due to the following exception. \n\t{1}".format(trickyStoreTargetFilePath, countTrickyStoreTarget))
 	
 	# Update the Web UI #
-	if not updateSHA512(srcFolderPath) and compress(webrootFolderPath, webrootFilePath, extensionsExcluded):
+	if not (compress(webrootFolderPath, webrootFilePath, extensionsExcluded) and updateSHA512(srcFolderPath)):
 		flag = False
 	
 	# Git Push #

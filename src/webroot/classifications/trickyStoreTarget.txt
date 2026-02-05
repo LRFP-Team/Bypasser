@@ -33,6 +33,7 @@ chuxin.shimo.shimowendang
 cl.coders.faketraveler
 club.youppgd.adhook
 cn.ac.lz233.tarnhelm
+cn.alhs.FQKill
 cn.amamiya.douyurepeat
 cn.amamiya.hupublacklist
 cn.android.x
@@ -555,6 +556,7 @@ com.wye4.hookforvip
 com.xchat
 com.xconst.vavatar
 com.xiaoer.watermark
+com.xiaohe.hyperclick
 com.xiaoniu.zuiyouhook
 com.xingin.xhs
 com.xposed.miuiime
@@ -611,6 +613,7 @@ dev.arktic.installerrestrictor
 dev.coderpwh.fuck_shake
 dev.device.emulator
 dev.fzer0x.fucksolidexplorer
+dev.fzer0x.imsicatcherdetector2
 dev.lackluster.mihelper
 dev.rushii.xspoofsignatures
 dev.sora.extractor
@@ -872,6 +875,7 @@ sb.firefds.r.firefdskit
 sb.firefds.s.firefdskit
 sb.firefds.t.firefdskit
 sb.firefds.u.firefdskit
+sh.dev.omniclip
 sh.siava.pixelxpert
 space.aioilight.tsubonofuta
 sqz.wenku8.bg
@@ -916,6 +920,7 @@ xyz.ccat3z.nodisplaycutout
 xyz.cirno.noswipetokill
 xyz.cirno.pseudodcdimming
 xyz.cirno.unfuckzui
+xyz.thewhitedog9487.freeunlock
 xyz.xfqlittlefan.ciwong.hello
 xyz.xfqlittlefan.notdeveloper
 yep.python.hook

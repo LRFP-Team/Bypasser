@@ -4,4 +4,4 @@ version=v2025122018
 versionCode=2025122018
 author=LRFP Team
 description=This is a developing rooting-layer system module for systematically bypassing environment detection related to LRFP for Android devices, where the abbreviation "LRFP" stands for Low-level, Rooting, Frameworks, and Plugins. 
-updateJson=https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/Update.json
+updateJson=https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/update.json

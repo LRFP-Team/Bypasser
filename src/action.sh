@@ -115,33 +115,33 @@ then
 						exitCode=$?
 					else
 						echo "Failed to execute \`\`action.sh\`\` since the necessary script \`\`${actionPath}\`\` failed to pass the local shell syntax check (sh). "
-						echo "Please try to flash the latest version of the ${moduleName} Magisk Module. "
+						echo "Please try to flash the latest version of the ${moduleName} rooting-layer system module. "
 						exitCode=${EXIT_FAILURE}
 					fi
 				else
 					echo "Failed to execute \`\`action.sh\`\` since the necessary script \`\`${actionPath}\`\` was not executable. "
-					echo "Please try to flash the latest version of the ${moduleName} Magisk Module. "
+					echo "Please try to flash the latest version of the ${moduleName} rooting-layer system module. "
 					exitCode=${EXIT_FAILURE}
 				fi
 			else
 				echo "Failed to execute \`\`action.sh\`\` since the necessary script \`\`${actionPath}\`\` was missing. "
-				echo "Please try to flash the latest version of the ${moduleName} Magisk Module. "
+				echo "Please try to flash the latest version of the ${moduleName} rooting-layer system module. "
 				exitCode=${EXIT_FAILURE}
 			fi
 		else
 			echo "Failed to execute \`\`action.sh\`\` since an improper action configuration file was detected. "
-			echo "Please try to flash the latest version of the ${moduleName} Magisk Module. "
+			echo "Please try to flash the latest version of the ${moduleName} rooting-layer system module. "
 			exitCode=${EXIT_FAILURE}
 		fi
 	else
 		echo "Failed to execute \`\`action.sh\`\` since the action configuration file \"${actionPropFilePath}\" was missing and unrecoverable. "
-		echo "Please try to flash the latest version of the ${moduleName} Magisk Module. "
+		echo "Please try to flash the latest version of the ${moduleName} rooting-layer system module. "
 		exitCode=${EXIT_FAILURE}
 	fi
 	setPermissions &> /dev/null 2>/dev/null && chmod 755 "${actionFolderPath}" 2>/dev/null
 else
 	echo "Failed to execute \`\`action.sh\`\` since the working directory \"$(pwd)\" is unexpected. "
-	echo "Please try to flash the latest version of the ${moduleName} Magisk Module. "
+	echo "Please try to flash the latest version of the ${moduleName} rooting-layer system module. "
 	exitCode=${EOF}
 fi
 clearCaches &> /dev/null

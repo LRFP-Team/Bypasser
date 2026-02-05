@@ -44,7 +44,7 @@ function setPermissions
 
 ui_print ""
 ui_print $(yes "#" | head -n ${outerSymbolCount} | tr -d '\n')
-ui_print "Welcome to the installer of the ${moduleName} Magisk Module! "
+ui_print "Welcome to the installer of the ${moduleName} rooting-layer system module! "
 ui_print "The absolute path to this script is \"$(cd "$(dirname "$0")" && pwd)/$(basename "$0")\". "
 clearCaches
 if [[ $? -eq ${EXIT_SUCCESS} ]];

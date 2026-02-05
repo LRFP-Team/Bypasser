@@ -36,7 +36,7 @@ function setPermissions
 	return ${returnCode}
 }
 
-echo "Welcome to the builder for the ``${moduleName}`` Magisk Module! "
+echo "Welcome to the builder for the ``${moduleName}`` rooting-layer system module! "
 echo "The absolute path to this script is \"$(cd "$(dirname "$0")" && pwd)/$(basename "$0")\". "
 chmod 755 "${moduleFolderPath}" && cd "${moduleFolderPath}"
 if [[ $? == ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleName}" ]]; then
@@ -93,7 +93,7 @@ version=v${moduleVersion}\n\
 versionCode=${moduleVersion}\n\
 author=LRFP Team\n\
 description=This is a developing rooting-layer system module for systematically bypassing environment detection related to LRFP for Android devices, where the abbreviation \"LRFP\" stands for Low-level, Rooting, Frameworks, and Plugins. \n\
-updateJson=https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/Update.json"
+updateJson=https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/update.json"
 readonly zipFolderPath="Release"
 readonly zipFileName="${moduleName}_v${moduleVersion}.zip"
 readonly zipFilePath="${zipFolderPath}/${zipFileName}"
@@ -167,9 +167,9 @@ if [[ -d "${srcFolderPath}" && -d "${srcFolderPath}/META-INF" && -d "${srcFolder
 			echo "Successfully created the ZIP folder path \"${zipFolderPath}\". "
 			(cd "${srcFolderPath}" && zip -J -ll -r -v - * -x "${webrootName}.zip" -x "${webrootName}.zip.sha512") > "${zipFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -f "${zipFilePath}" ]]; then
-				echo "Successfully packed the ${moduleName} Magisk module to \"${zipFilePath}\" via the ``zip`` command! "
+				echo "Successfully packed the ${moduleName} rooting-layer system module to \"${zipFilePath}\" via the ``zip`` command! "
 			else
-				echo "Failed to pack the ${moduleName} Magisk module to \"${zipFilePath}\" via the ``zip`` command. "
+				echo "Failed to pack the ${moduleName} rooting-layer system module to \"${zipFilePath}\" via the ``zip`` command. "
 				exit 24
 			fi
 		else
@@ -225,7 +225,7 @@ fi
 
 # Update (34--36) #
 readonly updateFolderPath="."
-readonly updateFileName="Update.json"
+readonly updateFileName="update.json"
 readonly updateFilePath="${updateFolderPath}/${updateFileName}"
 readonly updateContent="{\n\
 	\"version\":\"v${moduleVersion}\", \n\

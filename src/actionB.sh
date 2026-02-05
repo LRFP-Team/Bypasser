@@ -86,7 +86,12 @@ then
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
 		echo "- install the latest Tricky Store (TS) module as a system module with the correct configurations, "
 		echo "- install the latest Audit Patch module as a system module, and"
-		echo "- activate the latest HMA plugin from https://t.me/HideMyApplist with the correct configurations. "
+		if [[ ${API} -ge 31 ]];
+		then
+			echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
+		else
+			echo "- activate the latest HMA plugin with the correct configurations. "
+		fi
 		if [[ -d "${apatchFolder}" ]];
 		then
 			echo "The Apatch folder exists while the KSU / KSU Next is using. Please consider removing the Apatch folder. "
@@ -105,7 +110,12 @@ then
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
 		echo "- install the latest Tricky Store (TS) module as a system module with the correct configurations, "
 		echo "- install the latest Audit Patch module as a system module, and"
-		echo "- activate the latest HMA plugin from https://t.me/HideMyApplist with the correct configurations. "
+		if [[ ${API} -ge 31 ]];
+		then
+			echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
+		else
+			echo "- activate the latest HMA plugin with the correct configurations. "
+		fi
 		if [[ -d "${magiskFolder}" ]];
 		then
 			echo "The Magisk folder exists while the Apatch is using. Please consider removing the Magisk folder. "
@@ -134,7 +144,12 @@ then
 				echo "- install the latest Tricky Store (TS) module with the correct configurations, "
 				echo "- install the latest Audit Patch module, "
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
-				echo "- activate the latest HMA plugin from https://t.me/HideMyApplist with the correct configurations. "
+				if [[ ${API} -ge 31 ]];
+				then
+					echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
+				else
+					echo "- activate the latest HMA plugin with the correct configurations. "
+				fi
 				echo "Please consider switching to the latest Magisk Alpha if possible. "
 			else
 				if [[ ${MAGISK_VER} == *-alpha ]];
@@ -158,7 +173,12 @@ then
 				echo "- install the latest Tricky Store (TS) module with the correct configurations, "
 				echo "- install the latest Audit Patch module, "
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
-				echo "- activate the latest HMA plugin from https://t.me/HideMyApplist with the correct configurations. "
+				if [[ ${API} -ge 31 ]];
+				then
+					echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
+				else
+					echo "- activate the latest HMA plugin with the correct configurations. "
+				fi
 			fi
 			if [[ ${MAGISK_VER_CODE} -lt ${magiskVulnerabilityVersion} ]];
 			then
@@ -407,14 +427,16 @@ else
 fi
 echo ""
 
-# HMA(L) (0b000X00) #
-echo "# HMA(L) (0b000X00) #"
+# HMA Configurations (0b000X00) #
+echo "# HMA Configurations (0b000X00) #"
 readonly webrootName="webroot"
 readonly webrootFolderPath="${webrootName}"
 readonly webrootFilePath="${webrootName}.zip"
 readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/webroot.zip"
 readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/webroot.zip.sha512"
 readonly curlTimeout=10
+readonly actionPropFileName="action.prop"
+readonly actionPropFilePath="${webrootFolderPath}/${actionPropFileName}"
 readonly classificationFolderName="classifications"
 readonly classificationFolderPath="${webrootFolderPath}/${classificationFolderName}"
 readonly dataAppFolder="/data/app"
@@ -428,9 +450,9 @@ then
 else
 	readonly downloadFolderPath="/sdcard/Download"
 fi
-readonly blacklistConfigurationFileName=".HMA(L)_Blacklist_Config.json"
+readonly blacklistConfigurationFileName=".HMA_Blacklist_Configuration.json"
 readonly blacklistConfigurationFilePath="${downloadFolderPath}/${blacklistConfigurationFileName}"
-readonly whitelistConfigurationFileName=".HMA(L)_Whitelist_Config.json"
+readonly whitelistConfigurationFileName=".HMA_Whitelist_Configuration.json"
 readonly whitelistConfigurationFilePath="${downloadFolderPath}/${whitelistConfigurationFileName}"
 readonly reportLink="https://github.com/LRFP-Team/Bypasser"
 gapTime=0
@@ -658,12 +680,12 @@ then
 				echo "Successfully updated and verified the web UI. "
 				if [[ -d "${webrootFolderPath}.bak" ]];
 				then
-					rm -rf "${webrootFolderPath}.bak"
+					cp -fp "${webrootFolderPath}.bak/${actionPropFileName}" "${actionPropFilePath}" && rm -rf "${webrootFolderPath}.bak"
 					if [[ $? -eq ${EXIT_SUCCESS} && ! -d "${webrootFolderPath}.bak" ]];
 					then
-						echo "Successfully removed \"${webrootFolderPath}.bak\". "
+						echo "Successfully restored the action slot and removed \"${webrootFolderPath}.bak\". "
 					else
-						echo "Failed to remove \"${webrootFolderPath}.bak\". "
+						echo "Failed to restore the action slot or remove \"${webrootFolderPath}.bak\". "
 					fi
 				else
 					echo "No old web UI folders that should be removed were found. "
@@ -692,7 +714,7 @@ else
 fi
 if [[ $(expr ${exitCode} \& 32) -ne ${EXIT_SUCCESS} ]];
 then
-	echo "The updating of the classifications might fail. This will use the classification cache files to generate the HMA(L) configurations. "
+	echo "The updating of the classifications might fail. This will use the classification cache files to generate the configurations for HMA and its branches. "
 fi
 classificationB="$(getClassification "B")"
 returnCodeB=$?
@@ -831,7 +853,7 @@ then
 		echo "Successfully fetched ${lengthB} package name(s) of Classification \$B\$ from the library (${originalLengthB}) and the local machine (${localBCount}). "
 		oldConfigurationFolderCount=0
 		removedOldConfigurationFolderCount=0
-		echo "Removing old HMA(L) configuration directories. "
+		echo "Removing old configuration directories of HMA and its branches. "
 		for oldPath in $(find "${largerOldScanningScope}" -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
 		do
 			if [[ -e "${oldPath}/config.json" && -d "${oldPath}/log" ]];
@@ -862,12 +884,12 @@ then
 		done
 		if [[ ${oldConfigurationFolderCount} -ge 2 ]];
 		then
-			echo "Found ${oldConfigurationFolderCount} old HMA(L) configuration directories in the \"${largerOldScanningScope}\" directory, with ${removedOldConfigurationFolderCount} removed successfully. "
+			echo "Found ${oldConfigurationFolderCount} old configuration directories of HMA and its branches in the \"${largerOldScanningScope}\" directory, with ${removedOldConfigurationFolderCount} removed successfully. "
 		elif [[ ${oldConfigurationFolderCount} -eq 1 ]];
 		then
-			echo "Found 1 old HMA(L) configuration directory in the \"${largerOldScanningScope}\" directory, with ${removedOldConfigurationFolderCount} removed successfully. "
+			echo "Found 1 old configuration directory of HMA or its branches in the \"${largerOldScanningScope}\" directory, with ${removedOldConfigurationFolderCount} removed successfully. "
 		else
-			echo "No old HMA(L) configuration folders were found. "
+			echo "No old configuration directories of HMA or its branches were found. "
 		fi
 	fi
 else
@@ -985,7 +1007,7 @@ then
 	if [[ -f "${trickyStoreSecurityPatchFilePath}" ]];
 	then
 		echo "The security patch file was found at \"${trickyStoreSecurityPatchFilePath}\". "
-		if mv "${trickyStoreSecurityPatchFilePath}" "${trickyStoreSecurityPatchFilePath}.bak";
+		if mv -f "${trickyStoreSecurityPatchFilePath}" "${trickyStoreSecurityPatchFilePath}.bak";
 		then
 			echo "Successfully removed \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		else
@@ -1006,26 +1028,34 @@ then
 			if [[ -f "${trickyStoreTargetFilePath}" ]];
 			then
 				echo "The Tricky Store target file was found at \"${trickyStoreTargetFilePath}\". "
-				cp -fp "${trickyStoreTargetFilePath}" "${trickyStoreTargetFilePath}.bak"
+				mv -f "${trickyStoreTargetFilePath}" "${trickyStoreTargetFilePath}.bak"
 				if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}.bak" ]];
 				then
-					echo "Successfully copied \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+					echo "Successfully moved \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
 				else
 					abortFlag=${EXIT_FAILURE}
-					echo "Failed to copy \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+					echo "Failed to move \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
 				fi
 			else
 				echo "The copying has been skipped since the Tricky Store target file did not exist. "
 			fi
 			if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 			then
-				if echo "${trickyStoreTargetCloudLibrary}" > "${trickyStoreTargetFilePath}";
+				trickyStoreWritingFlag=${EXIT_SUCCESS}
+				for packageName in "${trickyStoreTargetCloudLibrary}";
+				do
+					if ! echo "${packageName}!" >> "${trickyStoreTargetFilePath}";
+					then
+						trickyStoreWritingFlag=${EXIT_FAILURE}
+					fi
+				done
+				if [[ ${EXIT_SUCCESS} -eq ${trickyStoreWritingFlag} ]];
 				then
 					echo "Successfully wrote ${targetApplicationCount} application package name(s) from the cloud library to \"${trickyStoreTargetFilePath}\". "
 				else
 					exitCode=$(expr ${exitCode} \| 8)
 					echo "Failed to write ${targetApplicationCount} application package name(s) from the cloud library to \"${trickyStoreTargetFilePath}\". "
-					if rm -f "${trickyStoreTargetFilePath}" && mv "${trickyStoreTargetFilePath}.bak" "${trickyStoreTargetFilePath}";
+					if rm -f "${trickyStoreTargetFilePath}" && mv -f "${trickyStoreTargetFilePath}.bak" "${trickyStoreTargetFilePath}";
 					then
 						echo "Successfully restored \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
 					else
@@ -1045,7 +1075,7 @@ then
 			trickyStorePermissionOwnerSettingFlag=${EXIT_FAILURE}
 		fi
 	done
-	if [[ ${trickyStorePermissionOwnerSettingFlag} -eq ${EXIT_SUCCESS} ]];
+	if [[ ${EXIT_SUCCESS} -eq ${trickyStorePermissionOwnerSettingFlag} ]];
 	then
 		echo "Successfully set the permission and the owner for the files directly under the Tricky Store configuration folder \"${trickyStoreConfigurationFolderPath}\". "
 	else
@@ -1300,8 +1330,6 @@ echo ""
 
 # Update (0bX00000) #
 echo "# Update (0bX00000) #"
-readonly actionPropFileName="action.prop"
-readonly actionPropFilePath="${webrootFolderPath}/${actionPropFileName}"
 readonly currentAB="B"
 readonly targetAB="A"
 readonly targetAction="action${targetAB}.sh"
