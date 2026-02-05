@@ -73,6 +73,7 @@ else
 	echo "The working directory \"$(pwd)\" is unexpected. "
 	exitCode=$(expr ${exitCode} \| ${EXIT_FAILURE})
 fi
+androidVersion=$(getprop ro.build.version.release)
 if ${BOOTMODE};
 then
 	if [[ "${KSU}" == "true" ]];
@@ -86,7 +87,7 @@ then
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
 		echo "- install the latest Tricky Store (TS) module as a system module with the correct configurations, "
 		echo "- install the latest Audit Patch module as a system module, and"
-		if [[ ${API} -ge 31 ]];
+		if [[ ${androidVersion} -ge 12 ]];
 		then
 			echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
 		else
@@ -110,7 +111,7 @@ then
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
 		echo "- install the latest Tricky Store (TS) module as a system module with the correct configurations, "
 		echo "- install the latest Audit Patch module as a system module, and"
-		if [[ ${API} -ge 31 ]];
+		if [[ ${androidVersion} -ge 12 ]];
 		then
 			echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
 		else
@@ -144,7 +145,7 @@ then
 				echo "- install the latest Tricky Store (TS) module with the correct configurations, "
 				echo "- install the latest Audit Patch module, "
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
-				if [[ ${API} -ge 31 ]];
+				if [[ ${androidVersion} -ge 12 ]];
 				then
 					echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
 				else
@@ -173,7 +174,7 @@ then
 				echo "- install the latest Tricky Store (TS) module with the correct configurations, "
 				echo "- install the latest Audit Patch module, "
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
-				if [[ ${API} -ge 31 ]];
+				if [[ ${androidVersion} -ge 12 ]];
 				then
 					echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
 				else
@@ -1303,7 +1304,6 @@ else
 		echo "Failed to remove replacement in this module. "
 	fi
 fi
-androidVersion=$(getprop ro.build.version.release)
 if [[ ${androidVersion} -ge 10 ]];
 then
 	settings put global show_hidden_icon_apps_enabled 0
