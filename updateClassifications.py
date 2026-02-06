@@ -266,7 +266,7 @@ def updateSHA512(srcFp:str, encoding:str = "utf-8") -> bool:
 	else:
 		return False
 
-def gitPush(filePathA:str, filePathB:str, encoding:str = "utf-8") -> bool:
+def gitPush(filePathA:str, filePathB:str) -> bool:
 	commitMessage = "Regular Update ({0})".format(datetime.now().strftime("%Y%m%d%H%M%S%f"))
 	print("The commit message is \"{0}\". ".format(commitMessage))
 	if __import__("platform").system().upper() == "WINDOWS":
@@ -289,14 +289,14 @@ def gitPush(filePathA:str, filePathB:str, encoding:str = "utf-8") -> bool:
 				print({"commandline":commandline, "output":output.decode(), "error":error.decode()})
 				return False
 	try:
-		with open(filePathA, "r", encoding = encoding) as f:
+		with open(filePathA, "rb") as f:
 			contentA = f.read()
-		with open(filePathB, "r", encoding = encoding) as f:
+		with open(filePathB, "rb") as f:
 			contentB = f.read()
 	except BaseException as e:
 		print("Cannot verify the differences between \"{0}\" and \"{1}\" due to exceptions. Details are as follows. \n\t{2}".format(filePathA, filePathB, e))
 		return False
-	if contentA.replace("readonly currentAB=\"A\"", "readonly currentAB=\"B\"").replace("readonly targetAB=\"B\"", "readonly targetAB=\"A\"") == contentB:
+	if contentA.replace(b"readonly currentAB=\"A\"", b"readonly currentAB=\"B\"").replace(b"readonly targetAB=\"B\"", b"readonly targetAB=\"A\"") == contentB:
 		print("Successfully verified the differences between \"{0}\" and \"{1}\"".format(filePathA, filePathB))
 	else:
 		print("Failed to verify the differences between \"{0}\" and \"{1}\"".format(filePathA, filePathB))
@@ -433,7 +433,7 @@ def main() -> int:
 			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
 	else:
 		print("Successfully removed {0} package(s) from the Tricky Store target file according to the Tricky Store avoidance file \"{1}\". ".format(	\
-			-delta, trickyStoreAvoidanceFilePath																																\
+			-delta, trickyStoreAvoidanceFilePath																										\
 		))
 	countTrickyStoreTarget = trickyStoreTarget.saveTo(trickyStoreTargetFilePath)
 	if isinstance(countTrickyStoreTarget, int):
