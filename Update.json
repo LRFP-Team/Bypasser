@@ -1,1 +1,6 @@
-update.json
+{
+	"version":"v2026020606", 
+	"versionCode":2026020606, 
+	"zipUrl":"https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/Release/Bypasser_v2026020606.zip", 
+	"changelog":"https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/Changelog/Bypasser_v2026020606.md"
+}
