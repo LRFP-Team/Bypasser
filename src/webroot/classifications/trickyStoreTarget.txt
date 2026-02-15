@@ -6,6 +6,7 @@ It.dhd.oxygencustomizer
 Telegram.Speed.Hook
 XP.fuck.MI
 admin.vsetting
+ai.noads.NoAdsTelegram
 ai.noads.ozon
 akhil.alltrans
 android.xiaolan.ppxshare.tools
@@ -306,6 +307,7 @@ com.icicibank.m2i
 com.icicibank.m2iEuropenew
 com.idfcfirstbank.optimus
 com.instagram.android
+com.install.appinstall.xl
 com.jakting.duolingo
 com.janking.viewperf
 com.jazibkhan.equalizer
@@ -484,6 +486,7 @@ com.sumver.fdtune
 com.sumver.fixmiaod
 com.sumver.kalinba
 com.sumver.keepaod
+com.sumver.tbulu
 com.suqi8.oshin
 com.surcumference.fingerprintpay
 com.sweet
@@ -597,6 +600,7 @@ com.zhufucdev.cp_plugin
 com.zhufucdev.motion_emulator
 com.zhufucdev.ws_plugin
 com.zidongdianji
+com.zidongdianji.autoclicker
 com.zitan.eternalseniahook
 com.znliang.fuck.soul
 com.ztc1997.fakedcbacklight
@@ -621,6 +625,7 @@ dialog.box
 es.chiteroman.bootloaderspoofer
 es.rafagale.biometricbypass
 eu.faircode.xlua
+eu.hxreborn.amznkiller
 eu.hxreborn.cleanshare
 eu.hxreborn.gboardmaterialexpressiveblack
 eu.hxreborn.phdp
@@ -693,6 +698,7 @@ io.github.duzhaokun123.fuckcainiao
 io.github.duzhaokun123.tasklabelastasktitle
 io.github.duzhaokun123.yamf
 io.github.enhancege
+io.github.howard20181.hyperpasskey
 io.github.howard20181.notificationiconfix
 io.github.huskydg.magisk
 io.github.huskydg.memorydetector
@@ -712,6 +718,7 @@ io.github.lzghzr.xperiaservicemenu
 io.github.lzghzr.xperiaupdatecenter
 io.github.nitsuya.aa.display
 io.github.nitsuya.donottryaccessibility
+io.github.nkr00711.xviphook
 io.github.nvg064.xiaomicharginganimation
 io.github.qauxv
 io.github.rabehx.securify
