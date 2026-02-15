@@ -198,7 +198,7 @@ class Classification:
 	def __and__(self:object, other:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackages|object) -> object:
 		return Classification(self.__packages & (other.__packages if isinstance(other, Classification) else other))
 	def __bytes__(self:object) -> bytes:
-		return bytes(os.linesep, encoding = "utf-8").join(self.__packages)
+		return b"\n".join(self.__packages)
 	def __len__(self:object) -> int:
 		return len(self.__packages)
 
@@ -267,7 +267,7 @@ def updateSHA512(srcFp:str, encoding:str = "utf-8") -> bool:
 		return False
 
 def gitPush(filePathA:str, filePathB:str) -> bool:
-	commitMessage = "Regular Update ({0})".format(datetime.now().strftime("%Y%m%d%H%M%S%f"))
+	commitMessage = "Regular Update (HKT {0})".format(datetime.now().strftime("%Y%m%d%H%M%S%f"))
 	print("The commit message is \"{0}\". ".format(commitMessage))
 	if __import__("platform").system().upper() == "WINDOWS":
 		commandlines = ()
