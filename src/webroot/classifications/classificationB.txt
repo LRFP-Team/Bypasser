@@ -162,7 +162,6 @@ com.fkzhang.qqxposed
 com.fkzhang.wechatxposed
 com.fkzhang.wxencoder
 com.flass.layoutinspect
-com.follow.clash
 com.fuck.android.rimet
 com.fuck.snotes
 com.fuckcoolapk
@@ -246,6 +245,7 @@ com.ketan.romtools24
 com.ketan.tweakss24pro
 com.kgg.hhvideo
 com.kgg.hlddz
+com.kiminonawa.HyperLight
 com.king250.fightoppoinstaller
 com.kooritea.fcmfix
 com.ldgz.sankuai
@@ -254,6 +254,7 @@ com.lenerd46.spotifyplus
 com.leo.xposed.xradiant
 com.lerist.fakelocation
 com.lexa.fakegps
+com.lively.xp
 com.ljlvink.formhook
 com.ljlvink.stylusplus.xposed
 com.lt2333.simplicitytools
@@ -397,6 +398,7 @@ com.wubydax.romcontrol.v2
 com.wye4.hookforvip
 com.xchat
 com.xconst.vavatar
+com.xiaoai.islandnotify
 com.xiaoer.watermark
 com.xiaohe.hyperclick
 com.xiaoniu.zuiyouhook
@@ -485,6 +487,7 @@ id.my.pjm.toys.nfcnci_patience
 im.hoho.alipayinstallb
 im.mingxi.miko
 inc.whew.android.fakegapps
+io.c4.UnFloat
 io.dixtdf.ocar
 io.github.MarsGao.speed
 io.github.Retmon403.oppotheme
@@ -537,6 +540,7 @@ io.github.nvg064.xiaomicharginganimation
 io.github.qauxv
 io.github.rezade05.hidebusybox
 io.github.rushiranpise.gameunlocker
+io.github.soclear.edgex
 io.github.tehcneko.applinkverify
 io.github.tehcneko.clipboardwhitelist
 io.github.tehcneko.hyperos.aospinstaller
@@ -602,6 +606,7 @@ me.teble.xposed.autodaily
 me.timschneeberger.onyxtweaks
 me.weishu.kernelsu
 me.xmbest.hyper
+me.yun.fkwechat
 me.yxp.qfun
 me.zhenxin.thisreallylite
 miko.client

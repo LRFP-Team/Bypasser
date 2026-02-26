@@ -1,7 +1,5 @@
 name: On Push
 
-# Thanks to [https://github.com/JHUISI/charm/blob/dev/.github/workflows/ci.yml](https://github.com/JHUISI/charm/blob/dev/.github/workflows/ci.yml). 
-
 on:
   push:
     branches: [ main ]
@@ -9,26 +7,60 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Build
-      run: |
-        cd "${{ github.workspace }}"
-        sed '/^# Git (37) #$/,/^# Exit #$/d' build.sh | bash
-    
-    - name: Prepare the artifact
-      id: artifact
-      run: |
-        cd "${{ github.workspace }}"
-        artifact="$(basename "$(find Release -type f | sort | tail -1)")"
-        echo "artifact=${artifact}" >> $GITHUB_OUTPUT
-    
-    - name: Upload the artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ steps.artifact.outputs.artifact }}
-        path: ${{ github.workspace }}/Release/${{ steps.artifact.outputs.artifact }}
-        if-no-files-found: error
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Build
+        run: |
+          cd "${{ github.workspace }}"
+          sed '/^# Git (37) #$/,/^# Exit #$/d' build.sh | bash
+      
+      - name: Prepare the artifact
+        id: artifact
+        run: |
+          cd "${{ github.workspace }}"
+          artifact="$(basename "$(find Release -type f | sort | tail -1)")"
+          echo "artifact=${artifact}" >> $GITHUB_OUTPUT
+      
+      - name: Upload the artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact.outputs.artifact }}
+          path: ${{ github.workspace }}/Release/${{ steps.artifact.outputs.artifact }}
+          if-no-files-found: error
+      
+      - name: Prepare information
+        id: information
+        run: |
+          echo "time=HKT $(TZ='Asia/Hong_Kong' date '+%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+          if git rev-parse --verify HEAD~1 >/dev/null 2>&1;
+          then
+            changes="$(git diff --stat HEAD~1 HEAD)"
+          else
+            changes="$(git show --stat HEAD)"
+          fi
+          echo "changes<<EOF" >> $GITHUB_OUTPUT
+          echo "${changes}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Notify updates
+        uses: appleboy/telegram-action@master
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          format: markdown
+          message: |
+            New Push to GitHub! 
+            
+            - Repository: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
+            - Branch: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
+            - Commit: [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            - Time: ${{ steps.information.outputs.time }}
+            
+            Changes: 
+            ```
+            ${{ steps.information.outputs.changes }}
+            ```
