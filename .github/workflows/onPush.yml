@@ -58,6 +58,7 @@ jobs:
             - Repository: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
             - Branch: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
             - Commit: [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
+            - Workflow: [Run #${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
             - Time: ${{ steps.information.outputs.time }}
             
             Changes: 

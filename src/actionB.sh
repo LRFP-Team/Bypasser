@@ -81,12 +81,12 @@ then
 		echo "KSU (${KSU_VER_CODE}): Please "
 		echo "- patch the kernel to support SukiSU-Ultra and SUSFS, "
 		echo "- deploy the latest SukiSU-Ultra from the \`\`Actions\`\` tab of its GitHub repository with only applications requiring root privileges configured and granted in the SukiSU-Ultra Manager, "
-		echo "- install the latest susfs4ksu module as a system module, "
+		echo "- install the latest BRENE SUSFS module as a system module, "
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
 		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
 		echo "- install the latest Tricky Store (TS) module as a system module with the correct configurations, "
-		echo "- install the latest Audit Patch module as a system module, and"
+		echo "- install the latest Audit Patch module as a system module if the BRENE SUSFS module is not working, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
 			echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
