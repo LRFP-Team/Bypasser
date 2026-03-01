@@ -163,6 +163,7 @@ com.fkzhang.wechatxposed
 com.fkzhang.wxencoder
 com.flass.layoutinspect
 com.fuck.android.rimet
+com.fuck.risk
 com.fuck.snotes
 com.fuckcoolapk
 com.fun.camerahook
@@ -552,6 +553,7 @@ io.github.vvb2060.callrecording
 io.github.vvb2060.magisk
 io.github.wzhy.xaudiocapture
 io.github.xyy.noad
+io.github.y9hack337.oplus.display
 io.github.yagiyuu.linextra
 io.github.yangyiyu08.taplusext
 io.kazutoiris.infinite.illusion

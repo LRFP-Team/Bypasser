@@ -220,6 +220,7 @@ com.fkzhang.wxencoder
 com.flass.layoutinspect
 com.flipkart.android
 com.fuck.android.rimet
+com.fuck.risk
 com.fuck.snotes
 com.fuckcoolapk
 com.fun.camerahook
@@ -305,6 +306,8 @@ com.icbc
 com.icicibank.m2i
 com.icicibank.m2iEuropenew
 com.idfcfirstbank.optimus
+com.imangi.templerun
+com.imangi.templerun2
 com.instagram.android
 com.install.appinstall.xl
 com.jakting.duolingo
@@ -743,6 +746,7 @@ io.github.vvb2060.mahoshojo
 io.github.vvb2060.xposeddetector
 io.github.wzhy.xaudiocapture
 io.github.xyy.noad
+io.github.y9hack337.oplus.display
 io.github.yagiyuu.linextra
 io.github.yangyiyu08.taplusext
 io.kazutoiris.infinite.illusion

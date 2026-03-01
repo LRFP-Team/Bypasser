@@ -79,6 +79,8 @@ com.icbc
 com.icicibank.m2i
 com.icicibank.m2iEuropenew
 com.idfcfirstbank.optimus
+com.imangi.templerun
+com.imangi.templerun2
 com.instagram.android
 com.jazibkhan.equalizer
 com.kotak.neo
