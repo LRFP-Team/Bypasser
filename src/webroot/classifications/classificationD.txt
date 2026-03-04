@@ -24,6 +24,7 @@ com.axis.mobile
 com.azure.authenticator
 com.baidu.input
 com.baidu.netdisk
+com.baidu.searchbox
 com.bankmandiri.mandiripay
 com.bnb.paynearby
 com.bochk.app.aos
