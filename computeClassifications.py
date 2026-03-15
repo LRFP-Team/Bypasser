@@ -325,10 +325,10 @@ def main() -> int:
 	# Initialization #
 	webrootFolderPath = os.path.join(srcFolderPath, webrootName)
 	classificationFolderPath = os.path.join(webrootFolderPath, classificationFolderName)
-	labelLRFPFilePath, labelDetectorFilePath, labelApplicationFilePath, labelSystemFilePath, trickyStoreTargetExclusionFilePath = (					\
-		os.path.join(classificationFolderPath, labelLRFPFileName), os.path.join(classificationFolderPath, labelDetectorFileName), 					\
-		os.path.join(classificationFolderPath, labelApplicationFileName), os.path.join(classificationFolderPath, labelSystemFileName), 																			\
-		os.path.join(classificationFolderPath, trickyStoreTargetExclusionFileName)		\
+	labelLRFPFilePath, labelDetectorFilePath, labelApplicationFilePath, labelSystemFilePath, trickyStoreTargetExclusionFilePath = (		\
+		os.path.join(classificationFolderPath, labelLRFPFileName), os.path.join(classificationFolderPath, labelDetectorFileName), 		\
+		os.path.join(classificationFolderPath, labelApplicationFileName), os.path.join(classificationFolderPath, labelSystemFileName),	\
+		os.path.join(classificationFolderPath, trickyStoreTargetExclusionFileName)														\
 	)
 	webrootFilePath = os.path.join(srcFolderPath, webrootName + ".zip")
 	actionAFilePath, actionBFilePath = os.path.join(srcFolderPath, actionAFileName), os.path.join(srcFolderPath, actionBFileName)
@@ -442,9 +442,9 @@ def main() -> int:
 		if intersection:
 			flag = False
 			intersectionCount = len(intersection)
-			print("There {0} in the intersection of the {1} and the {2} labels. \n\t{3}".format(			\
+			print("There {0} in the intersection of the {1} and the {2} labels. \n\t{3}".format(					\
 				("are {0} packageNames" if intersectionCount > 1 else "is {0} package").format(intersectionCount), 	\
-				labelLeft, labelRight, intersection.getBytes(prefix = b"\t")					\
+				labelLeft, labelRight, intersection.getBytes(prefix = b"\t")										\
 			))
 	
 	# Update the Web UI #
