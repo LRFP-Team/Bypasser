@@ -16,6 +16,7 @@ jobs:
       - name: Build
         run: |
           cd "${{ github.workspace }}"
+          export TZ="Asia/Hong_Kong"
           sed '/^# Git (37) #$/,/^# Exit #$/d' build.sh | bash
       
       - name: Prepare the artifact
@@ -23,7 +24,7 @@ jobs:
         run: |
           cd "${{ github.workspace }}"
           artifact="$(basename "$(find Release -type f | sort | tail -1)")"
-          echo "artifact=${artifact}" >> $GITHUB_OUTPUT
+          echo "artifact=${artifact}" >> "${GITHUB_OUTPUT}"
       
       - name: Upload the artifact
         uses: actions/upload-artifact@v7
@@ -35,16 +36,16 @@ jobs:
       - name: Prepare information
         id: information
         run: |
-          echo "time=HKT $(TZ='Asia/Hong_Kong' date '+%Y%m%d%H%M%S')" >> $GITHUB_OUTPUT
+          echo "time=HKT $(TZ='Asia/Hong_Kong' date '+%Y%m%d%H%M%S')" >> "${GITHUB_OUTPUT}"
           if git rev-parse --verify HEAD~1 >/dev/null 2>&1;
           then
             changes="$(git diff --stat HEAD~1 HEAD)"
           else
             changes="$(git show --stat HEAD)"
           fi
-          echo "changes<<EOF" >> $GITHUB_OUTPUT
-          echo "${changes}" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "changes<<EOF" >> "${GITHUB_OUTPUT}"
+          echo "${changes}" >> "${GITHUB_OUTPUT}"
+          echo "EOF" >> "${GITHUB_OUTPUT}"
       
       - name: Notify updates
         uses: appleboy/telegram-action@master
