@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
       
@@ -17,7 +17,7 @@ jobs:
         run: |
           cd "${{ github.workspace }}"
           export TZ="Asia/Hong_Kong"
-          sed '/^# Git (37) #$/,/^# Exit #$/d' build.sh | bash
+          sed '/^# Log (31--33) #$/,/^# Exit #$/d' build.sh | bash
       
       - name: Prepare the artifact
         id: artifact
