@@ -43,7 +43,7 @@ class SortedUniqueList(list):
 	def __and__(self:object, other:tuple|list|set|str|bytes|object) -> object:
 		return SortedUniqueList(set(self) & set(other)) if isinstance(other, SortedUniqueList) else self.intersection(SortedUniqueList(other))
 	def __iadd__(self:object, elements:tuple|list|set|str|bytes|object = None) -> object:
-		if isinstance(elements, (tuple, list, set, SortedUniqueList, SortedUniquePackages)):
+		if isinstance(elements, (tuple, list, set, SortedUniqueList, SortedUniquePackageNames)):
 			for element in elements:
 				self += element
 		elif isinstance(elements, (str, bytes)):
@@ -52,48 +52,48 @@ class SortedUniqueList(list):
 			self.sort()
 		return self
 	def __isub__(self:object, elements:tuple|list|set|str|bytes|object) -> object:
-		if isinstance(elements, (tuple, list, set, SortedUniqueList, SortedUniquePackages)):
+		if isinstance(elements, (tuple, list, set, SortedUniqueList, SortedUniquePackageNames)):
 			for element in elements:
 				self -= element
 		elif isinstance(elements, (str, bytes)) and elements in self:
 			super().remove(elements)
 		return self
 
-class SortedUniquePackages(SortedUniqueList):
+class SortedUniquePackageNames(SortedUniqueList):
 	Pattern = b"^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$"
 	def __and__(self:object, other:tuple|list|set|bytes|SortedUniqueList|object) -> object:
-		return SortedUniquePackages(set(self) & set(other)) if isinstance(other, SortedUniquePackages) else self.intersection(SortedUniquePackages(other))
-	def __iadd__(self:object, packages:tuple|list|set|bytes|SortedUniqueList|object = None) -> object:
-		if isinstance(packages, (tuple, list, set, SortedUniqueList, SortedUniquePackages)):
-			for package in packages:
-				self += package
-		elif isinstance(packages, bytes) and findall(SortedUniquePackages.Pattern, packages):
-			if packages not in self:
-				super().__iadd__(packages)
+		return SortedUniquePackageNames(set(self) & set(other)) if isinstance(other, SortedUniquePackageNames) else self.intersection(SortedUniquePackageNames(other))
+	def __iadd__(self:object, packageNames:tuple|list|set|bytes|SortedUniqueList|object = None) -> object:
+		if isinstance(packageNames, (tuple, list, set, SortedUniqueList, SortedUniquePackageNames)):
+			for packageName in packageNames:
+				self += packageName
+		elif isinstance(packageNames, bytes) and findall(SortedUniquePackageNames.Pattern, packageNames):
+			if packageNames not in self:
+				super().__iadd__(packageNames)
 		return self
-	def __isub__(self:object, packages:tuple|list|set|bytes|SortedUniqueList|object = None) -> object:
-		if isinstance(packages, (tuple, list, set, SortedUniqueList, SortedUniquePackages)):
-			for package in packages:
-				self -= package
-		elif isinstance(packages, bytes) and packages in self:
-			super().__isub__(packages)
+	def __isub__(self:object, packageNames:tuple|list|set|bytes|SortedUniqueList|object = None) -> object:
+		if isinstance(packageNames, (tuple, list, set, SortedUniqueList, SortedUniquePackageNames)):
+			for packageName in packageNames:
+				self -= packageName
+		elif isinstance(packageNames, bytes) and packageNames in self:
+			super().__isub__(packageNames)
 		return self
 
 class Classification:
 	Caches = {}
-	def __init__(self:object, packages:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackages = None, timeout:int = 10) -> object:
-		self.__packages = packages if isinstance(packages, SortedUniquePackages) else SortedUniquePackages(packages)
+	def __init__(self:object, packageNames:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackageNames = None, timeout:int = 10) -> object:
+		self.__packageNames = packageNames if isinstance(packageNames, SortedUniquePackageNames) else SortedUniquePackageNames(packageNames)
 		self.__timeout = timeout if isinstance(timeout, int) and timeout >= 1 else 10
-	def update(self:object, packages:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackages|object = None, cleanUpdate:bool = False) -> int:
+	def update(self:object, packageNames:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackageNames|object = None, cleanUpdate:bool = False) -> int:
 		if isinstance(cleanUpdate, bool) and cleanUpdate:
-			self.__packages.clear()
-		originalSize = len(self.__packages)
-		self.__packages += packages.__packages if isinstance(packages, Classification) else packages
-		return len(self.__packages) - originalSize
+			self.__packageNames.clear()
+		originalSize = len(self.__packageNames)
+		self.__packageNames += packageNames.__packageNames if isinstance(packageNames, Classification) else packageNames
+		return len(self.__packageNames) - originalSize
 	def updateFromFiles(self:object, filePaths:tuple|list|set|str|SortedUniqueList, cleanUpdate:bool = False) -> tuple:
 		if isinstance(cleanUpdate, bool) and cleanUpdate:
-			self.__packages.clear()
-		originalSize, d = len(self.__packages), OrderedDict()
+			self.__packageNames.clear()
+		originalSize, d = len(self.__packageNames), OrderedDict()
 		if isinstance(filePaths, (tuple, list, set)):
 			for filePath in SortedUniqueList(filePaths):
 				if isinstance(filePath, str):
@@ -105,14 +105,14 @@ class Classification:
 		elif isinstance(filePaths, str):
 			try:
 				with open(filePaths, "rb") as f:
-					self.__packages += f.read().splitlines()
+					self.__packageNames += f.read().splitlines()
 			except BaseException as e:
 				d[filePaths] = e
-		return (len(self.__packages) - originalSize, d)
+		return (len(self.__packageNames) - originalSize, d)
 	def updateFromURLs(self:object, URLs:tuple|list|set|str|SortedUniqueList, isDesktop:bool = False, cleanUpdate:bool = False) -> bool:
 		if isinstance(cleanUpdate, bool) and cleanUpdate:
-			self.__packages.clear()
-		originalSize, d = len(self.__packages), OrderedDict()
+			self.__packageNames.clear()
+		originalSize, d = len(self.__packageNames), OrderedDict()
 		if isinstance(URLs, (tuple, list, set)):
 			for URL in SortedUniqueList(URLs):
 				if isinstance(URL, str):
@@ -136,7 +136,7 @@ class Classification:
 				if isinstance(vector, list):
 					for v in vector:
 						if isinstance(v, dict) and "name" in v:
-							self.__packages += findall(SortedUniquePackages.Pattern, bytes(v["name"], encoding = "utf-8"))
+							self.__packageNames += findall(SortedUniquePackageNames.Pattern, bytes(v["name"], encoding = "utf-8"))
 				elif isinstance(vector, dict) and "Detectors" in vector and isinstance(vector["Detectors"], list):
 					if isDesktop:
 						for v in vector["Detectors"]:
@@ -145,10 +145,10 @@ class Classification:
 								and "developingPurpose" in v and "D" in v["developingPurpose"]										\
 							):
 								if isinstance(v["packageName"], (tuple, list, set)):
-									for package in v["packageName"]:
-										self.__packages += findall(SortedUniquePackages.Pattern, bytes(package, encoding = "utf-8"))
+									for packageName in v["packageName"]:
+										self.__packageNames += findall(SortedUniquePackageNames.Pattern, bytes(packageName, encoding = "utf-8"))
 								else:
-									self.__packages += findall(SortedUniquePackages.Pattern, bytes(v["packageName"], encoding = "utf-8"))
+									self.__packageNames += findall(SortedUniquePackageNames.Pattern, bytes(v["packageName"], encoding = "utf-8"))
 					else:
 						for v in vector["Detectors"]:
 							if (																										\
@@ -156,23 +156,23 @@ class Classification:
 								and "developingPurpose" in v and "D" not in v["developingPurpose"]										\
 							):
 								if isinstance(v["packageName"], (tuple, list, set)):
-									for package in v["packageName"]:
-										self.__packages += findall(SortedUniquePackages.Pattern, bytes(package, encoding = "utf-8"))
+									for packageName in v["packageName"]:
+										self.__packageNames += findall(SortedUniquePackageNames.Pattern, bytes(packageName, encoding = "utf-8"))
 								else:
-									self.__packages += findall(SortedUniquePackages.Pattern, bytes(v["packageName"], encoding = "utf-8"))
+									self.__packageNames += findall(SortedUniquePackageNames.Pattern, bytes(v["packageName"], encoding = "utf-8"))
 				else:
 					d[URLs] = "The data structure could not be recognized. "
-		return (len(self.__packages) - originalSize, d)
-	def intersection(self:object, other:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackages|object) -> object:
+		return (len(self.__packageNames) - originalSize, d)
+	def intersection(self:object, other:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackageNames|object) -> object:
 		return self & other
-	def remove(self:object, packages:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackages|object = None) -> int:
-		originalSize = len(self.__packages)
-		self.__packages.remove(packages)
-		return len(self.__packages) - originalSize
+	def remove(self:object, packageNames:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackageNames|object = None) -> int:
+		originalSize = len(self.__packageNames)
+		self.__packageNames.remove(packageNames)
+		return len(self.__packageNames) - originalSize
 	def removeFromFiles(self:object, filePaths:tuple|list|set|str|SortedUniqueList, cleanUpdate:bool = False) -> tuple:
 		if isinstance(cleanUpdate, bool) and cleanUpdate:
-			self.__packages.clear()
-		originalSize, d = len(self.__packages), OrderedDict()
+			self.__packageNames.clear()
+		originalSize, d = len(self.__packageNames), OrderedDict()
 		if isinstance(filePaths, (tuple, list, set)):
 			for filePath in SortedUniqueList(filePaths):
 				if isinstance(filePath, str):
@@ -184,10 +184,10 @@ class Classification:
 		elif isinstance(filePaths, str):
 			try:
 				with open(filePaths, "rb") as f:
-					self.__packages -= f.read().splitlines()
+					self.__packageNames -= f.read().splitlines()
 			except BaseException as e:
 				d[filePaths] = e
-		return (len(self.__packages) - originalSize, d)
+		return (len(self.__packageNames) - originalSize, d)
 	def saveTo(self:object, filePath:str) -> int|BaseException:
 		try:
 			with open(filePath, "wb") as f:
@@ -195,12 +195,15 @@ class Classification:
 			return len(self)
 		except BaseException as e:
 			return e
-	def __and__(self:object, other:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackages|object) -> object:
-		return Classification(self.__packages & (other.__packages if isinstance(other, Classification) else other))
+	def getBytes(self:object, prefix:bytes = b"", suffix:bytes = b"") -> bytes:
+		prefixBytes, suffixBytes = prefix if isinstance(prefix, bytes) else b"", suffix if isinstance(suffix, bytes) else b""
+		return b"\n".join(prefixBytes + packageName + suffixBytes for packageName in self.__packageNames)
+	def __and__(self:object, other:tuple|list|set|bytes|SortedUniqueList|SortedUniquePackageNames|object) -> object:
+		return Classification(self.__packageNames & (other.__packageNames if isinstance(other, Classification) else other))
 	def __bytes__(self:object) -> bytes:
-		return b"\n".join(self.__packages)
+		return b"\n".join(self.__packageNames)
 	def __len__(self:object) -> int:
-		return len(self.__packages)
+		return len(self.__packageNames)
 
 
 def compress(zipFolderPath:str, zipFilePath:str, extensionsExcluded:tuple|list|set) -> bool:
@@ -314,132 +317,135 @@ def main() -> int:
 	srcFolderPath = "src"
 	webrootName = "webroot"
 	classificationFolderName = "classifications"
-	labelLRFPFileName, labelDetectorFileName, labelApplicationFileName = "classificationB.txt", "classificationC.txt", "classificationD.txt"
-	trickyStoreTargetFileName, trickyStoreAvoidanceFileName = "trickyStoreTarget.txt", "trickyStoreAvoidance.txt"
+	labelLRFPFileName, labelDetectorFileName, labelApplicationFileName, labelSystemFileName = "classificationB.txt", "classificationC.txt", "classificationD.txt", "classificationS.txt"
+	trickyStoreTargetExclusionFileName = "trickyStoreTargetExclusions.txt"
 	extensionsExcluded = (".prop", ".sha512")
 	actionAFileName, actionBFileName = "actionA.sh", "actionB.sh"
 	
 	# Initialization #
 	webrootFolderPath = os.path.join(srcFolderPath, webrootName)
 	classificationFolderPath = os.path.join(webrootFolderPath, classificationFolderName)
-	labelLRFPFilePath, labelDetectorFilePath, labelApplicationFilePath, trickyStoreTargetFilePath, trickyStoreAvoidanceFilePath = (					\
+	labelLRFPFilePath, labelDetectorFilePath, labelApplicationFilePath, labelSystemFilePath, trickyStoreTargetExclusionFilePath = (					\
 		os.path.join(classificationFolderPath, labelLRFPFileName), os.path.join(classificationFolderPath, labelDetectorFileName), 					\
-		os.path.join(classificationFolderPath, labelApplicationFileName), 																			\
-		os.path.join(classificationFolderPath, trickyStoreTargetFileName), os.path.join(classificationFolderPath, trickyStoreAvoidanceFileName)		\
+		os.path.join(classificationFolderPath, labelApplicationFileName), os.path.join(classificationFolderPath, labelSystemFileName), 																			\
+		os.path.join(classificationFolderPath, trickyStoreTargetExclusionFileName)		\
 	)
 	webrootFilePath = os.path.join(srcFolderPath, webrootName + ".zip")
 	actionAFilePath, actionBFilePath = os.path.join(srcFolderPath, actionAFileName), os.path.join(srcFolderPath, actionBFileName)
-	flag, labelLRFP, labelDetector, labelApplication, trickyStoreTarget = True, Classification(), Classification(), Classification(), Classification()
+	flag, labelLRFP, labelDetector, labelApplication, labelSystem, trickyStoreTargetExclusions = True, Classification(), Classification(), Classification(), Classification(), Classification()
 	
 	# Update the LRFP label #
 	delta, d = labelLRFP.updateFromFiles(labelLRFPFilePath)
 	if d:
 		flag = False
-		print("Updated {0} package(s) of the LRFP label from the file \"{1}\" with the following exception(s). ".format(delta, labelLRFPFilePath))
+		print("Updated {0} package name(s) of the LRFP label from the file \"{1}\" with the following exception(s). ".format(delta, labelLRFPFilePath))
 		for key, value in d.items():
-			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
+			print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
 	else:
-		print("Successfully updated {0} package(s) of the LRFP label from the file \"{1}\". ".format(delta, labelLRFPFilePath))
+		print("Successfully updated {0} package name(s) of the LRFP label from the file \"{1}\". ".format(delta, labelLRFPFilePath))
 	delta, d = labelLRFP.updateFromURLs(pluginURL)
 	if d:
 		flag = False
-		print("Updated {0} package(s) of the LRFP label from the URL \"{1}\" with the following exception(s). ".format(delta, pluginURL))
+		print("Updated {0} package name(s) of the LRFP label from the URL \"{1}\" with the following exception(s). ".format(delta, pluginURL))
 		for key, value in d.items():
-			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
+			print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
 	else:
-		print("Successfully updated {0} package(s) of the LRFP label from the URL \"{1}\". ".format(delta, pluginURL))
+		print("Successfully updated {0} package name(s) of the LRFP label from the URL \"{1}\". ".format(delta, pluginURL))
 	countLRFP = labelLRFP.saveTo(labelLRFPFilePath)
 	if isinstance(countLRFP, int):
-		print("Successfully wrote {0} package(s) of the LRFP label to the file \"{1}\". ".format(countLRFP, labelLRFPFilePath))
+		print("Successfully wrote {0} package name(s) of the LRFP label to the file \"{1}\". ".format(countLRFP, labelLRFPFilePath))
 	else:
-		print("Failed to write the package(s) of the LRFP label to the file \"{0}\" due to the following exception. \n\t{1}".format(labelLRFPFilePath, countLRFP))
+		print("Failed to write the package name(s) of the LRFP label to the file \"{0}\" due to {1}. ".format(labelLRFPFilePath, repr(countLRFP)))
 	
 	# Update the detector label #
 	delta, d = labelDetector.updateFromFiles(labelDetectorFilePath)
 	if d:
 		flag = False
-		print("Updated {0} package(s) of the detector label from the file \"{1}\" with the following exception(s). ".format(delta, labelDetectorFilePath))
+		print("Updated {0} package name(s) of the detector label from the file \"{1}\" with the following exception(s). ".format(delta, labelDetectorFilePath))
 		for key, value in d.items():
-			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
+			print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
 	else:
-		print("Successfully updated {0} package(s) of the detector label from the file \"{1}\". ".format(delta, labelDetectorFilePath))
+		print("Successfully updated {0} package name(s) of the detector label from the file \"{1}\". ".format(delta, labelDetectorFilePath))
 	delta, d = labelDetector.updateFromURLs(selfURL, isDesktop = False)
 	if d:
 		flag = False
-		print("Updated {0} package(s) of the detector label from the URL \"{1}\" with the following exception(s). ".format(delta, selfURL))
+		print("Updated {0} package name(s) of the detector label from the URL \"{1}\" with the following exception(s). ".format(delta, selfURL))
 		for key, value in d.items():
-			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
+			print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
 	else:
-		print("Successfully updated {0} package(s) of the detector label from the URL \"{1}\". ".format(delta, selfURL))
+		print("Successfully updated {0} package name(s) of the detector label from the URL \"{1}\". ".format(delta, selfURL))
 	countDetector = labelDetector.saveTo(labelDetectorFilePath)
 	if isinstance(countDetector, int):
-		print("Successfully wrote {0} package(s) of the detector label to the file \"{1}\". ".format(countDetector, labelDetectorFilePath))
+		print("Successfully wrote {0} package name(s) of the detector label to the file \"{1}\". ".format(countDetector, labelDetectorFilePath))
 	else:
-		print("Failed to write the package(s) of the detector label to the file \"{0}\" due to the following exception. \n\t{1}".format(labelDetectorFilePath, countDetector))
+		print("Failed to write the package name(s) of the detector label to the file \"{0}\" due to {1}. ".format(labelDetectorFilePath, repr(countDetector)))
 	
 	# Update the application label #
 	delta, d = labelApplication.updateFromFiles(labelApplicationFilePath)
 	if d:
 		flag = False
-		print("Updated {0} package(s) of the application label from the file \"{1}\" with the following exception(s). ".format(delta, labelApplicationFilePath))
+		print("Updated {0} package name(s) of the application label from the file \"{1}\" with the following exception(s). ".format(delta, labelApplicationFilePath))
 		for key, value in d.items():
-			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
+			print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
 	else:
-		print("Successfully updated {0} package(s) of the application label from the file \"{1}\". ".format(delta, labelApplicationFilePath))
+		print("Successfully updated {0} package name(s) of the application label from the file \"{1}\". ".format(delta, labelApplicationFilePath))
 	delta, d = labelApplication.updateFromURLs(selfURL, isDesktop = True)
 	if d:
 		flag = False
-		print("Updated {0} package(s) of the application label from the URL \"{1}\" with the following exception(s). ".format(delta, selfURL))
+		print("Updated {0} package name(s) of the application label from the URL \"{1}\" with the following exception(s). ".format(delta, selfURL))
 		for key, value in d.items():
-			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
+			print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
 	else:
-		print("Successfully updated {0} package(s) of the application label from the URL \"{1}\". ".format(delta, selfURL))
+		print("Successfully updated {0} package name(s) of the application label from the URL \"{1}\". ".format(delta, selfURL))
 	countApplication = labelApplication.saveTo(labelApplicationFilePath)
 	if isinstance(countApplication, int):
-		print("Successfully wrote {0} package(s) of the application label to the file \"{1}\". ".format(countApplication, labelApplicationFilePath))
+		print("Successfully wrote {0} package name(s) of the application label to the file \"{1}\". ".format(countApplication, labelApplicationFilePath))
 	else:
-		print("Failed to write the package(s) of the application label to the file \"{0}\" due to the following exception. \n\t{1}".format(labelApplicationFilePath, countApplication))
+		print("Failed to write the package name(s) of the application label to the file \"{0}\" due to {1}. ".format(labelApplicationFilePath, repr(countApplication)))
 	
-	# Compute intersections #
-	intersectionLRFPDetector = labelLRFP & labelDetector
-	intersectionLRFPApplication = labelLRFP & labelApplication
-	intersectionDetectorApplication = labelDetector & labelApplication
-	if intersectionLRFPDetector:
-		flag = False
-		print("There {0} in the intersection of the LRFP and the detector labels. \n\t{1}".format(																	\
-			("are {0} packages" if len(intersectionLRFPDetector) > 1 else "is {0} package").format(len(intersectionLRFPDetector)), bytes(intersectionLRFPDetector)	\
-		))
-	if intersectionLRFPApplication:
-		flag = False
-		print("There {0} in the intersection of the LRFP and the application labels. \n\t{1}".format(																		\
-			("are {0} packages" if len(intersectionLRFPApplication) > 1 else "is {0} package").format(len(intersectionLRFPApplication)), bytes(intersectionLRFPApplication)	\
-		))
-	if intersectionDetectorApplication:
-		flag = False
-		print("There {0} in the intersection of the detector and the application labels. \n\t{1}".format(																				\
-			("are {0} packages" if len(intersectionDetectorApplication) > 1 else "is {0} package").format(len(intersectionDetectorApplication)), bytes(intersectionDetectorApplication)	\
-		))
-	
-	# Generate the Tricky Store target #
-	trickyStoreTarget.update(labelLRFP)
-	trickyStoreTarget.update(labelDetector)
-	trickyStoreTarget.update(labelApplication)
-	print("Gathered {0} package(s) for the Tricky Store target from the LRFP, detector, and application labels. ".format(len(trickyStoreTarget)))
-	delta, d = trickyStoreTarget.removeFromFiles(trickyStoreAvoidanceFilePath)
+	# Update the system label #
+	delta, d = labelSystem.updateFromFiles(labelSystemFilePath)
 	if d:
 		flag = False
-		print("Removed {0} package(s) from the Tricky Store target file from the Tricky Store avoidance file \"{1}\" with the following exception(s). ".format(-delta, trickyStoreAvoidanceFilePath))
+		print("Updated {0} package name(s) of the system label from the file \"{1}\" with the following exception(s). ".format(delta, labelSystemFilePath))
 		for key, value in d.items():
-			print("\t\"{0}\" -> {1}".format(key, "KeyboardInterrupt" if isinstance(value, KeyboardInterrupt) else value))
+			print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
 	else:
-		print("Successfully removed {0} package(s) from the Tricky Store target file according to the Tricky Store avoidance file \"{1}\". ".format(	\
-			-delta, trickyStoreAvoidanceFilePath																										\
-		))
-	countTrickyStoreTarget = trickyStoreTarget.saveTo(trickyStoreTargetFilePath)
-	if isinstance(countTrickyStoreTarget, int):
-		print("Successfully wrote {0} package(s) of the Tricky Store target to the file \"{1}\". ".format(countTrickyStoreTarget, trickyStoreTargetFilePath))
+		print("Successfully updated {0} package name(s) of the system label from the file \"{1}\". ".format(delta, labelSystemFilePath))
+	countSystem = labelSystem.saveTo(labelSystemFilePath)
+	if isinstance(countSystem, int):
+		print("Successfully wrote {0} package name(s) of the system label to the file \"{1}\". ".format(countSystem, labelSystemFilePath))
 	else:
-		print("Failed to write the package(s) of the Tricky Store target to the file \"{0}\" due to the following exception. \n\t{1}".format(trickyStoreTargetFilePath, countTrickyStoreTarget))
+		print("Failed to write the package name(s) of the system label to the file \"{0}\" due to {1}. ".format(labelSystemFilePath, repr(countSystem)))
+	
+	# Update the Tricky Store Exclusions #
+	delta, d = trickyStoreTargetExclusions.updateFromFiles(trickyStoreTargetExclusionFilePath)
+	if d:
+		flag = False
+		print("Updated {0} package name(s) of Tricky Store target exclusions from the file \"{1}\" with the following exception(s). ".format(delta, trickyStoreTargetExclusionFilePath))
+		for key, value in d.items():
+			print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
+	else:
+		print("Successfully updated {0} package name(s) of Tricky Store target exclusions from the file \"{1}\". ".format(delta, trickyStoreTargetExclusionFilePath))
+	trickyStoreTargetExclusionCount = trickyStoreTargetExclusions.saveTo(trickyStoreTargetExclusionFilePath)
+	if isinstance(trickyStoreTargetExclusionCount, int):
+		print("Successfully wrote {0} package name(s) of Tricky Store target exclusions to the file \"{1}\". ".format(trickyStoreTargetExclusionCount, trickyStoreTargetExclusionFilePath))
+	else:
+		print("Failed to write the package name(s) of Tricky Store target exclusions to the file \"{0}\" due to {1}. ".format(trickyStoreTargetExclusionFilePath, repr(trickyStoreTargetExclusionCount)))
+	
+	# Compute intersections #
+	labelPairs = (
+		(labelLRFP & labelDetector, "LRFP", "detector"), (labelLRFP & labelApplication, "LRFP", "application"), (labelLRFP & labelSystem, "LRFP", "system"), 
+		(labelDetector & labelApplication, "detector", "application"), (labelDetector & labelSystem, "detector", "system"), (labelApplication & labelSystem, "application", "system")
+	)
+	for intersection, labelLeft, labelRight in labelPairs:
+		if intersection:
+			flag = False
+			intersectionCount = len(intersection)
+			print("There {0} in the intersection of the {1} and the {2} labels. \n\t{3}".format(			\
+				("are {0} packageNames" if intersectionCount > 1 else "is {0} package").format(intersectionCount), 	\
+				labelLeft, labelRight, intersection.getBytes(prefix = b"\t")					\
+			))
 	
 	# Update the Web UI #
 	if not (compress(webrootFolderPath, webrootFilePath, extensionsExcluded) and updateSHA512(srcFolderPath)):

@@ -20,11 +20,13 @@ bilibili.helper
 bin.mt.plus
 bin.mt.termex
 cat.app.bicleaner
+cat.baaad.hooker
 cc.aoeiuv020.hookcimoc
 cc.aoeiuv020.hookfanqie
 cc.aoeiuv020.hookpicacg
 cc.aoeiuv020.iamnotdisabled.hook
 cc.godhook
+cc.hakurei.wxhooklocation
 cc.hicore.qtool
 chili.xposed.chimi
 cl.coders.faketraveler
@@ -40,6 +42,7 @@ cn.buffcow.hyperaodzen
 cn.buffcow.hypersc
 cn.coderstory.miui.water
 cn.cyanc.xposed.noregionlimits
+cn.dorimu.lsp.wakeuphelper
 cn.dreamn.qianji_auto
 cn.enaium.bb
 cn.enaium.fuckmarket
@@ -98,6 +101,7 @@ com.app.catsmoker
 com.asameer.killappnow
 com.asdf51.friend
 com.asyjaiz.a12blur
+com.autoexpand.xposed
 com.berdik.letmedowngrade
 com.berdik.macsposed
 com.bit747.clipboardfilter
@@ -129,6 +133,7 @@ com.coderstory.flyme9
 com.coderstory.toolkit
 com.coolest.toolbox
 com.crossbowffs.quotelock
+com.cxapk.viphelper
 com.darkeyes.tricks
 com.daxiaamu.op7mutools
 com.demo.serendipity
@@ -162,6 +167,7 @@ com.fkzhang.qqxposed
 com.fkzhang.wechatxposed
 com.fkzhang.wxencoder
 com.flass.layoutinspect
+com.forbidad4tieba.hook
 com.fuck.android.rimet
 com.fuck.risk
 com.fuck.snotes
@@ -249,6 +255,7 @@ com.kgg.hlddz
 com.kiminonawa.HyperLight
 com.king250.fightoppoinstaller
 com.kooritea.fcmfix
+com.laros.lsp.traffics
 com.ldgz.sankuai
 com.ldq.connect
 com.lenerd46.spotifyplus
@@ -393,6 +400,7 @@ com.wizpizz.reddidnt
 com.wmods.wppenhacer
 com.wmods.wppenhacer.w4b
 com.wovow.youtubehelper
+com.wowsoftware.hidemyandroid
 com.wrlus.module.fwkdebug
 com.ws.onscripterplus
 com.wubydax.romcontrol.v2
@@ -461,6 +469,7 @@ eu.faircode.xlua
 eu.hxreborn.amznkiller
 eu.hxreborn.cleanshare
 eu.hxreborn.gboardmaterialexpressiveblack
+eu.hxreborn.ghfastpass
 eu.hxreborn.phdp
 eu.hxreborn.qsboundlesstiles
 eu.hxreborn.remembermysort
@@ -485,6 +494,7 @@ icu.insomnia.qavatar
 icu.insomnia.zen
 icu.nullptr.twifucker
 id.my.pjm.toys.nfcnci_patience
+id.my.pjm.toys.noableism
 im.hoho.alipayinstallb
 im.mingxi.miko
 inc.whew.android.fakegapps
@@ -518,7 +528,9 @@ io.github.duzhaokun123.tasklabelastasktitle
 io.github.duzhaokun123.yamf
 io.github.enhancege
 io.github.howard20181.hyperpasskey
+io.github.howard20181.ime
 io.github.howard20181.notificationiconfix
+io.github.huajiqaq.farmadskip
 io.github.huskydg.magisk
 io.github.icepony.alwaysbatterysaver
 io.github.icepony.alwayscreateuser
@@ -528,6 +540,7 @@ io.github.jhl337.oplushook
 io.github.jqssun.gpssetter
 io.github.jqssun.seaccess
 io.github.lamprose.mi_ultra
+io.github.liuran001.fakebluetoothconnect
 io.github.liusj5257
 io.github.lsposed.disableflagsecure
 io.github.lsposed.disabletgscreenshot
@@ -542,6 +555,7 @@ io.github.qauxv
 io.github.rezade05.hidebusybox
 io.github.rushiranpise.gameunlocker
 io.github.soclear.edgex
+io.github.soclear.oneuix
 io.github.tehcneko.applinkverify
 io.github.tehcneko.clipboardwhitelist
 io.github.tehcneko.hyperos.aospinstaller
@@ -556,6 +570,7 @@ io.github.xyy.noad
 io.github.y9hack337.oplus.display
 io.github.yagiyuu.linextra
 io.github.yangyiyu08.taplusext
+io.github.zensu357.camswap
 io.kazutoiris.infinite.illusion
 io.kazutoiris.mrga
 io.mesalabs.knoxpatch
@@ -598,6 +613,7 @@ me.kyuubiran.akinatorhelper
 me.kyuubiran.qqcleaner
 me.neko.lotus
 me.neversleep.plusplus
+me.padi.xiaoai
 me.plusne
 me.rhunk.snapenhance
 me.simplehook

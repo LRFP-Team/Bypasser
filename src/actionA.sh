@@ -462,7 +462,7 @@ function getClassification
 {
 	if [[ $# -eq 1 ]];
 	then
-		if [[ "B" == "$1" || "C" == "$1" || "D" == "$1" ]];
+		if [[ "B" == "$1" || "C" == "$1" || "D" == "$1" || "S" == "$1" ]];
 		then
 			classificationFilePath="${classificationFolderPath}/classification$1.txt"
 			if [[ -f "${classificationFilePath}" ]];
@@ -741,6 +741,14 @@ then
 else
 	lengthD=0
 fi
+classificationS="$(getClassification "S")"
+returnCodeS=$?
+if [[ -n "${classificationS}" ]];
+then
+	lengthS=$(echo "${classificationS}" | wc -l)
+else
+	lengthS=0
+fi
 if [[ ${returnCodeB} -eq ${EXIT_SUCCESS} ]];
 then
 	echo "Successfully fetched ${lengthB} package name(s) of Classification \$B\$ from the library. "
@@ -911,7 +919,7 @@ then
 	localDCount=0
 	for packageName in $(pm list packages -3 | cut -d ':' -f2)
 	do
-		if ! echo -e -n "${classificationB}\n${classificationC}\n${classificationD}" | grep -qF "${packageName}";
+		if ! echo -e -n "${classificationB}\n${classificationC}\n${classificationD}\n${classificationS}" | grep -qF "${packageName}";
 		then
 			localDCount=$(expr ${localDCount} + 1)
 			classificationD="$(echo -e -n "${classificationD}\n${packageName}")"
@@ -930,6 +938,14 @@ else
 	classificationD=""
 	lengthD=0
 	echo "Failed to fetch package names of Classification \$D\$ from the library. "
+fi
+if [[ ${returnCodeS} -eq ${EXIT_SUCCESS} ]];
+then
+	echo "Successfully fetched ${lengthS} package name(s) of Classification \$S\$ from the library. "
+else
+	classificationS=""
+	lengthS=0
+	echo "Failed to fetch package names of Classification \$S\$ from the library. "
 fi
 if [[ ${returnCodeB} -eq ${EXIT_SUCCESS} ]];
 then
@@ -959,14 +975,14 @@ else
 	whitelistAppList=""
 	blacklistScopeList=""
 fi
-commonConfigContent="{\"configVersion\":92,\"detailLog\":true,\"maxLogSize\":1024,\"forceMountData\":true,\"aggressiveFilter\":true,\"templates\":{\"${blacklistName}\":{\"isWhitelist\":false,\"appList\":[${blacklistAppList}]},\"${whitelistName}\":{\"isWhitelist\":true,\"appList\":[${whitelistAppList}]}},"
-blacklistConfigContent="${commonConfigContent}\"scope\":{${blacklistScopeList}}}"
-whitelistConfigContent="${commonConfigContent}\"scope\":{${whitelistScopeList}}}"
+commonConfigurationContent="{\"configVersion\":92,\"detailLog\":true,\"maxLogSize\":1024,\"forceMountData\":true,\"aggressiveFilter\":true,\"templates\":{\"${blacklistName}\":{\"isWhitelist\":false,\"appList\":[${blacklistAppList}]},\"${whitelistName}\":{\"isWhitelist\":true,\"appList\":[${whitelistAppList}]}},"
+blacklistConfigurationContent="${commonConfigurationContent}\"scope\":{${blacklistScopeList}}}"
+whitelistConfigurationContent="${commonConfigurationContent}\"scope\":{${whitelistScopeList}}}"
 mkdir -p "${downloadFolderPath}"
 if [[ $? -eq ${EXIT_SUCCESS} && -d "${downloadFolderPath}" ]];
 then
 	echo "Successfully prepared the folder \"${downloadFolderPath}\". "
-	echo -n "${blacklistConfigContent}" > "${blacklistConfigurationFilePath}"
+	echo -n "${blacklistConfigurationContent}" > "${blacklistConfigurationFilePath}"
 	if [[ $? -eq ${EXIT_SUCCESS} && -f "${blacklistConfigurationFilePath}" ]];
 	then
 		echo "Successfully generated the configuration file \"${blacklistConfigurationFilePath}\". "
@@ -974,7 +990,7 @@ then
 		exitCode=$(expr ${exitCode} \| 4)
 		echo "Failed to generate the configuration file \"${blacklistConfigurationFilePath}\". "
 	fi
-	echo -n "${whitelistConfigContent}" > "${whitelistConfigurationFilePath}"
+	echo -n "${whitelistConfigurationContent}" > "${whitelistConfigurationFilePath}"
 	if [[ $? -eq ${EXIT_SUCCESS} && -f "${whitelistConfigurationFilePath}" ]];
 	then
 		echo "Successfully generated the configuration file \"${whitelistConfigurationFilePath}\". "
@@ -997,8 +1013,8 @@ echo "# Tricky Store (0b00X000) #"
 readonly trickyStoreConfigurationFolderPath="${adbFolder}/tricky_store"
 readonly trickyStoreSecurityPatchFileName="security_patch.txt"
 readonly trickyStoreSecurityPatchFilePath="${trickyStoreConfigurationFolderPath}/${trickyStoreSecurityPatchFileName}"
-readonly trickyStoreTargetCloudLibraryName="trickyStoreTarget.txt"
-readonly trickyStoreTargetCloudLibraryPath="${classificationFolderPath}/${trickyStoreTargetCloudLibraryName}"
+readonly trickyStoreTargetExclusionFileName="trickyStoreTargetExclusions.txt"
+readonly trickyStoreTargetExclusionFilePath="${classificationFolderPath}/${trickyStoreTargetExclusionFileName}"
 readonly trickyStoreTargetFileName="target.txt"
 readonly trickyStoreTargetFilePath="${trickyStoreConfigurationFolderPath}/${trickyStoreTargetFileName}"
 
@@ -1018,13 +1034,13 @@ then
 	else
 		echo "The security patch file at \"${trickyStoreSecurityPatchFilePath}\" did not exist, which was proper. "
 	fi
-	if [[ -f "${trickyStoreTargetCloudLibraryPath}" ]];
+	if [[ -f "${trickyStoreTargetExclusionFilePath}" ]];
 	then
-		trickyStoreTargetCloudLibrary="$(cat "${trickyStoreTargetCloudLibraryPath}")"
+		trickyStoreTargetExclusions="$(cat "${trickyStoreTargetExclusionFilePath}")"
 		if [[ $? -eq ${EXIT_SUCCESS} ]];
 		then
-			targetApplicationCount=$(echo "${trickyStoreTargetCloudLibrary}" | wc -l)
-			echo "Successfully fetched ${targetApplicationCount} application package name(s) from the library. "
+			trickyStoreTargetExclusionCount=$(echo "${trickyStoreTargetExclusion}" | wc -l)
+			echo "Successfully fetched ${trickyStoreTargetExclusionCount} application package name(s) from the library, which will be excluded in the Tricky Store target file. "
 			abortFlag=${EXIT_SUCCESS}
 			if [[ -f "${trickyStoreTargetFilePath}" ]];
 			then
@@ -1038,29 +1054,40 @@ then
 					echo "Failed to move \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
 				fi
 			else
-				echo "The copying has been skipped since the Tricky Store target file did not exist. "
+				echo "The backing up has been skipped since the Tricky Store target file \"${trickyStoreTargetFilePath}\" did not exist. "
 			fi
 			if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 			then
 				trickyStoreWritingFlag=${EXIT_SUCCESS}
-				echo "${trickyStoreTargetCloudLibrary}" | while IFS= read -r packageName || [[ -n "${packageName}" ]];
+				trickyStoreTargets="$(echo -e -n "${classificationB}\n${classificationC}\n${classificationD}\n${classificationS}\n$(pm list packages | cut -d ':' -f2)" | sort | uniq)"
+				trickyStoreTargetCount=0
+				while IFS= read -r packageName || [[ -n "${packageName}" ]]; 
 				do
-					if ! echo "${packageName}!" >> "${trickyStoreTargetFilePath}";
+					if echo -n "${packageName}" | grep -qE '^[A-Za-z][0-9A-Za-z_]*(\.[A-Za-z][0-9A-Za-z_]*)+$' && ! echo "${trickyStoreTargetExclusions}" | grep -qF "${packageName}";
 					then
-						trickyStoreWritingFlag=${EXIT_FAILURE}
+						trickyStoreTargetCount=$((trickyStoreTargetCount + 1))
+						if ! echo "${packageName}" >> "${trickyStoreTargetFilePath}";
+						then
+							trickyStoreWritingFlag=${EXIT_FAILURE}
+						fi
 					fi
-				done
+				done < <(echo "${trickyStoreTargets}")
 				if [[ ${EXIT_SUCCESS} -eq ${trickyStoreWritingFlag} ]];
 				then
-					echo "Successfully wrote ${targetApplicationCount} application package name(s) from the library to \"${trickyStoreTargetFilePath}\". "
+					echo "Successfully wrote ${trickyStoreTargetCount} application package name(s) to \"${trickyStoreTargetFilePath}\". "
 				else
 					exitCode=$(expr ${exitCode} \| 8)
-					echo "Failed to write ${targetApplicationCount} application package name(s) from the library to \"${trickyStoreTargetFilePath}\". "
-					if rm -f "${trickyStoreTargetFilePath}" && mv -f "${trickyStoreTargetFilePath}.bak" "${trickyStoreTargetFilePath}";
+					echo "Failed to write ${trickyStoreTargetCount} application package name(s) to \"${trickyStoreTargetFilePath}\". "
+					if [[ -f "${trickyStoreTargetFilePath}.bak" ]];
 					then
-						echo "Successfully restored \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
+						if rm -f "${trickyStoreTargetFilePath}" && mv -f "${trickyStoreTargetFilePath}.bak" "${trickyStoreTargetFilePath}";
+						then
+							echo "Successfully restored \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
+						else
+							echo "Failed to restore \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
+						fi
 					else
-						echo "Failed to restore \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
+						echo "The backup file \"${trickyStoreTargetFilePath}.bak\" does not exist. "
 					fi
 				fi
 			fi
