@@ -89,17 +89,17 @@ then
 		echo "- install the latest Audit Patch module as a system module if the BRENE SUSFS module is not working, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
-			echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
+			echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
 		else
-			echo "- activate the latest HMA plugin with the correct configurations. "
+			echo "- activate the latest HMA-OSS plugin with the correct configurations. "
 		fi
 		if [[ -d "${apatchFolder}" ]];
 		then
-			echo "The Apatch folder exists while the KSU / KSU Next is using. Please consider removing the Apatch folder. "
+			echo "The Apatch folder exists while KSU or one of its variants is using. Please consider removing the Apatch folder. "
 		fi
 		if [[ -d "${magiskFolder}" ]];
 		then
-			echo "The Magisk folder exists while the KSU / KSU Next / SukiSU-Ultra is using. Please consider removing the Magisk folder. "
+			echo "The Magisk folder exists while KSU or one of its variants is using. Please consider removing the Magisk folder. "
 		fi
 	elif [[ "${APATCH}" == "true" ]];
 	then
@@ -113,9 +113,9 @@ then
 		echo "- install the latest Audit Patch module as a system module, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
-			echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
+			echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
 		else
-			echo "- activate the latest HMA plugin with the correct configurations. "
+			echo "- activate the latest HMA-OSS plugin with the correct configurations. "
 		fi
 		if [[ -d "${magiskFolder}" ]];
 		then
@@ -147,9 +147,9 @@ then
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
 				if [[ ${androidVersion} -ge 12 ]];
 				then
-					echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
+					echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
 				else
-					echo "- activate the latest HMA plugin with the correct configurations. "
+					echo "- activate the latest HMA-OSS plugin with the correct configurations. "
 				fi
 				echo "Please consider switching to the latest Magisk Alpha if possible. "
 			else
@@ -176,9 +176,9 @@ then
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
 				if [[ ${androidVersion} -ge 12 ]];
 				then
-					echo "- activate the latest HMA plugin with the correct configurations and the latest FuseFixer plugin. "
+					echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
 				else
-					echo "- activate the latest HMA plugin with the correct configurations. "
+					echo "- activate the latest HMA-OSS plugin with the correct configurations. "
 				fi
 			fi
 			if [[ ${MAGISK_VER_CODE} -lt ${magiskVulnerabilityVersion} ]];
@@ -438,68 +438,26 @@ readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/
 readonly curlTimeout=10
 readonly actionPropFileName="action.prop"
 readonly actionPropFilePath="${webrootFolderPath}/${actionPropFileName}"
-readonly classificationFolderName="classifications"
-readonly classificationFolderPath="${webrootFolderPath}/${classificationFolderName}"
 readonly dataAppFolder="/data/app"
 readonly largerOldScanningScope="/data"
 readonly smallerOldScanningScope="/data/misc"
-readonly blacklistName="Blacklist"
-readonly whitelistName="Whitelist"
 if [[ -n "${EXTERNAL_STORAGE}" ]];
 then
 	readonly downloadFolderPath="${EXTERNAL_STORAGE}/Download"
 else
 	readonly downloadFolderPath="/sdcard/Download"
 fi
-readonly blacklistConfigurationFileName=".HMA_Blacklist_Configuration.json"
-readonly blacklistConfigurationFilePath="${downloadFolderPath}/${blacklistConfigurationFileName}"
-readonly whitelistConfigurationFileName=".HMA_Whitelist_Configuration.json"
+readonly cppBinaryFileName="generate"
+readonly cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}"
+readonly databaseFileName="database.json"
+readonly databaseFilePath="${webrootFolderPath}/${databaseFileName}"
+readonly whitelistConfigurationFileName=".v92HMAWhitelistModeConfiguration.json"
 readonly whitelistConfigurationFilePath="${downloadFolderPath}/${whitelistConfigurationFileName}"
-readonly reportLink="https://github.com/LRFP-Team/Bypasser"
+readonly blacklistConfigurationFileName=".v92HMABlacklistModeConfiguration.json"
+readonly blacklistConfigurationFilePath="${downloadFolderPath}/${blacklistConfigurationFileName}"
+readonly pathTesterFileName="pathTester.sh"
+readonly pathTesterFilePath="${downloadFolderPath}/${pathTesterFileName}"
 gapTime=0
-
-function getClassification
-{
-	if [[ $# -eq 1 ]];
-	then
-		if [[ "B" == "$1" || "C" == "$1" || "D" == "$1" || "S" == "$1" ]];
-		then
-			classificationFilePath="${classificationFolderPath}/classification$1.txt"
-			if [[ -f "${classificationFilePath}" ]];
-			then
-				arr="$(cat "${classificationFilePath}")"
-				returnCode=$?
-				if [[ ${returnCode} -eq ${EXIT_SUCCESS} && -n "${arr}" ]];
-				then
-					arr="$(echo -n ${arr} | sort | uniq)"
-					echoFlag=0
-					for package in ${arr}
-					do
-						if echo -n "${package}" | grep -qE '^[A-Za-z][0-9A-Za-z_]*(\.[A-Za-z][0-9A-Za-z_]*)+$';
-						then
-							if [[ 1 == ${echoFlag} ]];
-							then
-								echo -e -n "\n${package}"
-							else
-								echo -n "${package}"
-								echoFlag=1
-							fi
-						fi
-					done
-					return ${EXIT_SUCCESS}
-				else
-					return ${returnCode}
-				fi
-			else
-				return ${EOF}
-			fi
-		else
-			return ${EOF}
-		fi
-	else
-		return ${EOF}
-	fi
-}
 
 function getTheKeyPressed
 {
@@ -540,115 +498,6 @@ function getTheKeyPressed
 	fi
 }
 
-function getArray
-{
-	if [[ $# == 1 ]];
-	then
-		content=""
-		arr="$(echo -n "$1" | sort | uniq)"
-		for package in ${arr}
-		do
-			content="${content}\"${package}\","
-		done
-		if [[ "${content}" == *, ]];
-		then
-			content="${content%,}"
-			echo -n "${content}"
-			return ${EXIT_SUCCESS}
-		else
-			echo -n "${content}"
-			return ${EXIT_FAILURE}
-		fi
-	else
-		echo -n ""
-		return ${EOF}
-	fi
-}	
-
-function getBlacklistScopeStringC
-{
-	if [[ $# == 1 ]];
-	then
-		content=""
-		arr="$(echo -n "$1" | sort | uniq)"
-		totalLength="$(echo "${arr}" | wc -l)"
-		headIndex=0
-		tailIndex=$(expr ${totalLength} - ${headIndex} - 1)
-		for package in ${arr}
-		do
-			extraAppList="$(getArray "$(echo -e -n "$(echo -n "${arr}" | head -${headIndex})\n$(echo -n "${arr}" | tail -${tailIndex})")")"
-			headIndex=$(expr ${headIndex} + 1)
-			tailIndex=$(expr ${tailIndex} - 1)
-			content="${content}\"${package}\":{\"useWhitelist\":false,\"excludeSystemApps\":false,\"applyTemplates\":[\"${blacklistName}\"],\"extraAppList\":[${extraAppList}]},"
-		done
-		if [[ "${content}" == *, ]]; then
-			content="${content%,}"
-			echo -n "${content}"
-			return ${EXIT_SUCCESS}
-		else
-			echo -n "${content}"
-			return ${EXIT_FAILURE}
-		fi
-	else
-		echo -n ""
-		return ${EOF}
-	fi
-}
-
-function getBlacklistScopeStringD
-{
-	if [[ $# == 2 ]];
-	then
-		content=""
-		arr="$(echo -n "$1" | sort | uniq)"
-		extraAppList="$(getArray "$(echo -n "$2" | sort | uniq)")"
-		for package in ${arr}
-		do
-			content="${content}\"${package}\":{\"useWhitelist\":false,\"excludeSystemApps\":false,\"applyTemplates\":[\"${blacklistName}\"],\"extraAppList\":[${extraAppList}]},"
-		done
-		if [[ "${content}" == *, ]]; then
-			content="${content%,}"
-			echo -n "${content}"
-			return ${EXIT_SUCCESS}
-		else
-			echo -n "${content}"
-			return ${EXIT_FAILURE}
-		fi
-	else
-		echo -n ""
-		return ${EOF}
-	fi
-}
-
-function getWhitelistScopeString
-{
-	if [[ $# == 2 ]];
-	then
-		content=""
-		arrC="$(echo "$1" | sort | uniq)"
-		arrD="$(echo "$2" | sort | uniq)"
-		for package in ${arrC}
-		do
-			content="${content}\"${package}\":{\"useWhitelist\":true,\"excludeSystemApps\":true,\"applyTemplates\":[\"${whitelistName}\"],\"extraAppList\":[\"${package}\"]},"
-		done
-		for package in ${arrD}
-		do
-			content="${content}\"${package}\":{\"useWhitelist\":true,\"excludeSystemApps\":true,\"applyTemplates\":[\"${whitelistName}\"],\"extraAppList\":[]},"
-		done
-		if [[ "${content}" == *, ]]; then
-			content="${content%,}"
-			echo -n "${content}"
-			return ${EXIT_SUCCESS}
-		else
-			echo -n "${content}"
-			return ${EXIT_FAILURE}
-		fi
-	else
-		echo -n ""
-		return ${EOF}
-	fi
-}
-
 webrootDigest="$(curl -s -m ${curlTimeout} "${webrootDigestUrl}")"
 if [[ $? -eq ${EXIT_SUCCESS} && -n "${webrootDigest}" ]];
 then
@@ -681,12 +530,19 @@ then
 				echo "Successfully updated and verified the web UI. "
 				if [[ -d "${webrootFolderPath}.bak" ]];
 				then
-					cp -fp "${webrootFolderPath}.bak/${actionPropFileName}" "${actionPropFilePath}" && rm -rf "${webrootFolderPath}.bak"
-					if [[ $? -eq ${EXIT_SUCCESS} && ! -d "${webrootFolderPath}.bak" ]];
+					cp -fp "${webrootFolderPath}.bak/${actionPropFileName}" "${actionPropFilePath}"
+					if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootFolderPath}.bak" ]];
 					then
-						echo "Successfully restored the action slot and removed \"${webrootFolderPath}.bak\". "
+						echo "Successfully restored the action slot. "
+						rm -rf "${webrootFolderPath}.bak"
+						if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootFolderPath}.bak" ]];
+						then
+							echo "Successfully removed \"${webrootFolderPath}.bak\". "
+						else
+							echo "Failed to remove \"${webrootFolderPath}.bak\". "
+						fi
 					else
-						echo "Failed to restore the action slot or remove \"${webrootFolderPath}.bak\". "
+						echo "Failed to restore the action slot. "
 					fi
 				else
 					echo "No old web UI folders that should be removed were found. "
@@ -715,296 +571,143 @@ else
 fi
 if [[ $(expr ${exitCode} \& 32) -ne ${EXIT_SUCCESS} ]];
 then
-	echo "The updating of the classifications might fail. This will use the classification cache files to generate the configurations for HMA and its branches. "
+	echo "The updating of the \`\`${databaseFileName}\`\` might fail. This will use the cache to generate the configurations for HMA and its variants. "
 fi
-classificationB="$(getClassification "B")"
-returnCodeB=$?
-if [[ -n "${classificationB}" ]];
+if [[ $# -ge 1 ]];
 then
-	lengthB=$(echo "${classificationB}" | wc -l)
+	keyCode="$1"
 else
-	lengthB=0
+	echo "Please press the [+] or [-] key in ${defaultTimeout} seconds if you want to perform the local scanning (\`\`/data\`\`). Otherwise, you may touch the screen to skip the timing. "
+	startGapTime=$(date +%s%N)
+	getTheKeyPressed
+	keyCode=$?
+	endGapTime=$(date +%s%N)
+	gapTime=$(expr ${endGapTime} - ${startGapTime})
 fi
-classificationC="$(getClassification "C")"
-returnCodeC=$?
-if [[ -n "${classificationC}" ]];
+if [[ ${VK_UP} -eq ${keyCode} || ${VK_DOWN} -eq ${keyCode} ]];
 then
-	lengthC=$(echo "${classificationC}" | wc -l)
-else
-	lengthC=0
-fi
-classificationD="$(getClassification "D")"
-returnCodeD=$?
-if [[ -n "${classificationD}" ]];
-then
-	lengthD=$(echo "${classificationD}" | wc -l)
-else
-	lengthD=0
-fi
-classificationS="$(getClassification "S")"
-returnCodeS=$?
-if [[ -n "${classificationS}" ]];
-then
-	lengthS=$(echo "${classificationS}" | wc -l)
-else
-	lengthS=0
-fi
-if [[ ${returnCodeB} -eq ${EXIT_SUCCESS} ]];
-then
-	echo "Successfully fetched ${lengthB} package name(s) of Classification \$B\$ from the library. "
-	if [[ $# -ge 1 ]];
-	then
-		keyCode="$1"
-	else
-		echo "Please press the [+] or [-] key in ${defaultTimeout} seconds if you want to perform the local scanning (\`\`/data\`\`). Otherwise, you may touch the screen to skip the timing. "
-		startGapTime=$(date +%s%N)
-		getTheKeyPressed
-		keyCode=$?
-		endGapTime=$(date +%s%N)
-		gapTime=$(expr ${endGapTime} - ${startGapTime})
-	fi
-	if [[ ${VK_UP} -eq ${keyCode} || ${VK_DOWN} -eq ${keyCode} ]];
-	then
-		localBCount=0
-		folderCount=0
-		fileCount=0
-		failureInstallationCount=0
-		failureInstallationRemovedCount=0
-		echo "Performing local user application installation directory scanning. "
-		for item in "${dataAppFolder}/"*
-		do
-			if [[ -d "${item}" ]];
-			then
-				if basename "${item}" | grep -qE "^vmdl[0-9]+\\.tmp\$";
-				then
-					failureInstallationCount=$(expr ${failureInstallationCount} + 1)
-					if rm -rf "${item}";
-					then
-						failureInstallationRemovedCount=$(expr ${failureInstallationRemovedCount} + 1)
-						echo "[${failureInstallationRemovedCount}/${failureInstallationCount}] Found a failure installation at \"${item}\", which has been removed. "
-					else
-						echo "[${failureInstallationRemovedCount}/${failureInstallationCount}] Found a failure installation at \"${item}\", which could not be removed. "
-					fi
-				else
-					folderCount=$(expr ${folderCount} + 1)
-					subItems="$(ls -1 "${item}")"
-					if [[ $(echo "${subItems}" | wc -l) -eq 1 ]];
-					then
-						firstItem="$(echo "${subItems}" | awk "NR==1")"
-						packageName="$(basename "${firstItem}" | cut -d "-" -f 1)"
-						if echo -n "${packageName}" | grep -qE '^[A-Za-z][0-9A-Za-z_]*(\.[A-Za-z][0-9A-Za-z_]*)+$';
-						then
-							if ! echo -n "${classificationB}" | grep -qF "${packageName}";
-							then
-								printableStrings="$(cat "${item}/${firstItem}/base.apk" | strings)"
-								if echo "${printableStrings}" | grep -qE "/xposed/|xposed_init";
-								then
-									localBCount=$(expr ${localBCount} + 1)
-									classificationB="$(echo -e -n "${classificationB}\n${packageName}")"
-									echo -n "[${localBCount}] Found the string \"/xposed/\" or \"xposed_init\" in \`\`${packageName}\`\`, which was not in and has been added to Classification \$B\$. "
-								fi
-							fi
-						else
-							echo "- Failed to resolve the folder \"${item}\". "
-						fi
-					else
-						echo "- There is at least 1 additional item in \"${item}\", which should not exist. "
-					fi
-				fi
-			elif [ -f "${item}" ];
-			then
-				if [[ "${item}" == *.apk ]];
-				then
-					fileCount=$(expr ${fileCount} + 1)
-					packageName="$(basename "${item}")"
-					packageName="${packageName%.apk}"
-					if echo -n "${packageName}" | grep -qE '^[A-Za-z][0-9A-Za-z_]*(\.[A-Za-z][0-9A-Za-z_]*)+$';
-					then
-						if ! echo -n "${classificationB}" | grep -qF "${packageName}";
-						then
-							printableStrings="$(cat "${item}/${firstItem}/base.apk" | strings)"
-							if echo "${printableStrings}" | grep -qE "/xposed/|xposed_init";
-							then
-								localBCount=$(expr ${localBCount} + 1)
-								classificationB="$(echo -e -n "${classificationB}\n${packageName}")"
-								echo -n "[${localBCount}] Found the string \"/xposed/\" or \"xposed_init\" in \`\`${packageName}\`\`, which was not in and has been added to Classification \$B\$. "
-							fi
-						fi
-					else
-						echo "- Failed to resolve the APK file \"${item}\". "
-					fi
-				else
-					echo "- A file that should not exist was found at \"${item}\". "
-				fi
-			fi
-		done
-		if [[ ${folderCount} -gt 0 ]] && [[ ${fileCount} -gt 0 ]];
-		then
-			echo "A mixture of folders and files was detected in the \"${dataAppFolder}\" directory. "
-		fi
-		if [[ ${failureInstallationCount} -ge 1 ]];
-		then
-			echo "Found ${failureInstallationCount} failure installation(s) in the \"${dataAppFolder}\" directory with ${failureInstallationRemovedCount} removed successfully. "
-		fi
-		if [[ ${localBCount} -ge 1 ]];
-		then
-			echo "Successfully fetched ${localBCount} package name(s) of Classification \$B\$ from the local machine. "
-			echo "Kindly report the package name(s) with the corresponding classification(s) to \"${reportLink}\" if you wish to. "
-		fi
-		originalLengthB=${lengthB}
-		classificationB=$(echo -n "${classificationB}" | sort | uniq)
-		if [[ -n "${classificationB}" ]];
-		then
-			lengthB=$(echo "${classificationB}" | wc -l)
-		else
-			lengthB=0
-		fi
-		echo "Successfully fetched ${lengthB} package name(s) of Classification \$B\$ from the library (${originalLengthB}) and the local machine (${localBCount}). "
-		oldConfigurationFolderCount=0
-		removedOldConfigurationFolderCount=0
-		echo "Removing old configuration directories of HMA and its branches. "
-		for oldPath in $(find "${largerOldScanningScope}" -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
-		do
-			if [[ -e "${oldPath}/config.json" && -d "${oldPath}/log" ]];
-			then
-				oldConfigurationFolderCount=$(expr ${oldConfigurationFolderCount} + 1)
-				if rm -rf "${oldPath}";
-				then
-					removedOldConfigurationFolderCount=$(expr ${removedOldConfigurationFolderCount} + 1)
-					echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Successfully removed \"${oldPath}\" (L). "
-				else
-					echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Failed to remove \"${oldPath}\" (L). "
-				fi
-			fi
-		done
-		for oldPath in $(find "${smallerOldScanningScope}" -mindepth 2 -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
-		do
-			if [[ -z "$(ls -A "${oldPath}")" ]];
-			then
-				oldConfigurationFolderCount=$(expr ${oldConfigurationFolderCount} + 1)
-				if rm -rf "${oldPath}";
-				then
-					removedOldConfigurationFolderCount=$(expr ${removedOldConfigurationFolderCount} + 1)
-					echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Successfully removed \"${oldPath}\" (S). "
-				else
-					echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Failed to remove \"${oldPath}\" (S). "
-				fi
-			fi
-		done
-		if [[ ${oldConfigurationFolderCount} -ge 2 ]];
-		then
-			echo "Found ${oldConfigurationFolderCount} old configuration directories of HMA and its branches in the \"${largerOldScanningScope}\" directory, with ${removedOldConfigurationFolderCount} removed successfully. "
-		elif [[ ${oldConfigurationFolderCount} -eq 1 ]];
-		then
-			echo "Found 1 old configuration directory of HMA or its branches in the \"${largerOldScanningScope}\" directory, with ${removedOldConfigurationFolderCount} removed successfully. "
-		else
-			echo "No old configuration directories of HMA or its branches were found. "
-		fi
-	fi
-else
-	classificationB=""
-	lengthB=0
-	echo "Failed to fetch package names of Classification \$B\$ from the library. "
-fi
-if [[ ${returnCodeC} -eq ${EXIT_SUCCESS} ]];
-then
-	echo "Successfully fetched ${lengthC} package name(s) of Classification \$C\$ from the library. "
-else
-	classificationC=""
-	lengthC=0
-	echo "Failed to fetch package names of Classification \$C\$ from the library. "
-fi
-if [[ ${returnCodeD} -eq ${EXIT_SUCCESS} ]];
-then
-	localDCount=0
-	for packageName in $(pm list packages -3 | cut -d ':' -f2)
+	folderCount=0
+	fileCount=0
+	failureInstallationCount=0
+	failureInstallationRemovedCount=0
+	for item in "${dataAppFolder}/"*
 	do
-		if ! echo -e -n "${classificationB}\n${classificationC}\n${classificationD}\n${classificationS}" | grep -qF "${packageName}";
+		if [[ -d "${item}" ]];
 		then
-			localDCount=$(expr ${localDCount} + 1)
-			classificationD="$(echo -e -n "${classificationD}\n${packageName}")"
+			if basename "${item}" | grep -qE "^vmdl[0-9]+\\.tmp\$";
+			then
+				failureInstallationCount=$(expr ${failureInstallationCount} + 1)
+				if rm -rf "${item}";
+				then
+					failureInstallationRemovedCount=$(expr ${failureInstallationRemovedCount} + 1)
+					echo "[${failureInstallationRemovedCount}/${failureInstallationCount}] Found a failure installation at \"${item}\", which has been removed. "
+				else
+					echo "[${failureInstallationRemovedCount}/${failureInstallationCount}] Found a failure installation at \"${item}\", which could not be removed. "
+				fi
+			else
+				folderCount=$(expr ${folderCount} + 1)
+				subItems="$(ls -1 "${item}")"
+				if [[ $(echo "${subItems}" | wc -l) -ne 1 ]];
+				then
+					echo "- There is at least 1 additional item in \"${item}\", which should not exist. "
+				fi
+			fi
+		elif [ -f "${item}" ];
+		then
+			if [[ "${item}" == *.apk ]];
+			then
+				fileCount=$(expr ${fileCount} + 1)
+			else
+				echo "- A file that should not exist was found at \"${item}\". "
+			fi
 		fi
 	done
-	originalLengthD=${lengthD}
-	classificationD=$(echo -n "${classificationD}" | sort | uniq)
-	if [[ -n "${classificationD}" ]];
+	if [[ ${folderCount} -gt 0 ]] && [[ ${fileCount} -gt 0 ]];
 	then
-		lengthD=$(echo "${classificationD}" | wc -l)
-	else
-		lengthD=0
+		echo "A mixture of folders and files was detected in the \"${dataAppFolder}\" directory. "
 	fi
-	echo "Successfully fetched ${lengthD} package name(s) of Classification \$D\$ from the library (${originalLengthD}) and the local machine (${localDCount}). "
-else
-	classificationD=""
-	lengthD=0
-	echo "Failed to fetch package names of Classification \$D\$ from the library. "
-fi
-if [[ ${returnCodeS} -eq ${EXIT_SUCCESS} ]];
-then
-	echo "Successfully fetched ${lengthS} package name(s) of Classification \$S\$ from the library. "
-else
-	classificationS=""
-	lengthS=0
-	echo "Failed to fetch package names of Classification \$S\$ from the library. "
-fi
-if [[ ${returnCodeB} -eq ${EXIT_SUCCESS} ]];
-then
-	blacklistAppList="$(getArray "${classificationB}")"
-	whitelistScopeList="$(getWhitelistScopeString "${classificationC}" "${classificationD}")"
-else
-	blacklistAppList=""
-	whitelistScopeList=""
-fi
-if [[ ${returnCodeD} -eq ${EXIT_SUCCESS} ]];
-then
-	whitelistAppList=$(getArray "${classificationD}")
-	if [[ ${returnCodeC} -eq ${EXIT_SUCCESS} ]];
+	if [[ ${failureInstallationCount} -ge 1 ]];
 	then
-		blacklistScopeListC="$(getBlacklistScopeStringC "${classificationC}")"
-		blacklistScopeListD="$(getBlacklistScopeStringD "${classificationD}" "${classificationC}")"
-		if [[ -z "${blacklistScopeListC}" ]];
+		echo "Found ${failureInstallationCount} failure installation(s) in the \"${dataAppFolder}\" directory with ${failureInstallationRemovedCount} removed successfully. "
+	fi
+	oldConfigurationFolderCount=0
+	removedOldConfigurationFolderCount=0
+	echo "Removing old configuration directories of HMA and its variants. "
+	for oldPath in $(find "${largerOldScanningScope}" -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
+	do
+		if [[ -e "${oldPath}/config.json" && -d "${oldPath}/log" ]];
 		then
-			blacklistScopeList="${blacklistScopeListD}"
-		else
-			blacklistScopeList="${blacklistScopeListC},${blacklistScopeListD}"
+			oldConfigurationFolderCount=$(expr ${oldConfigurationFolderCount} + 1)
+			if rm -rf "${oldPath}";
+			then
+				removedOldConfigurationFolderCount=$(expr ${removedOldConfigurationFolderCount} + 1)
+				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Successfully removed \"${oldPath}\" (L). "
+			else
+				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Failed to remove \"${oldPath}\" (L). "
+			fi
 		fi
+	done
+	for oldPath in $(find "${smallerOldScanningScope}" -mindepth 2 -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
+	do
+		if [[ -z "$(ls -A "${oldPath}")" ]];
+		then
+			oldConfigurationFolderCount=$(expr ${oldConfigurationFolderCount} + 1)
+			if rm -rf "${oldPath}";
+			then
+				removedOldConfigurationFolderCount=$(expr ${removedOldConfigurationFolderCount} + 1)
+				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Successfully removed \"${oldPath}\" (S). "
+			else
+				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Failed to remove \"${oldPath}\" (S). "
+			fi
+		fi
+	done
+	if [[ ${oldConfigurationFolderCount} -ge 2 ]];
+	then
+		echo "Found ${oldConfigurationFolderCount} old configuration directories of HMA and its variants in the \"${largerOldScanningScope}\" directory, with ${removedOldConfigurationFolderCount} removed successfully. "
+	elif [[ ${oldConfigurationFolderCount} -eq 1 ]];
+	then
+		echo "Found 1 old configuration directory of HMA or its variants in the \"${largerOldScanningScope}\" directory, with ${removedOldConfigurationFolderCount} removed successfully. "
 	else
-		blacklistScopeList=""
+		echo "No old configuration directories of HMA or its variants were found. "
 	fi
-else
-	whitelistAppList=""
-	blacklistScopeList=""
 fi
-commonConfigurationContent="{\"configVersion\":92,\"detailLog\":true,\"maxLogSize\":1024,\"forceMountData\":true,\"aggressiveFilter\":true,\"templates\":{\"${blacklistName}\":{\"isWhitelist\":false,\"appList\":[${blacklistAppList}]},\"${whitelistName}\":{\"isWhitelist\":true,\"appList\":[${whitelistAppList}]}},"
-blacklistConfigurationContent="${commonConfigurationContent}\"scope\":{${blacklistScopeList}}}"
-whitelistConfigurationContent="${commonConfigurationContent}\"scope\":{${whitelistScopeList}}}"
 mkdir -p "${downloadFolderPath}"
 if [[ $? -eq ${EXIT_SUCCESS} && -d "${downloadFolderPath}" ]];
 then
 	echo "Successfully prepared the folder \"${downloadFolderPath}\". "
-	echo -n "${blacklistConfigurationContent}" > "${blacklistConfigurationFilePath}"
-	if [[ $? -eq ${EXIT_SUCCESS} && -f "${blacklistConfigurationFilePath}" ]];
+	chmod u+x "${cppBinaryFilePath}"
+	"${cppBinaryFilePath}" -i "${databaseFilePath}" -ow "${whitelistConfigurationFileName}" -ob "${blacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
+	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
-		echo "Successfully generated the configuration file \"${blacklistConfigurationFilePath}\". "
+		if [[ -f "${whitelistConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the configuration file \"${whitelistConfigurationFilePath}\". "
+		else
+			exitCode=$(expr ${exitCode} \| 4)
+			echo "Failed to generate the configuration file \"${whitelistConfigurationFilePath}\". "
+		fi
+		if [[ -f "${blacklistConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the configuration file \"${blacklistConfigurationFilePath}\". "
+		else
+			exitCode=$(expr ${exitCode} \| 4)
+			echo "Failed to generate the configuration file \"${blacklistConfigurationFilePath}\". "
+		fi
+		if [[ -f "${pathTesterFilePath}" ]];
+		then
+			echo "Successfully generated the path tester file \"${pathTesterFilePath}\". "
+		else
+			exitCode=$(expr ${exitCode} \| 4)
+			echo "Failed to generate the path tester file \"${pathTesterFilePath}\". "
+		fi
 	else
 		exitCode=$(expr ${exitCode} \| 4)
-		echo "Failed to generate the configuration file \"${blacklistConfigurationFilePath}\". "
+		echo "Failed to generate relevant files for HMA and its variants. "
 	fi
-	echo -n "${whitelistConfigurationContent}" > "${whitelistConfigurationFilePath}"
-	if [[ $? -eq ${EXIT_SUCCESS} && -f "${whitelistConfigurationFilePath}" ]];
-	then
-		echo "Successfully generated the configuration file \"${whitelistConfigurationFilePath}\". "
-	else
-		exitCode=$(expr ${exitCode} \| 4)
-		echo "Failed to generate the configuration file \"${whitelistConfigurationFilePath}\". "
-	fi
+	chmod -x "${cppBinaryFilePath}"
 else
 	exitCode=$(expr ${exitCode} \| 4)
 	echo "Failed to prepare the folder \"${downloadFolderPath}\". "
-fi
-if [[ -z "${blacklistAppList}" || -z "${blacklistScopeList}" || -z "${whitelistAppList}" || -z "${whitelistScopeList}" ]];
-then
-	echo "At least one list was empty. Please check the configurations generated before importing. "
 fi
 echo ""
 
@@ -1034,65 +737,41 @@ then
 	else
 		echo "The security patch file at \"${trickyStoreSecurityPatchFilePath}\" did not exist, which was proper. "
 	fi
-	if [[ -f "${trickyStoreTargetExclusionFilePath}" ]];
+	abortFlag=${EXIT_SUCCESS}
+	if [[ -f "${trickyStoreTargetFilePath}" ]];
 	then
-		trickyStoreTargetExclusions="$(cat "${trickyStoreTargetExclusionFilePath}")"
-		if [[ $? -eq ${EXIT_SUCCESS} ]];
+		echo "The Tricky Store target file was found at \"${trickyStoreTargetFilePath}\". "
+		mv -f "${trickyStoreTargetFilePath}" "${trickyStoreTargetFilePath}.bak"
+		if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}.bak" ]];
 		then
-			trickyStoreTargetExclusionCount=$(echo "${trickyStoreTargetExclusion}" | wc -l)
-			echo "Successfully fetched ${trickyStoreTargetExclusionCount} application package name(s) from the library, which will be excluded in the Tricky Store target file. "
-			abortFlag=${EXIT_SUCCESS}
-			if [[ -f "${trickyStoreTargetFilePath}" ]];
+			echo "Successfully moved \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+		else
+			abortFlag=${EXIT_FAILURE}
+			echo "Failed to move \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+		fi
+	else
+		echo "The backing up has been skipped since the Tricky Store target file \"${trickyStoreTargetFilePath}\" did not exist. "
+	fi
+	if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
+	then
+		chmod u+x "${cppBinaryFilePath}"
+		"${cppBinaryFilePath}" -i "${databaseFilePath}" -ot "${trickyStoreTargetFilePath}"
+		if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}" ]];
+		then
+			echo "Successfully generated \"${trickyStoreTargetFilePath}\". "
+		else
+			echo "Failed to generate \"${trickyStoreTargetFilePath}\". "
+			if [[ -f "${trickyStoreTargetFilePath}.bak" ]];
 			then
-				echo "The Tricky Store target file was found at \"${trickyStoreTargetFilePath}\". "
-				mv -f "${trickyStoreTargetFilePath}" "${trickyStoreTargetFilePath}.bak"
-				if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}.bak" ]];
+				if rm -f "${trickyStoreTargetFilePath}" && mv -f "${trickyStoreTargetFilePath}.bak" "${trickyStoreTargetFilePath}";
 				then
-					echo "Successfully moved \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+					echo "Successfully restored \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
 				else
-					abortFlag=${EXIT_FAILURE}
-					echo "Failed to move \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+					echo "Failed to restore \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
 				fi
 			else
-				echo "The backing up has been skipped since the Tricky Store target file \"${trickyStoreTargetFilePath}\" did not exist. "
+				echo "The backup file \"${trickyStoreTargetFilePath}.bak\" does not exist. "
 			fi
-			if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
-			then
-				trickyStoreWritingFlag=${EXIT_SUCCESS}
-				trickyStoreTargets="$(echo -e -n "${classificationB}\n${classificationC}\n${classificationD}\n${classificationS}\n$(pm list packages | cut -d ':' -f2)" | sort | uniq)"
-				trickyStoreTargetCount=0
-				while IFS= read -r packageName || [[ -n "${packageName}" ]]; 
-				do
-					if echo -n "${packageName}" | grep -qE '^[A-Za-z][0-9A-Za-z_]*(\.[A-Za-z][0-9A-Za-z_]*)+$' && ! echo "${trickyStoreTargetExclusions}" | grep -qF "${packageName}";
-					then
-						trickyStoreTargetCount=$((trickyStoreTargetCount + 1))
-						if ! echo "${packageName}" >> "${trickyStoreTargetFilePath}";
-						then
-							trickyStoreWritingFlag=${EXIT_FAILURE}
-						fi
-					fi
-				done < <(echo "${trickyStoreTargets}")
-				if [[ ${EXIT_SUCCESS} -eq ${trickyStoreWritingFlag} ]];
-				then
-					echo "Successfully wrote ${trickyStoreTargetCount} application package name(s) to \"${trickyStoreTargetFilePath}\". "
-				else
-					exitCode=$(expr ${exitCode} \| 8)
-					echo "Failed to write ${trickyStoreTargetCount} application package name(s) to \"${trickyStoreTargetFilePath}\". "
-					if [[ -f "${trickyStoreTargetFilePath}.bak" ]];
-					then
-						if rm -f "${trickyStoreTargetFilePath}" && mv -f "${trickyStoreTargetFilePath}.bak" "${trickyStoreTargetFilePath}";
-						then
-							echo "Successfully restored \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
-						else
-							echo "Failed to restore \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
-						fi
-					else
-						echo "The backup file \"${trickyStoreTargetFilePath}.bak\" does not exist. "
-					fi
-				fi
-			fi
-		else
-			echo "Failed to fetch application package names from the library. "
 		fi
 	fi
 else
@@ -1109,8 +788,6 @@ readonly propertiesToExist="ro.boot.vbmeta.avb_version ro.boot.vbmeta.hash_alg r
 readonly propertiesToBeDeleted="persist.sys.vold_app_data_isolation_enabled persist.zygote.app_data_isolation ro.oem_unlock_supported"
 readonly persistentPropertyFilePath="/data/property/persistent_properties"
 readonly directoryForTesting="/data/data/com.android.settings"
-readonly plainUserTesterFileName="plainUserTester.sh"
-readonly plainUserTesterFilePath="${downloadFolderPath}/${plainUserTesterFileName}"
 readonly bannedSubStrings="-AICP -arter97 -blu_spark -CAF -cm- -crDroid -crdroid -CyanogenMod -Deathly -EAS- -eas- -ElementalX -Elite -franco -hadesKernel -Lineage- -lineage- -LineageOS -lineageos -mokee -MoRoKernel -Noble -Optimus -SlimRoms -Sultan -sultan"
 readonly sourceXmlFilePath="/etc/compatconfig/services-platform-compat-config.xml"
 readonly replacementEntry="system"
@@ -1239,62 +916,6 @@ done
 if [[ ${bannedSubStringFoundFlag} -eq ${EXIT_SUCCESS} ]];
 then
 	echo "No banned substrings were found in the kernel version \"${kernelVersion}\". "
-fi
-plainUserExecution="$(echo -e "#!/system/bin/sh\n\
-readonly EXIT_SUCCESS=0\n\
-readonly EXIT_FAILURE=1\n\n\
-errorLevel=\${EXIT_SUCCESS}\n\
-if echo \"\${EXTERNAL_STORAGE}\" | grep -qE \"^(/[A-Za-z0-9_-]+)+\\\$\";\n\
-then\n\
-	readonly folders=\"/data/data /data/user/0 /data/user_de/0 \${EXTERNAL_STORAGE}/Android/data\"\n\
-	readonly wxDownloadFolderPath=\"\${EXTERNAL_STORAGE}/Download/WechatXposed\"\n\
-else\n\
-	readonly folders=\"/data/data /data/user/0 /data/user_de/0 /sdcard/Android/data\"\n\
-	readonly wxDownloadFolderPath=\"/sdcard/Download/WechatXposed\"\n\
-fi")"
-while IFS= read -r packageName || [[ -n "${packageName}" ]];
-do
-	plainUserExecution="$(echo -e "${plainUserExecution}\n\
-for folder in \${folders}\n\
-do\n\
-	leakedPath=\"\${folder}/${packageName}\"\n\
-	if [[ -e \"\${leakedPath}\" ]];\n\
-	then\n\
-		errorLevel=\${EXIT_FAILURE}\n\
-		echo \"- Found \\\"\${leakedPath}\\\" (LRFP). \"\n\
-	fi\n\
-done")"
-done < "${classificationFolderPath}/classificationB.txt"
-plainUserExecution="$(echo -e "${plainUserExecution}\n\
-if [[ -e \"\${wxDownloadFolderPath}\" ]];\n\
-then\n\
-	errorLevel=\${EXIT_FAILURE}\n\
-	echo \"- Found \\\"\${wxDownloadFolderPath}\\\" (LRFP). \"
-fi")"
-while IFS= read -r packageName || [[ -n "${packageName}" ]];
-do
-	plainUserExecution="$(echo -e "${plainUserExecution}\n\
-for folder in \${folders}\n\
-do\n\
-	if [[ -e \"\${leakedPath}\" ]];\n\
-	then\n\
-		errorLevel=\${EXIT_FAILURE}\n\
-		echo \"- Found \\\"\${leakedPath}\\\" (Detector). \"\n\
-	fi\n\
-done")"
-done < "${classificationFolderPath}/classificationC.txt"
-plainUserExecution="$(echo -e "${plainUserExecution}\n\
-if [[ \${EXIT_SUCCESS} -eq \${errorLevel} ]];\n\
-then\n\
-	echo \"Finished scanning as a plain user. You should have bypass the detection of LRFP-related application installation traces leaked by specified folders. \"\n\
-fi\n\
-exit \${errorLevel}")"
-if echo "${plainUserExecution}" > "${plainUserTesterFilePath}";
-then
-	echo "Successfully generated \"${plainUserTesterFilePath}\". Please execute the shell script without root privileges for detection. "
-else
-	exitCode=$(expr ${exitCode} \| 16)
-	echo "Failed to generate \"${plainUserTesterFilePath}\". "
 fi
 if [[ -s "${sourceXmlFilePath}" ]];
 then

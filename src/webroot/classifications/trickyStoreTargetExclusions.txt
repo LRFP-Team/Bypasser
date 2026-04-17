@@ -1,2 +1,0 @@
-com.bochk.app.aos
-com.bochk.bocpay

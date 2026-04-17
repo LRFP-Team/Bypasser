@@ -1,0 +1,37 @@
+name: On pull request
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: |
+            src
+            build.sh
+      
+      - name: Build
+        run: |
+          cd "${{ github.workspace }}"
+          export TZ="Asia/Hong_Kong"
+          sed '/^# Log (31--33) #$/,/^# Exit #$/d' build.sh | bash
+      
+      - name: Prepare the artifact
+        id: artifact
+        run: |
+          cd "${{ github.workspace }}"
+          artifact="$(basename "$(find Release -type f | sort | tail -1)")"
+          echo "artifact=${artifact}" >> "${GITHUB_OUTPUT}"
+      
+      - name: Upload the artifact
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ github.workspace }}/Release/${{ steps.artifact.outputs.artifact }}
+          archive: false
+          if-no-files-found: error

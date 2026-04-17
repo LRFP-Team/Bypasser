@@ -38,20 +38,17 @@
 		<div id="welcome" style="font-size:18px;"><b>Welcome to the web UI of the Bypasser rooting-layer system module! </b></div>
 		<br />
 		<div id="actionSlots" style="background-color:rgba(31, 31, 31, 0.6)">
-			<b>The dynamic update procedure relies on the A/B swap architecture. </b>
+			<b>Slot</b>
 			<div id="actionSlot" style="color:#FF0000;">&emsp;<b>Error</b>: Cannot fetch the current action slot. </div>
 		</div>
 		<br />
 		<div id="classifications" style="background-color:rgba(31, 31, 31, 0.6)">
-			<b>Three stored classification files are listed as follows. </b>
-			<div id="classificationB">&emsp;<a href="classifications/classificationB.txt">Classification <i>B</i></a></div>
-			<div id="classificationC">&emsp;<a href="classifications/classificationC.txt">Classification <i>C</i></a></div>
-			<div id="classificationD">&emsp;<a href="classifications/classificationD.txt">Classification <i>D</i></a></div>
+			<b>Database</b>
+			<div id="database" style="color:#FF0000;">&emsp;<b>Error</b>: Cannot fetch the current database. </div>
 		</div>
 		<br /><br />
 		<script type="text/javascript">
-			if (window.apatch !== undefined && window.apatch.ksu === undefined)
-			{
+			if (window.apatch !== undefined && window.apatch.ksu === undefined) {
 				window.ksu = window.apatch;
 			}
 			fetch("action.prop")
@@ -65,6 +62,13 @@
 						document.getElementById("actionSlot").innerHTML = "&emsp;<b>Error</b>: An invalid action slot value is detected. ";
 						document.getElementById("actionSlot").style.color = "#FF0000";
 					}
+				})
+				.catch(error => console.error("Error: ", error));
+			fetch("database.json")
+				.then(response => response.text())
+				.then(data => {
+					document.getElementById("database").innerHTML = data;
+					document.getElementById("database").style.color = "#00FF00";
 				})
 				.catch(error => console.error("Error: ", error));
 		</script>

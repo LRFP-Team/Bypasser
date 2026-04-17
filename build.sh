@@ -81,9 +81,24 @@ else
 	exit 14
 fi
 
-# Pack (21--27) #
+# Compile (15) #
+readonly cppSourceFolderPath="cpp"
+readonly cppSourceFileName="generate.cpp"
+readonly cppSourceFilePath="${cppSourceFolderPath}/${cppSourceFileName}"
 readonly webrootName="webroot"
 readonly webrootFolderPath="${srcFolderPath}/${webrootName}"
+readonly cppBinaryFileName="generate"
+readonly cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}"
+aarch64-linux-android21-clang++ -O3 -Wall -Wextra -Wpedantic -I "${cppSourceFolderPath}" "${cppSourceFilePath}" -o "${cppBinaryFilePath}" -static-libstdc++ -fPIE -pie
+if [[ $? == ${EXIT_SUCCESS} && -f "${cppBinaryFilePath}" ]];
+then
+	echo "Successfully compiled \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\". "
+else
+	echo "Failed to compile \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\". "
+	exit 15
+fi
+
+# Pack (21--27) #
 readonly webrootFilePath="${srcFolderPath}/${webrootName}.zip"
 readonly propFileName="module.prop"
 readonly propFilePath="${srcFolderPath}/${propFileName}"
@@ -185,7 +200,7 @@ else
 	exit 27
 fi
 
-# Log (31--33) #
+# ChangeLog (31--33) #
 readonly changelogFolderPath="Changelog"
 readonly changelogFileName="${moduleName}_v${moduleVersion}.md"
 readonly changelogFilePath="${changelogFolderPath}/${changelogFileName}"
