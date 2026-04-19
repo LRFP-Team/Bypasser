@@ -6,15 +6,14 @@ This module will only take effect when users install it or click the ``action`` 
 
 - Welcome (0b00000X): Perform built-in configurations for this module. 
 - Zygisk Traces (0b0000X0): Deploy correct configurations for different Zygisk solutions according to the Zygisk implementation, Shamiko, NoHello, and Zygisk Assistant modules used. 
-- HMA Configurations (0b000X00): Generate configurations for HMA and its branches based on cloud libraries (along with the web UI updating) and local packages. Users are required to manually import the configurations via HMA or its branches. Networks to GitHub are optional. 
-- Tricky Store (0b00X000): Generate Tricky Store configurations directly based on cloud libraries. The configurations will be written to the Tricky Store configuration folder directly. Networks to GitHub are optional. 
+- HMA Configurations (0b000X00): Generate relevant configurations for HMA and its variants based on the cloud database (along with the web UI updating) and local packages (if enabled). Users are required to manually import the configurations via HMA or one of its variants. Networks to GitHub are optional. 
+- Tricky Store (0b00X000): Generate Tricky Store configurations directly based on the cloud database. The configurations will be written to the Tricky Store configuration folder directly. Networks to GitHub are optional. 
 - Shell (0b0X0000): Perform some shell commands. Please check ``actionA.sh`` for details. 
   - Disable sensitive applications automatically installed by Google. 
   - Remove sensitive policies. 
   - Handle properties. 
   - Enforce SELinux. 
   - Check whether the kernel version involves banned strings. 
-  - Generate a non-root scanning shell script for specified folder detection. 
   - Patch ``/etc/compatconfig/services-platform-compat-config.xml``. 
   - Enable the feature of hiding desktop icons on devices running Android 10 or above. 
 - Update (0bX00000): Perform regular dynamic updates for ``actionA.sh``, ``actionB.sh``, and the web UI (processed in the HMA Configuration stage). Networks to GitHub are required. 
@@ -39,7 +38,7 @@ Submit modifications via a pull request (PR) if you wish to.
 
 Here, we express our faithful gratitude to all the LRFP-related developers, especially the developers of different rooting solutions and the detailed guidelines for rooting-layer system module development. 
 
-We also sincerely thank [@pumPCin](https://github.com/pumPCin) for providing old HMA(L) configuration folders in [https://github.com/pumPCin/HMAL/issues/50](https://github.com/pumPCin/HMAL/issues/50). 
+We also sincerely thank [@pumPCin](https://github.com/pumPCin) for providing old configuration folders of HMA and its variants in [https://github.com/pumPCin/HMAL/issues/50](https://github.com/pumPCin/HMAL/issues/50). 
 
 ## Licensing
 
@@ -49,4 +48,4 @@ You can regard this repository as an alternative rooting-layer system module tem
 
 ## Warning
 
-Since the project is still developing, please do not install the module here until this warning is removed in the future. 
+Since the project is still developing, please do not install the modules here until this warning is removed. 

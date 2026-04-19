@@ -7,15 +7,8 @@ from getpass import getpass
 from hashlib import sha512
 from json import dump, loads
 from re import findall
-from subprocess import PIPE, Popen
-from zipfile import ZipFile
-try:
-	from requests import get
-except:
-	def get(url:str, *args:tuple, **kwargs:dict) -> None:
-		return None
-	print("Cannot import ``get`` from the ``requests`` library. Fetching from URLs will be unavailable. ")
-	print("Please try to install the ``requests`` library correctly via ``python -m pip install requests``. ")
+from subprocess import run
+from zipfile import ZipFile, ZipInfo
 try:
 	os.chdir(os.path.abspath(os.path.dirname(__file__)))
 except:
@@ -47,7 +40,7 @@ class DatabaseManager:
 			if isinstance(self.__database, dict):
 				removedKeyCount = 0
 				for key in tuple(self.__database.keys()):
-					if key not in ("C", "D", "M", "N", "S", "T"):
+					if key not in ("C", "D", "M", "N", "S", "T", "U", "V"):
 						del self.__database[key]
 						removedKeyCount += 1
 				if "C" in self.__database:
@@ -65,7 +58,7 @@ class DatabaseManager:
 		packageNames = set()
 		if isinstance(URL, str) and isinstance(d, dict):
 			if URL not in DatabaseManager.__Caches:
-				r = get(URL, timeout = self.__timeout)
+				r = __import__("requests").get(URL, timeout = self.__timeout)
 				if 200 == r.status_code:
 					DatabaseManager.__Caches[URL] = r.content
 				else:
@@ -95,7 +88,7 @@ class DatabaseManager:
 				while stack:
 					element = stack.pop()
 					if isinstance(element, (tuple, list, set)):
-						element.extend(reversed(element))
+						stack.extend(reversed(element))
 					elif isinstance(element, str):
 						try:
 							packageNames.update(self.__fetchPackageNamesFromURL(element, d))
@@ -110,7 +103,7 @@ class DatabaseManager:
 				return (False, 0, KeyError("The database was not initialized or the condition ``key in (\"D\", \"M\")`` was not satisfied. "))
 		except BaseException as e:
 			return (False, 0, e)
-	def checkSatisfaction(self:object) -> tuple:
+	def check(self:object) -> tuple:
 		if isinstance(self.__database, dict):
 			d, C = OrderedDict(), set()
 			if "C" in self.__database and isinstance(self.__database["C"], dict):
@@ -145,6 +138,7 @@ class DatabaseManager:
 			return (False, TypeError("The database is not a ``dict``. Please check whether the method function ``load`` has been called. "))
 	def save(self:object) -> tuple:
 		if isinstance(self.__database, dict):
+			self.__database["V"] = "3.6.2+HKT" + datetime.now().strftime("%Y%m%d%H%M%S%f")
 			try:
 				with open(self.__databaseFilePath, "w", encoding = self.__encoding) as f:
 					dump(self.__database, f, indent = "\t", ensure_ascii = False, sort_keys = True)
@@ -155,220 +149,332 @@ class DatabaseManager:
 			return (False, TypeError("The database is not a ``dict``. Please check whether the method function ``load`` has been called. "))
 
 
-def compress(zipFolderPath:str, zipFilePath:str, extensionsExcluded:tuple|list|set) -> bool:
-	if isinstance(zipFolderPath, str) and os.path.isdir(zipFolderPath) and isinstance(zipFilePath, str) and isinstance(extensionsExcluded, (tuple, list, set)):
+class RegularUpdater:
+	def __init__(self:object, srcFolderPath:str, webrootName:str, databaseFileName:str, actionAFileName:str, actionBFileName:str) -> object: # -> 0b00000001
 		try:
-			with ZipFile(zipFilePath, "w") as zipf:
-				for root, _, fileNames in os.walk(zipFolderPath):
-					for fileName in fileNames:
-						if os.path.splitext(fileName)[1] not in extensionsExcluded:
-							filePath = os.path.join(root, fileName)
-							zipf.write(filePath, os.path.relpath(filePath, zipFolderPath))
-			print("Successfully compressed the web UI folder \"{0}\" to \"{1}\". ".format(zipFolderPath, zipFilePath))
-			return True
+			# Parameters #
+			self.__srcFolderPath = srcFolderPath
+			self.__webrootName = webrootName
+			self.__databaseFileName = databaseFileName
+			self.__actionAFileName = actionAFileName
+			self.__actionBFileName = actionBFileName
+			
+			# Initialization #
+			self.__webrootFolderPath = os.path.join(self.__srcFolderPath, self.__webrootName)
+			self.__databaseFilePath = os.path.join(self.__webrootFolderPath, self.__databaseFileName)
+			self.__webrootFilePath = os.path.join(self.__srcFolderPath, self.__webrootName + ".zip")
+			self.__actionAFilePath = os.path.join(self.__srcFolderPath, self.__actionAFileName)
+			self.__actionBFilePath = os.path.join(self.__srcFolderPath, self.__actionBFileName)
+			
+			# Main #
+			self.__databaseManager = DatabaseManager(databaseFilePath = self.__databaseFilePath)
+			self.__flag = 0b00000001
+			print("Successfully initialized the updater with the parameters passed. ")
 		except BaseException as e:
-			print("Failed to compress the web UI folder \"{0}\" to \"{1}\" due to \"{2}\". ".format(zipFolderPath, zipFilePath, e))
-	else:
-		return False
-
-def updateSHA512(srcFp:str, encoding:str = "utf-8") -> bool:
-	if isinstance(srcFp, str) and os.path.isdir(srcFp) and isinstance(encoding, str):
-		successCnt, filePaths = 0, []
-		for root, _, fileNames in os.walk(srcFp):
-			for fileName in fileNames:
-				filePath = os.path.join(root, fileName)
-				if os.path.splitext(fileName)[1] == ".sha512":
-					try:
-						os.remove(filePath)
-					except:
-						pass
-				else:
-					filePaths.append(filePath)
-		totalCnt = len(filePaths)
-		length = len(str(totalCnt))
-		for i, filePath in enumerate(filePaths):
-			try:
-				if os.path.join(srcFp, "webroot.zip") == filePath:
-					digests = []
-					for root, _, fileNames in os.walk(os.path.join(srcFp, "webroot")):
-						for fileName in fileNames:
-							if os.path.splitext(fileName)[1].lower() not in (".prop", ".sha512"):
-								fileP = os.path.join(root, fileName)
-								with open(fileP, "rb") as f:
-									digests.append(sha512(f.read()).hexdigest() + "  " + os.path.relpath(fileP, srcFp))
-					digests.sort()
-					digest = "\n".join(digests)
-				else:
-					with open(filePath, "rb") as f:
-						digest = sha512(f.read()).hexdigest()
-			except BaseException as e:
-				print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i + 1, filePath, e))
-				continue
-			try:
-				with open(filePath + ".sha512", "w", encoding = encoding) as f:
-					f.write(digest)
-				successCnt += 1
-				print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i + 1, filePath, digest if digest.isalnum() else digest.split("\n")))
-			except BaseException as e:
-				print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i + 1, filePath, e))
-		print("Successfully generated {0} / {1} SHA-512 value file(s) at the success rate of {2:.2f}%. ".format(	\
-			successCnt, totalCnt, successCnt * 100 / totalCnt														\
-		) if totalCnt else "No SHA-512 value files were generated. ")
-		return successCnt == totalCnt
-	else:
-		return False
-
-def gitPush(filePathA:str, filePathB:str) -> bool:
-	commitMessage = "Regular Update (HKT {0})".format(datetime.now().strftime("%Y%m%d%H%M%S%f"))
-	print("The commit message is \"{0}\". ".format(commitMessage))
-	if __import__("platform").system().upper() == "WINDOWS":
-		commandlines = ()
-		print("Cannot guarantee whether permission or syntax issues are solved due to the platform. ")
-	else:
-		commandlines = (																							\
-			"find . -type d -exec chmod 755 {} \\;", 																\
-			"find . -type f ! -name \"LICENSE\" ! -name \"build.sh\" ! -name \"*.sha512\" -exec chmod 644 {} \\;", 	\
-			"find . -type f -name \"*.sha512\" -exec chmod 444 {} \\;", 											\
-			"chmod 444 \"LICENSE\"", 																				\
-			"chmod 744 \"build.sh\"", 																				\
-			"find . -name \"*.sh\" -exec bash -n {} \\;"															\
-		)
-	for commandline in commandlines:
-		with Popen(commandline, stdout = PIPE, stderr = PIPE, shell = True) as process:
-			output, error = process.communicate()
-			if output or error:
-				print("Abort ``git`` operations due to the following issue. ")
-				print({"commandline":commandline, "output":output.decode(), "error":error.decode()})
-				return False
-	try:
-		with open(filePathA, "rb") as f:
-			contentA = f.read()
-		with open(filePathB, "rb") as f:
-			contentB = f.read()
-	except BaseException as e:
-		print("Cannot verify the differences between \"{0}\" and \"{1}\" due to exceptions. Details are as follows. \n\t{2}".format(filePathA, filePathB, e))
-		return False
-	if contentA.replace(b"readonly currentAB=\"A\"", b"readonly currentAB=\"B\"").replace(b"readonly targetAB=\"B\"", b"readonly targetAB=\"A\"") == contentB:
-		print("Successfully verified the differences between \"{0}\" and \"{1}\"".format(filePathA, filePathB))
-	else:
-		print("Failed to verify the differences between \"{0}\" and \"{1}\"".format(filePathA, filePathB))
-		return False
-	commandlines = ("git add .", "git commit -m \"{0}\"".format(commitMessage), "git push")
-	for commandline in commandlines:
-		if os.system(commandline) != EXIT_SUCCESS:
+			self.__flag = 0b00000000
+			print("Failed to initialize the updater with the parameters passed. ")
+	def setPermissions(self:object) -> bool: # (0b00000001 | 0b00000010 -> 0b00000011, 0b01111111 + 0b01000000 -> 0b10111111)
+		if self.__flag & 0b00111111 and self.__flag >> 6 >= 1:
+			self.__flag = self.__flag & 0b00111111 | 0b01000000
+		elif self.__flag & 0b00000001:
+			self.__flag &= 0b00000001
+		else:
+			print("Please initialize the updater before setting permissions. ")
 			return False
-	return True
+		baseExceptions = []
+		try:
+			os.chmod(".", 0o755)
+			for root, folderNames, fileNames in os.walk("."):
+				for folderName in folderNames:
+					folderPath = os.path.join(root, folderName)
+					try:
+						os.chmod(folderPath, 0o755)
+					except BaseException as innerBaseException:
+						baseExceptions.append((folderPath, 0o755, innerBaseException))
+				for fileName in fileNames:
+					filePath = os.path.join(root, fileName)
+					if "LICENSE" == fileName or os.path.splitext(fileName)[1] == ".sha512":
+						try:
+							os.chmod(filePath, 0o444)
+						except BaseException as innerBaseException:
+							baseExceptions.append((filePath, 0o444, innerBaseException))
+					elif "build.sh" == fileName:
+						try:
+							os.chmod(filePath, 0o744)
+						except BaseException as innerBaseException:
+							baseExceptions.append((filePath, 0o744, innerBaseException))
+					else:
+						try:
+							os.chmod(filePath, 0o644)
+						except BaseException as innerBaseException:
+							baseExceptions.append((filePath, 0o644, innerBaseException))
+		except BaseException as outerBaseException:
+			baseExceptions.append((".", 0o755, outerBaseException))
+		if baseExceptions:
+			print("Failed to set permissions due to the following base exception(s). ")
+			for filePath, permission, baseException in baseExceptions:
+				print("{0} -> {1} -> {2}".format(repr(filePath), oct(permission), repr(baseException)))
+			return False
+		else:
+			if self.__flag & 0b00111111 and self.__flag >> 6 >= 1:
+				self.__flag += 0b01000000
+			elif self.__flag & 0b00000001:
+				self.__flag |= 0b00000010
+			print("Successfully set permissions. ")
+			return True
+	def loadDatabase(self:object) -> bool: # 0b00?00011 + 0b00000100 -> 0b00?00111
+		if self.__flag & 0b00000011:
+			self.__flag &= 0b00100011
+			validity, information = self.__databaseManager.load()
+			if validity:
+				if information:
+					print("Loaded {0} with {1} keys removed in total. ".format(repr(self.__databaseFilePath), information))
+				else:
+					self.__flag += 0b00000100
+					print("Successfully loaded the database from {0}. ".format(repr(self.__databaseFilePath)))
+					return True
+			else:
+				print("Failed to load {0} due to {1}. ".format(repr(self.__databaseFilePath), repr(information)))
+		else:
+			print("Please initialize the updater and set permissions before loading the database. ")
+		return False
+	def checkDatabase(self:object) -> bool: # (0b00?00111, 0b00?01111) + 0b00000100 -> (0b00?01011, 0b00?10011)
+		if self.__flag & 0b00000011:
+			localFlag = self.__flag >> 2 & 0b111
+			if localFlag >= 3:
+				self.__flag = self.__flag & 0b00100011 | 0b00001100
+			elif localFlag >= 1:
+				self.__flag = self.__flag & 0b00100011 | 0b00000100
+			else:
+				print("Please load the database before checking. ")
+				return False
+		else:
+			print("Please initialize the updater and load the database before checking the database. ")
+			return False
+		validity, d = self.__databaseManager.check()
+		if validity:
+			if d:
+				print("Failed to pass the database check according to the equation system. ")
+				for key, value in d.items():
+					print("\t{0} -> {1}".format(key, value))
+			else:
+				self.__flag += 0b00000100
+				print("Successfully passed the database check according to the equation system. ")
+				return True
+		else:
+			print("Failed to check the database according to the equation system due to {0}. ".format(repr(d)))
+		return False
+	def synchronizeDatabase(self:object, targetURLs:OrderedDict|dict) -> bool: # 0b00?01011 + 0b00000100 -> 0b00?01111
+		if self.__flag & 0b00000011 and self.__flag >> 2 & 0b111 >= 2 and isinstance(targetURLs, (OrderedDict, dict)):
+			self.__flag, localFlag = self.__flag & 0b00100011 | 0b00001000, bool(targetURLs)
+			for key, value in targetURLs.items():
+				if isinstance(key, str) and len(key) == 1 and 'A' <= key <= 'Z':
+					validity, delta, d = self.__databaseManager.updateFromURLs(value, key)
+					if validity:
+						if d:
+							localFlag = False
+							print("Updated {0} package name(s) of ${1}$ from {2} with the following base exception(s). ".format(delta, key, value))
+							for key, value in d.items():
+								print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
+						else:
+							print("Successfully updated {0} package name(s) of ${1}$ from {2}. ".format(delta, key, value))
+				else:
+					localFlag = False
+					print("Failed to update package names of ${0}$ from {1} due to {2}. ".format(key, value, repr(d)))
+			if localFlag:
+				self.__flag += 0b00000100
+				return True
+		else:
+			print("Please check the database and the parameter types before synchronizing. ")
+		return False
+	def saveDatabase(self:object) -> bool: # 0b00?10011 + 0b00000100 -> 0b00?10111
+		if self.__flag & 0b00000011 and self.__flag >> 2 & 0b111 >= 4:
+			self.__flag = self.__flag & 0b00100011 | 0b00010000
+			validity, exception = self.__databaseManager.save()
+			if validity:
+				self.__flag += 0b00000100
+				print("Successfully wrote the database to the database file {0}. ".format(repr(self.__databaseFilePath)))
+				return True
+			else:
+				print("Failed to write the database to the database file {0} due to {1}. ".format(repr(self.__databaseFilePath), repr(exception)))
+		else:
+			print("Please check the database again before saving. ")
+		return False
+	def compileCPP(self:object, cppSourceFolderPath:str, cppSourceMainFileName:str) -> bool: # 0b00?10111 + 0b00000100 -> 0b00?11011
+		if self.__flag & 0b00000011 and self.__flag >> 2 & 0b111 >= 5:
+			self.__flag = self.__flag & 0b00100011 | 0b00010100
+			try:
+				cppSourceFilePath = os.path.join(cppSourceFolderPath, cppSourceMainFileName + ".cpp")
+				cppBinaryFilePath = os.path.join(self.__webrootFolderPath, cppSourceMainFileName)
+				result = run((
+					"aarch64-linux-android21-clang++", "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceFolderPath, 
+					cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
+				), capture_output = True, text = True)
+				if result.returncode != EXIT_SUCCESS:
+					print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
+				elif result.stdout or result.stderr:
+					print("Compiled {0} to {1} with warnings {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
+				else:
+					self.__flag += 0b00000100
+					print("Successfully compiled {0} to {1} without errors or warnings. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath)))
+					return True
+			except BaseException as e:
+				print("Failed to compile the CPP due to {0}. ".format(repr(e)))
+		else:
+			print("Please save the database before compiling the CPP. ")
+		return False
+	def compress(self:object, extensionsExcluded:tuple|list|set) -> bool: # 0b00?11011 | 0b00011100 -> 0b00?11111
+		if self.__flag & 0b00000011 and self.__flag >> 2 & 0b111 >= 6 and isinstance(extensionsExcluded, (tuple, list, set)):
+			self.__flag = self.__flag & 0b00100011 | 0b00011000
+			if os.path.isdir(self.__webrootFolderPath):
+				try:
+					with ZipFile(self.__webrootFilePath, "w") as zipf:
+						for root, _, fileNames in os.walk(self.__webrootFolderPath):
+							for fileName in fileNames:
+								if os.path.splitext(fileName)[1] not in extensionsExcluded:
+									filePath = os.path.join(root, fileName)
+									relativePath = os.path.relpath(filePath, self.__webrootFolderPath)
+									zipInfo = ZipInfo(relativePath)
+									zipInfo.external_attr = 0o644 << 16
+									with open(filePath, "rb") as f:
+										zipf.writestr(zipInfo, f.read())
+					self.__flag |= 0b00011100
+					print("Successfully compressed the web UI folder {0} to {1}. ".format(repr(self.__webrootFolderPath), repr(self.__webrootFilePath)))
+					return True
+				except BaseException as e:
+					print("Failed to compress the web UI folder {0} to {1} due to {2}. ".format(repr(self.__webrootFolderPath), repr(self.__webrootFilePath), repr(e)))
+			else:
+				print("The webroot folder path {0} does not exist or exists not as a folder. ".format(repr(self.__webrootFolderPath))) 
+		else:
+			print("Please compile the CPP before compressing the webroot folder. ")
+		return False
+	def checkDifferences(self:object) -> bool: # 0b000???11 | 0b00100000 -> 0b001???11
+		if self.__flag & 0b00000011:
+			try:
+				with open(self.__actionAFilePath, "rb") as f:
+					contentA = f.read()
+				with open(self.__actionBFilePath, "rb") as f:
+					contentB = f.read()
+				if contentA.replace(b"readonly currentAB=\"A\"", b"readonly currentAB=\"B\"").replace(b"readonly targetAB=\"B\"", b"readonly targetAB=\"A\"") == contentB:
+					self.__flag |= 0b00100000
+					print("Successfully verified the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
+					return True
+				else:
+					print("Failed to verify the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
+			except BaseException as e:
+				print("Failed to verify the differences between {0} and {1} due to {2}".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath), repr(e)))
+		else:
+			print("Please initialize the updater before checking differences. ")
+		return False
+	def updateSHA512(self:object, encoding:str = "utf-8") -> bool: # 0b00111111 + 0b01000000 -> 0b01111111
+		if self.__flag & 0b00111111:
+			self.__flag &= 0b00111111
+			if os.path.isdir(self.__srcFolderPath):
+				filePaths = []
+				for root, _, fileNames in os.walk(self.__srcFolderPath):
+					for fileName in fileNames:
+						filePath = os.path.join(root, fileName)
+						if os.path.splitext(fileName)[1] == ".sha512":
+							try:
+								os.remove(filePath)
+							except:
+								pass
+						else:
+							filePaths.append(filePath)
+				totalCount = len(filePaths)
+				if totalCount:
+					length, successCount = len(str(totalCount)), 0
+					print("Generating SHA-512 value files for {0} item(s). ".format(totalCount))
+					for i, filePath in enumerate(filePaths, start = 1):
+						try:
+							if os.path.join(self.__srcFolderPath, self.__webrootName + ".zip") == filePath:
+								digests = []
+								for root, _, fileNames in os.walk(os.path.join(self.__srcFolderPath, self.__webrootName)):
+									for fileName in fileNames:
+										if os.path.splitext(fileName)[1].lower() not in (".prop", ".sha512"):
+											fileP = os.path.join(root, fileName)
+											with open(fileP, "rb") as f:
+												digests.append(sha512(f.read()).hexdigest() + "  " + os.path.relpath(fileP, self.__srcFolderPath))
+								digests.sort()
+								digest = "\n".join(digests)
+							else:
+								with open(filePath, "rb") as f:
+									digest = sha512(f.read()).hexdigest()
+						except BaseException as e:
+							print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, e))
+							continue
+						try:
+							with open(filePath + ".sha512", "w", encoding = encoding) as f:
+								f.write(digest)
+							successCount += 1
+							print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, digest if digest.isalnum() else digest.split("\n")))
+						except BaseException as e:
+							print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, e))
+					print("Successfully generated {0} / {1} SHA-512 value file(s) at the success rate of {2:.2f}%. ".format(successCount, totalCount, successCount * 100 / totalCount))
+					if successCount == totalCount:
+						self.__flag += 0b01000000
+						return True
+				else:
+					print("No SHA-512 value files were generated. ")
+			else:
+				print("The source folder path {0} does not exist or exists not as a folder. ".format(repr(self.__srcFolderPath)))
+		else:
+			print("Please compress the webroot folder and check differences before updating SHA-512. ")
+		return False
+	def gitPush(self:object, pushConfirmed:bool = False) -> bool: # 0b10111111 | 0b11000000 -> 0b11111111
+		if self.__flag & 0b00111111 and self.__flag >> 6 >= 2:
+			self.__flag = self.__flag & 0b00111111 | 0b10000000
+			if "posix" == os.name:
+				try:
+					if isinstance(pushConfirmed, bool) and pushConfirmed:
+						choice = True
+					else:
+						choice = input("Would you like to upload the files to GitHub via ``git`` [yN]? ").upper() in ("Y", "YES", "1", "T", "TRUE")
+				except:
+					choice = False
+			else:
+				choice = False
+				print("Skipped pushing since this is not a Linux platform. ")
+			if choice:
+				commitMessage = "Regular Update (HKT {0})".format(datetime.now().strftime("%Y%m%d%H%M%S%f"))
+				print("The commit message is \"{0}\". ".format(commitMessage))
+				commandlines = ("git add .", "git commit -m \"{0}\"".format(commitMessage), "git push")
+				for commandline in commandlines:
+					if os.system(commandline) != EXIT_SUCCESS:
+						return False
+				self.__flag |= 0b11000000
+				return True
+			else:
+				return True
+		else:
+			print("Please set permissions again before pushing. ")
+			return False
+
 
 def main() -> int:
 	# Parameters #
-	pluginURL = "https://modules.lsposed.org/modules.json"
-	selfURL = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
 	srcFolderPath = "src"
 	webrootName = "webroot"
 	databaseFileName = "database.json"
-	extensionsExcluded = (".prop", ".sha512")
 	actionAFileName, actionBFileName = "actionA.sh", "actionB.sh"
+	selfURL = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
+	pluginURL = "https://modules.lsposed.org/modules.json"
+	cppSourceFolderPath = "cpp"
+	cppSourceMainFileName = "generate"
+	extensionsExcluded = (".prop", ".sha512")
 	
-	# Initialization #
-	webrootFolderPath = os.path.join(srcFolderPath, webrootName)
-	databaseFilePath = os.path.join(webrootFolderPath, databaseFileName)
-	databaseManager = DatabaseManager(databaseFilePath = databaseFilePath)
-	webrootFilePath = os.path.join(srcFolderPath, webrootName + ".zip")
-	actionAFilePath, actionBFilePath = os.path.join(srcFolderPath, actionAFileName), os.path.join(srcFolderPath, actionBFileName)
-	
-	# Load the database #
-	flag = True
-	validity, information = databaseManager.load()
-	if validity:
-		if information:
-			print("Loaded {0} with {1} keys removed in total. ".format(repr(databaseFilePath), information))
+	# Updater #
+	regularUpdater = RegularUpdater(srcFolderPath, webrootName, databaseFileName, actionAFileName, actionBFileName)
+	if regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
+		databaseFlag = (
+			regularUpdater.synchronizeDatabase({"D":selfURL, "M":pluginURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
+			and regularUpdater.compileCPP(cppSourceFolderPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
+		)
+		differenceFlag = regularUpdater.checkDifferences()
+		if databaseFlag and differenceFlag:
+			errorLevel = EXIT_SUCCESS if regularUpdater.updateSHA512() and regularUpdater.setPermissions() and regularUpdater.gitPush() else EXIT_FAILURE
 		else:
-			print("Successfully loaded the database from {0}. ".format(repr(databaseFilePath)))
-		
-		# Compute intersections #
-		validity, d = databaseManager.checkSatisfaction()
-		if validity:
-			if d:
-				flag = False
-				print("Failed to pass the satisfaction check of the equation system. ")
-				for key, value in d.items():
-					print("\t{0} -> {1}".format(key, value))
-			else:
-				print("Successfully passed the satisfaction check of the equation system. ")
-		else:
-			flag = False
-			print("Failed to check the satisfaction of the equation system due to {0}. ".format(repr(d)))
-	else:
-		flag = False
-		print("Failed to load {0} due to {1}. ".format(repr(databaseFilePath), repr(information)))
-	
-	# Synchronize the database #
-	if flag:
-		# Update $D$ #
-		validity, delta, d = databaseManager.updateFromURLs(selfURL, "D")
-		if validity:
-			if d:
-				flag = False
-				print("Updated {0} package name(s) of $D$ from the URL \"{1}\" with the following exception(s). ".format(delta, selfURL))
-				for key, value in d.items():
-					print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
-			else:
-				print("Successfully updated {0} package name(s) of $D$ from the URL \"{1}\". ".format(delta, selfURL))
-		else:
-			flag = False
-			print("Failed to update package names of $D$ from the URL \"{0}\" due to {1}. ".format(selfURL, repr(d)))
-		
-		# Update $M$ #
-		validity, delta, d = databaseManager.updateFromURLs(pluginURL, "M")
-		if validity:
-			if d:
-				flag = False
-				print("Updated {0} package name(s) of $M$ from the URL \"{1}\" with the following exception(s). ".format(delta, pluginURL))
-				for key, value in d.items():
-					print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
-			else:
-				print("Successfully updated {0} package name(s) of $M$ from the URL \"{1}\". ".format(delta, pluginURL))
-		else:
-			flag = False
-			print("Failed to update package names of $M$ from the URL \"{0}\" due to {1}. ".format(pluginURL, repr(d)))
-		
-		# Compute intersections #
-		validity, d = databaseManager.checkSatisfaction()
-		if validity:
-			if d:
-				flag = False
-				print("Failed to pass the satisfaction check of the equation system. ")
-				for key, value in d.items():
-					print("\t{0} -> {1}".format(key, value))
-			else:
-				print("Successfully passed the satisfaction check of the equation system. ")
-		else:
-			flag = False
-			print("Failed to check the satisfaction of the equation system due to {0}. ".format(repr(d)))
-		
-		if flag:
-			# Save #
-			validity, exception = databaseManager.save()
-			if validity:
-				print("Successfully wrote the database to the database file {0}. ".format(repr(databaseFilePath)))
-			else:
-				flag = False
-				print("Failed to write the database to the database file {0} due to {1}. ".format(repr(databaseFilePath), repr(exception)))
-			
-			if flag:
-				# Update the Web UI #
-				if not (compress(webrootFolderPath, webrootFilePath, extensionsExcluded) and updateSHA512(srcFolderPath)):
-					flag = False
-				
-				if flag:
-					# Git Push #
-					try:
-						choice = input("Would you like to upload the files to GitHub via ``git`` [Yn]? ").upper() not in ("N", "NO", "0", "F", "FALSE")
-					except:
-						choice = True
-					if choice:
-						flag = gitPush(actionAFilePath, actionBFilePath)
-		errorLevel = EXIT_SUCCESS if flag else EXIT_FAILURE
+			errorLevel = EXIT_FAILURE
 	else:
 		errorLevel = EOF
 	

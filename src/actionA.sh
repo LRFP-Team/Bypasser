@@ -455,7 +455,7 @@ readonly whitelistConfigurationFileName=".v92HMAWhitelistModeConfiguration.json"
 readonly whitelistConfigurationFilePath="${downloadFolderPath}/${whitelistConfigurationFileName}"
 readonly blacklistConfigurationFileName=".v92HMABlacklistModeConfiguration.json"
 readonly blacklistConfigurationFilePath="${downloadFolderPath}/${blacklistConfigurationFileName}"
-readonly pathTesterFileName="pathTester.sh"
+readonly pathTesterFileName=".pathTester.sh"
 readonly pathTesterFilePath="${downloadFolderPath}/${pathTesterFileName}"
 gapTime=0
 
@@ -676,7 +676,7 @@ if [[ $? -eq ${EXIT_SUCCESS} && -d "${downloadFolderPath}" ]];
 then
 	echo "Successfully prepared the folder \"${downloadFolderPath}\". "
 	chmod u+x "${cppBinaryFilePath}"
-	"${cppBinaryFilePath}" -i "${databaseFilePath}" -ow "${whitelistConfigurationFileName}" -ob "${blacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
+	"${cppBinaryFilePath}" -i "${databaseFilePath}" -ow "${whitelistConfigurationFilePath}" -ob "${blacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
 		if [[ -f "${whitelistConfigurationFilePath}" ]];

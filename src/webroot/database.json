@@ -75,6 +75,7 @@
 			"com.whatsapp",
 			"com.yuurewards.app",
 			"com.zeptolab.ctr.ads",
+			"com.zeptolab.ctr2.f2p.google",
 			"hk.gov.immd.contactless",
 			"hk.gov.immd.mobileapps",
 			"hk.gov.ogcio.iamsmart",
@@ -1029,5 +1030,7 @@
 	"T": [
 		"-com.bochk.app.aos",
 		"-com.bochk.bocpay"
-	]
+	],
+	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
+	"V": "3.6.2+HKT20260419123114058706"
 }

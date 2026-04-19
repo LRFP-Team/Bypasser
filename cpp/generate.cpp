@@ -1,9 +1,13 @@
 #include <iostream>
+#include <filesystem>
 #include <sstream>
 #include <fstream>
 #include <vector>
 #include <set>
 #include "nlohmann/json.hpp"
+#ifndef MODULE_NAME
+#define MODULE_NAME "Bypasser"
+#endif
 
 
 class Generator
@@ -15,50 +19,134 @@ private:
 	std::string outputBlacklistFilePath{};
 	std::string outputPathTesterFilePath{};
 	std::string outputTargetFilePath{};
-	std::vector<std::string> inputArguments{ "i", "/i", "-i", "input", "/input", "--input" };
-	std::vector<std::string> outputWhitelistArguments{ "ow", "/ow", "-ow", "outputWhitelist", "/outputWhitelist", "--outputWhitelist" };
-	std::vector<std::string> outputBlacklistArguments{ "ob", "/ob", "-ob", "outputBlacklist", "/outputBlacklist", "--outputBlacklist" };
-	std::vector<std::string> outputPathTesterArguments{ "op", "/op", "-op", "outputPathTester", "/outputPathTester", "--outputPathTester" };
-	std::vector<std::string> outputTargetArguments{ "ot", "/ot", "-ot", "outputTarget", "/outputTarget", "--outputTarget" };
+	const std::vector<std::string> helpArguments{ "h", "/h", "-h", "help", "/help", "--help" };
+	const std::vector<std::string> inputArguments{ "i", "/i", "-i", "input", "/input", "--input" };
+	const std::vector<std::string> outputWhitelistArguments{ "ow", "/ow", "-ow", "outputWhitelist", "/outputWhitelist", "--outputWhitelist" };
+	const std::vector<std::string> outputBlacklistArguments{ "ob", "/ob", "-ob", "outputBlacklist", "/outputBlacklist", "--outputBlacklist" };
+	const std::vector<std::string> outputPathTesterArguments{ "op", "/op", "-op", "outputPathTester", "/outputPathTester", "--outputPathTester" };
+	const std::vector<std::string> outputTargetArguments{ "ot", "/ot", "-ot", "outputTarget", "/outputTarget", "--outputTarget" };
 	nlohmann::json j{};
 	bool flagCG = false, flagCZ = false, flagD = false, flagM = false, flagO = false, flagS = false, flagT = false;
+	
+	std::string vector2string(const std::vector<std::string>& arguments, std::string prefix, std::string separator, std::string suffix) const
+	{
+		std::string s = prefix;
+		if (!arguments.empty())
+		{
+			const size_t length = arguments.size();
+			s += arguments[0];
+			for (size_t i = 1; i < length; ++i)
+				s += separator + arguments[i];
+		}
+		s += suffix;
+		return s;
+	}
+	std::string vector2string(const std::vector<std::string>& arguments) const
+	{
+		return this->vector2string(arguments, "[", "|", "]");
+	}
+	void printHelp() const
+	{
+		std::cout << "This is a generator for the " << MODULE_NAME << "rooting-layer system module. " << std::endl << std::endl;
+		std::cout << "Options: " << std::endl;
+		std::cout << "\t" << this->vector2string(this->helpArguments) << "\t\tPrint the help information. " << std::endl;
+		std::cout << "\t" << this->vector2string(this->inputArguments) << "<path>\t\tSpecify the input database JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(this->outputWhitelistArguments) << "<path>\t\tSpecify the output whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(this->outputBlacklistArguments) << "<path>\t\tSpecify the output blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(this->outputPathTesterArguments) << "<path>\t\tSpecify the output path tester shell script file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(this->outputTargetArguments) << "<path>\t\tSpecify the output Tricky Store target text file path. " << std::endl << std::endl;
+		std::cout << "Notes:" << std::endl;
+		std::cout << "\t1) Arguments are processed sequentially. If the same argument is provided multiple times, the last one will overwrite the previous ones. Unrecognized options or missing option values will be skipped with a warning. " << std::endl;
+		std::cout << "\t2) The input database is required. The program will return EOF (" << EOF << ") if the input file path cannot be parsed. " << std::endl;
+		std::cout << "\t3) The outputs are optional. If ``.`` is passed, the program will print to the console. The program will create the parent directory if it does not exist. If an output is not specified, it will be regarded as successful. " << std::endl;
+		std::cout << "\t4) Only when all outputs are successful, the program will return EXIT_SUCCESS (" << EXIT_SUCCESS << "). If one or more outputs are unsuccessful, the program will return EXIT_FAILURE (" << EXIT_FAILURE << "). " << std::endl << std::endl;
+		return;
+	}
+	bool handleFolder(const std::string& filePath)
+	{
+		try
+		{
+			std::filesystem::path p(filePath);
+			const std::filesystem::path folderPath = p.parent_path();
+			if (folderPath.empty()) // os.path.split("test.txt")[0] = ""
+				return true;
+			else if (std::filesystem::exists(folderPath))
+				return std::filesystem::is_directory(folderPath);
+			else
+				return std::filesystem::create_directories(folderPath) && std::filesystem::is_directory(folderPath);
+		}
+		catch (...)
+		{
+			return false;
+		}
+	}
 	
 public:
 	Generator()
 	{
 		
 	}
-	bool parseArguments(int argc, char* argv[])
+	bool parseArguments(int argc, char* argv[], bool& exitFlag)
 	{
 		this->flag = 0;
 		this->inputFilePath.clear();
 		this->outputWhitelistFilePath.clear();
 		this->outputBlacklistFilePath.clear();
+		this->outputPathTesterFilePath.clear();
 		this->outputTargetFilePath.clear();
+		bool missingArgument = false;
 		std::vector<size_t> invalidArgumentIndexes{};
-		for (int i = 0; i < argc; ++i)
-			if (std::find(inputArguments.begin(), inputArguments.end(), argv[i]) != inputArguments.end())
+		for (int i = 1; i < argc; ++i)
+			if (std::find(helpArguments.begin(), helpArguments.end(), argv[i]) != helpArguments.end())
+			{
+				this->printHelp();
+				exitFlag = true;
+				return true;
+			}
+			else if (std::find(inputArguments.begin(), inputArguments.end(), argv[i]) != inputArguments.end())
 				if (++i < argc)
 					this->inputFilePath = argv[i];
 				else
+				{
+					missingArgument = true;
 					break;
+				}
 			else if (std::find(outputWhitelistArguments.begin(), outputWhitelistArguments.end(), argv[i]) != outputWhitelistArguments.end())
 				if (++i < argc)
 					this->outputWhitelistFilePath = argv[i];
 				else
+				{
+					missingArgument = true;
 					break;
+				}
 			else if (std::find(outputBlacklistArguments.begin(), outputBlacklistArguments.end(), argv[i]) != outputBlacklistArguments.end())
 				if (++i < argc)
 					this->outputBlacklistFilePath = argv[i];
 				else
+				{
+					missingArgument = true;
 					break;
+				}
+			else if (std::find(outputPathTesterArguments.begin(), outputPathTesterArguments.end(), argv[i]) != outputPathTesterArguments.end())
+				if (++i < argc)
+					this->outputPathTesterFilePath = argv[i];
+				else
+				{
+					missingArgument = true;
+					break;
+				}
 			else if (std::find(outputTargetArguments.begin(), outputTargetArguments.end(), argv[i]) != outputTargetArguments.end())
 				if (++i < argc)
 					this->outputTargetFilePath = argv[i];
 				else
+				{
+					missingArgument = true;
 					break;
+				}
 			else
 				invalidArgumentIndexes.push_back(i);
+		if (missingArgument)
+			std::cout << "Warning: The corresponding value for the last argument is missing. " << std::endl;
 		const size_t invalidArgumentCount = invalidArgumentIndexes.size();
 		if (1 == invalidArgumentCount)
 			std::cout << "Warning: The argument whose index is [" << invalidArgumentIndexes[0] << "] could not be recognized, which has been skipped. " << std::endl;
@@ -85,9 +173,9 @@ public:
 	}
 	bool parseJSON()
 	{
-		if (this->flag & 1)
+		if (this->flag & 1/* 0b000001 */)
 		{
-			this->flag &= 1;
+			this->flag &= 1/* 0b000001 */;
 			try
 			{
 				std::ifstream inputFile(this->inputFilePath);
@@ -284,7 +372,7 @@ public:
 						std::cout << whitelistHMAv92.dump() << std::endl;
 						this->flag |= 4/* 0b000100 */;
 					}
-					else
+					else if (this->handleFolder(this->outputWhitelistFilePath))
 						try
 						{
 							std::ofstream outputWhitelistFile(this->outputWhitelistFilePath);
@@ -294,8 +382,15 @@ public:
 								outputWhitelistFile.close();
 								this->flag |= 4/* 0b000100 */;
 							}
+							else
+								std::cerr << "Error: Failed to open the output whitelist configuration JSON file. " << std::endl;
 						}
-						catch (...) {}
+						catch (...)
+						{
+							std::cerr << "Error: Failed to generate the output whitelist configuration JSON file. " << std::endl;
+						}
+					else
+						std::cerr << "Error: Failed to handle the parent directory for the output whitelist configuration JSON file. " << std::endl;
 				}
 				
 				/* blacklistHMAv92 */
@@ -369,7 +464,7 @@ public:
 						std::cout << blacklistHMAv92.dump() << std::endl;
 						this->flag |= 8/* 0b001000 */;
 					}
-					else
+					else if (this->handleFolder(this->outputBlacklistFilePath))
 						try
 						{
 							std::ofstream outputBlacklistFile(this->outputBlacklistFilePath);
@@ -379,8 +474,15 @@ public:
 								outputBlacklistFile.close();
 								this->flag |= 8/* 0b001000 */;
 							}
+							else
+								std::cerr << "Error: Failed to open the output blacklist configuration JSON file. " << std::endl;
 						}
-						catch (...) {}
+						catch (...)
+						{
+							std::cerr << "Error: Failed to generate the output blacklist configuration JSON file. " << std::endl;
+						}
+					else
+						std::cerr << "Error: Failed to handle the parent directory for the output blacklist configuration JSON file. " << std::endl;
 				}
 			}
 			
@@ -467,12 +569,12 @@ public:
 				ss << "\techo \"Finished scanning as a regular user. Your LRFP environments may have been exposed. \"\n";
 				ss << "fi\n\n";
 				ss << "exit ${errorLevel}\n";
-				if (this->outputPathTesterFilePath.empty())
+				if ("." == this->outputPathTesterFilePath)
 				{
 					std::cout << ss.str() << std::endl;
 					this->flag |= 16/* 0b010000 */;
 				}
-				else
+				else if (this->handleFolder(this->outputPathTesterFilePath))
 					try
 					{
 						std::ofstream outputPathTesterFile(this->outputPathTesterFilePath);
@@ -482,8 +584,15 @@ public:
 							outputPathTesterFile.close();
 							this->flag |= 16/* 0b010000 */;
 						}
+						else
+							std::cerr << "Error: Failed to open the output path tester script file. " << std::endl;
 					}
-					catch (...) {}
+					catch (...)
+					{
+						std::cerr << "Error: Failed to generate the output path tester script file. " << std::endl;
+					}
+				else
+					std::cerr << "Error: Failed to handle the parent directory for the output path tester script file. " << std::endl;
 			}
 			return this->flag & 19/* 0b010011 */;
 		}
@@ -533,7 +642,7 @@ public:
 						std::cout << packageName << std::endl;
 					this->flag |= 32/* 0b100000 */;
 				}
-				else
+				else if (this->handleFolder(this->outputTargetFilePath))
 					try
 					{
 						std::ofstream outputTargetFile(this->outputTargetFilePath);
@@ -544,8 +653,15 @@ public:
 							outputTargetFile.close();
 							this->flag |= 32/* 0b100000 */;
 						}
+						else
+							std::cerr << "Error: Failed to open the output Tricky Store target text file. " << std::endl;
 					}
-					catch (...) {}
+					catch (...)
+					{
+						std::cerr << "Error: Failed to generate the output Tricky Store target text file. " << std::endl;
+					}
+				else
+					std::cerr << "Error: Failed to handle the parent directory for the output Tricky Store target text file. " << std::endl;
 			}
 			return this->flag & 35/* 0b100011 */;
 		}
@@ -563,7 +679,12 @@ public:
 int main(int argc, char* argv[])
 {
 	Generator generator{};
-	generator.parseArguments(argc, argv);
-	generator.parseJSON();
-	return generator.generateHMAConfigurations() && generator.generatePathTester() && generator.generateTrickyStoreTarget() ? EXIT_SUCCESS : EXIT_FAILURE;
+	bool exitFlag = false;
+	const bool parsingFlag = generator.parseArguments(argc, argv, exitFlag);
+	if (exitFlag)
+		return EXIT_SUCCESS;
+	else if (parsingFlag && generator.parseJSON())
+		return generator.generateHMAConfigurations() && generator.generatePathTester() && generator.generateTrickyStoreTarget() ? EXIT_SUCCESS : EXIT_FAILURE;
+	else
+		return EOF;
 }
