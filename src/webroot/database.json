@@ -237,6 +237,7 @@
 		"It.dhd.oxygencustomizer",
 		"Telegram.Speed.Hook",
 		"XP.fuck.MI",
+		"ac.no.screenshot",
 		"admin.vsetting",
 		"ai.noads.NoAdsTelegram",
 		"ai.noads.ozon",
@@ -1032,5 +1033,5 @@
 		"-com.bochk.bocpay"
 	],
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.6.2+HKT20260419123114058706"
+	"V": "3.6.2+HKT20260420011115981393"
 }

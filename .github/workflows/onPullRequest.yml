@@ -13,14 +13,24 @@ jobs:
         uses: actions/checkout@v6
         with:
           sparse-checkout: |
+            cpp
             src
             build.sh
+      
+      - name: Install Android C++ compiler
+        run: |
+          cd "${{ github.workspace }}"
+          wget -q https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
+          unzip -q android-ndk-r27c-linux.zip
+          rm android-ndk-r27c-linux.zip
+          echo "android-ndk-r27c/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
       
       - name: Build
         run: |
           cd "${{ github.workspace }}"
-          export TZ="Asia/Hong_Kong"
           sed '/^# Log (31--33) #$/,/^# Exit #$/d' build.sh | bash
+        env:
+          TZ: 'Asia/Hong_Kong'
       
       - name: Prepare the artifact
         id: artifact

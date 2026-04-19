@@ -47,7 +47,7 @@ private:
 	}
 	void printHelp() const
 	{
-		std::cout << "This is a generator for the " << MODULE_NAME << "rooting-layer system module. " << std::endl << std::endl;
+		std::cout << "This is a generator for the " << MODULE_NAME << " rooting-layer system module. " << std::endl << std::endl;
 		std::cout << "Options: " << std::endl;
 		std::cout << "\t" << this->vector2string(this->helpArguments) << "\t\tPrint the help information. " << std::endl;
 		std::cout << "\t" << this->vector2string(this->inputArguments) << "<path>\t\tSpecify the input database JSON file path. " << std::endl;
@@ -497,7 +497,7 @@ public:
 		if (this->flag & 3/* 0b000011 */)
 		{
 			this->flag &= 47/* 0b101111 */;
-			if (!this->outputPathTesterFilePath.empty())
+			if (this->outputPathTesterFilePath.empty())
 				this->flag |= 16/* 0b010000 */;
 			else
 			{
@@ -604,7 +604,7 @@ public:
 		if (this->flag & 3/* 0b000011 */)
 		{
 			this->flag &= 31/* 0b011111 */;
-			if (!this->outputTargetFilePath.empty())
+			if (this->outputTargetFilePath.empty())
 				this->flag |= 32/* 0b100000 */;
 			else
 			{
