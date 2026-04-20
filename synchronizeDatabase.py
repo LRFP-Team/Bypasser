@@ -7,7 +7,7 @@ from getpass import getpass
 from hashlib import sha512
 from json import dump, loads
 from re import findall
-from subprocess import run
+from subprocess import TimeoutExpired, run
 from zipfile import ZipFile, ZipInfo
 try:
 	os.chdir(os.path.abspath(os.path.dirname(__file__)))
@@ -348,29 +348,54 @@ class RegularUpdater:
 		else:
 			print("Please compile the CPP before compressing the webroot folder. ")
 		return False
-	def checkDifferences(self:object) -> bool: # 0b000???11 | 0b00100000 -> 0b001???11
+	def checkShell(self:object) -> bool: # 0b000???11 | 0b00100000 -> 0b001???11
 		if self.__flag & 0b00000011:
+			filePaths = []
 			try:
-				with open(self.__actionAFilePath, "rb") as f:
-					contentA = f.read()
-				with open(self.__actionBFilePath, "rb") as f:
-					contentB = f.read()
-				if contentA.replace(b"readonly currentAB=\"A\"", b"readonly currentAB=\"B\"").replace(b"readonly targetAB=\"B\"", b"readonly targetAB=\"A\"") == contentB:
-					self.__flag |= 0b00100000
-					print("Successfully verified the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
-					return True
-				else:
-					print("Failed to verify the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
+				for root, _, fileNames in os.walk(self.__srcFolderPath):
+					for fileName in fileNames:
+						if os.path.splitext(fileName)[1] == ".sh":
+							filePaths.append(os.path.join(root, fileName))
 			except BaseException as e:
-				print("Failed to verify the differences between {0} and {1} due to {2}".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath), repr(e)))
+				print("Failed to walk {0} due to {1}. ".format(repr(self.__srcFolderPath), repr(e)))
+			filePaths.sort()
+			totalCount = len(filePaths)
+			if totalCount:
+				length, successCount = len(str(totalCount)), 0
+				for i, filePath in enumerate(filePaths, start = 1):
+					try:
+						result = run(("bash", "-n", filePath), capture_output = True, text = True)
+						if EXIT_SUCCESS == result.returncode:
+							successCount += 1
+							print("[{{0:0>{0}}}] {{1}} -> Passed (bash)".format(length).format(i, repr(filePath)))
+					except BaseException as e:
+						print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), repr(e)))
+				try:
+					with open(self.__actionAFilePath, "rb") as f:
+						contentA = f.read()
+					with open(self.__actionBFilePath, "rb") as f:
+						contentB = f.read()
+					if contentA.replace(b"readonly currentAB=\"A\"", b"readonly currentAB=\"B\"").replace(b"readonly targetAB=\"B\"", b"readonly targetAB=\"A\"") == contentB:
+						print("Successfully verified the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
+						if successCount == totalCount:
+							self.__flag |= 0b00100000
+							return True					
+					else:
+						localFlag = False
+						print("Failed to verify the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
+				except BaseException as e:
+					localFlag = False
+					print("Failed to verify the differences between {0} and {1} due to {2}".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath), repr(e)))
+			else:
+				print("The source folder path {0} does not contain any shell scripts. ".format(repr(self.__srcFolderPath)))
 		else:
 			print("Please initialize the updater before checking differences. ")
 		return False
 	def updateSHA512(self:object, encoding:str = "utf-8") -> bool: # 0b00111111 + 0b01000000 -> 0b01111111
 		if self.__flag & 0b00111111:
 			self.__flag &= 0b00111111
-			if os.path.isdir(self.__srcFolderPath):
-				filePaths = []
+			filePaths = []
+			try:
 				for root, _, fileNames in os.walk(self.__srcFolderPath):
 					for fileName in fileNames:
 						filePath = os.path.join(root, fileName)
@@ -381,45 +406,46 @@ class RegularUpdater:
 								pass
 						else:
 							filePaths.append(filePath)
-				totalCount = len(filePaths)
-				if totalCount:
-					length, successCount = len(str(totalCount)), 0
-					print("Generating SHA-512 value files for {0} item(s). ".format(totalCount))
-					for i, filePath in enumerate(filePaths, start = 1):
-						try:
-							if os.path.join(self.__srcFolderPath, self.__webrootName + ".zip") == filePath:
-								digests = []
-								for root, _, fileNames in os.walk(os.path.join(self.__srcFolderPath, self.__webrootName)):
-									for fileName in fileNames:
-										if os.path.splitext(fileName)[1].lower() not in (".prop", ".sha512"):
-											fileP = os.path.join(root, fileName)
-											with open(fileP, "rb") as f:
-												digests.append(sha512(f.read()).hexdigest() + "  " + os.path.relpath(fileP, self.__srcFolderPath))
-								digests.sort()
-								digest = "\n".join(digests)
-							else:
-								with open(filePath, "rb") as f:
-									digest = sha512(f.read()).hexdigest()
-						except BaseException as e:
-							print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, e))
-							continue
-						try:
-							with open(filePath + ".sha512", "w", encoding = encoding) as f:
-								f.write(digest)
-							successCount += 1
-							print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, digest if digest.isalnum() else digest.split("\n")))
-						except BaseException as e:
-							print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, e))
-					print("Successfully generated {0} / {1} SHA-512 value file(s) at the success rate of {2:.2f}%. ".format(successCount, totalCount, successCount * 100 / totalCount))
-					if successCount == totalCount:
-						self.__flag += 0b01000000
-						return True
-				else:
-					print("No SHA-512 value files were generated. ")
+			except BaseException as e:
+				print("Failed to walk {0} due to {1}. ".format(repr(self.__srcFolderPath), repr(e)), end = "")
+			filePaths.sort()
+			totalCount = len(filePaths)
+			if totalCount:
+				length, successCount = len(str(totalCount)), 0
+				print("Generating SHA-512 value files for {0} item(s). ".format(totalCount))
+				for i, filePath in enumerate(filePaths, start = 1):
+					try:
+						if os.path.join(self.__srcFolderPath, self.__webrootName + ".zip") == filePath:
+							digests = []
+							for root, _, fileNames in os.walk(os.path.join(self.__srcFolderPath, self.__webrootName)):
+								for fileName in fileNames:
+									if os.path.splitext(fileName)[1].lower() not in (".prop", ".sha512"):
+										fileP = os.path.join(root, fileName)
+										with open(fileP, "rb") as f:
+											digests.append(sha512(f.read()).hexdigest() + "  " + os.path.relpath(fileP, self.__srcFolderPath))
+							digests.sort()
+							digest = "\n".join(digests)
+						else:
+							with open(filePath, "rb") as f:
+								digest = sha512(f.read()).hexdigest()
+					except BaseException as e:
+						print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, e))
+						continue
+					try:
+						with open(filePath + ".sha512", "w", encoding = encoding) as f:
+							f.write(digest)
+						successCount += 1
+						print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, digest if digest.isalnum() else digest.split("\n")))
+					except BaseException as e:
+						print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, e))
+				print("Successfully generated {0} / {1} SHA-512 value file(s) at the success rate of {2:.2f}%. ".format(successCount, totalCount, successCount * 100 / totalCount))
+				if successCount == totalCount:
+					self.__flag += 0b01000000
+					return True
 			else:
-				print("The source folder path {0} does not exist or exists not as a folder. ".format(repr(self.__srcFolderPath)))
+				print("No SHA-512 value files were generated. ")
 		else:
-			print("Please compress the webroot folder and check differences before updating SHA-512. ")
+			print("Please compress the webroot folder and check the shell scripts before updating SHA-512. ")
 		return False
 	def gitPush(self:object, pushConfirmed:bool = False) -> bool: # 0b10111111 | 0b11000000 -> 0b11111111
 		if self.__flag & 0b00111111 and self.__flag >> 6 >= 2:
@@ -470,7 +496,7 @@ def main() -> int:
 			regularUpdater.synchronizeDatabase({"D":selfURL, "M":pluginURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
 			and regularUpdater.compileCPP(cppSourceFolderPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
 		)
-		differenceFlag = regularUpdater.checkDifferences()
+		differenceFlag = regularUpdater.checkShell()
 		if databaseFlag and differenceFlag:
 			errorLevel = EXIT_SUCCESS if regularUpdater.updateSHA512() and regularUpdater.setPermissions() and regularUpdater.gitPush() else EXIT_FAILURE
 		else:

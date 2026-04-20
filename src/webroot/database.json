@@ -502,6 +502,7 @@
 		"com.leo.xposed.xradiant",
 		"com.lerist.fakelocation",
 		"com.lexa.fakegps",
+		"com.lidesheng.hyperlyric",
 		"com.lively.xp",
 		"com.ljlvink.formhook",
 		"com.ljlvink.stylusplus.xposed",
@@ -778,6 +779,7 @@
 		"io.github.cpatcher",
 		"io.github.dixtdf.key.forward",
 		"io.github.dixtdf.oplus.display",
+		"io.github.dopee.douyinfilter",
 		"io.github.duzhaokun123.darkaischedule",
 		"io.github.duzhaokun123.fuckcainiao",
 		"io.github.duzhaokun123.tasklabelastasktitle",
@@ -1033,5 +1035,5 @@
 		"-com.bochk.bocpay"
 	],
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.6.2+HKT20260420011115981393"
+	"V": "3.6.2+HKT20260420234442565696"
 }
