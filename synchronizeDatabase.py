@@ -54,6 +54,39 @@ class DatabaseManager:
 				return (False, ValueError("The data loaded from {0} could not be recognized. ".format(repr(self.__databaseFilePath))))
 		except BaseException as e:
 			return (False, e)
+	def check(self:object) -> tuple:
+		if isinstance(self.__database, dict):
+			d, C = OrderedDict(), set()
+			if "C" in self.__database and isinstance(self.__database["C"], dict):
+				keys = tuple(
+					key for key in self.__database["C"].keys() if isinstance(key, str) and len(key) == 1
+					and 'A' <= key <= 'Z' and isinstance(self.__database["C"][key], (tuple, list, set))
+				)
+				keyLength = len(keys)
+				for i in range(keyLength - 1):
+					for j in range(i + 1, keyLength):
+						intersection = set(self.__database["C"][keys[i]]) & set(self.__database["C"][keys[j]])
+						if intersection:
+							d[("$C_{0}$".format(keys[i]), "$C_{0}$".format(keys[j]))] = intersection
+				for key in keys:
+					C.update(self.__database["C"][key])
+			orderedDict = OrderedDict([("C", C)])
+			if "D" in self.__database and isinstance(self.__database["D"], (tuple, list, set)):
+				orderedDict["D"] = set(self.__database["D"])
+			if "M" in self.__database and isinstance(self.__database["M"], (tuple, list, set)):
+				orderedDict["M"] = set(self.__database["M"])
+			if "S" in self.__database and isinstance(self.__database["S"], (tuple, list, set)):
+				orderedDict["S"] = set(self.__database["S"])
+			keys = tuple(orderedDict.keys())
+			keyLength = len(keys)
+			for i in range(keyLength - 1):
+				for j in range(i + 1, keyLength):
+					intersection = orderedDict[keys[i]] & orderedDict[keys[j]]
+					if intersection:
+						d[("${0}$".format(keys[i]), "${0}$".format(keys[j]))] = intersection
+			return (not d, d)
+		else:
+			return (False, TypeError("The database is not a ``dict``. Please check whether the method function ``load`` has been called. "))
 	def __fetchPackageNamesFromURL(self:object, URL:str, d:dict) -> set:
 		packageNames = set()
 		if isinstance(URL, str) and isinstance(d, dict):
@@ -103,42 +136,9 @@ class DatabaseManager:
 				return (False, 0, KeyError("The database was not initialized or the condition ``key in (\"D\", \"M\")`` was not satisfied. "))
 		except BaseException as e:
 			return (False, 0, e)
-	def check(self:object) -> tuple:
-		if isinstance(self.__database, dict):
-			d, C = OrderedDict(), set()
-			if "C" in self.__database and isinstance(self.__database["C"], dict):
-				keys = tuple(
-					key for key in self.__database["C"].keys() if isinstance(key, str) and len(key) == 1
-					and 'A' <= key <= 'Z' and isinstance(self.__database["C"][key], (tuple, list, set))
-				)
-				keyLength = len(keys)
-				for i in range(keyLength - 1):
-					for j in range(i + 1, keyLength):
-						intersection = set(self.__database["C"][keys[i]]) & set(self.__database["C"][keys[j]])
-						if intersection:
-							d[("$C_{0}$".format(keys[i]), "$C_{0}$".format(keys[j]))] = intersection
-				for key in keys:
-					C.update(self.__database["C"][key])
-			orderedDict = OrderedDict([("C", C)])
-			if "D" in self.__database and isinstance(self.__database["D"], (tuple, list, set)):
-				orderedDict["D"] = set(self.__database["D"])
-			if "M" in self.__database and isinstance(self.__database["M"], (tuple, list, set)):
-				orderedDict["M"] = set(self.__database["M"])
-			if "S" in self.__database and isinstance(self.__database["S"], (tuple, list, set)):
-				orderedDict["S"] = set(self.__database["S"])
-			keys = tuple(orderedDict.keys())
-			keyLength = len(keys)
-			for i in range(keyLength - 1):
-				for j in range(i + 1, keyLength):
-					intersection = orderedDict[keys[i]] & orderedDict[keys[j]]
-					if intersection:
-						d[("${0}$".format(keys[i]), "${0}$".format(keys[j]))] = intersection
-			return (not d, d)
-		else:
-			return (False, TypeError("The database is not a ``dict``. Please check whether the method function ``load`` has been called. "))
 	def save(self:object) -> tuple:
 		if isinstance(self.__database, dict):
-			self.__database["V"] = "3.6.2+HKT" + datetime.now().strftime("%Y%m%d%H%M%S%f")
+			self.__database["V"] = "3.6.3+HKT" + datetime.now().strftime("%Y%m%d%H%M%S%f")
 			try:
 				with open(self.__databaseFilePath, "w", encoding = self.__encoding) as f:
 					dump(self.__database, f, indent = "\t", ensure_ascii = False, sort_keys = True)
@@ -174,7 +174,7 @@ class RegularUpdater:
 			self.__flag = 0b00000000
 			print("Failed to initialize the updater with the parameters passed. ")
 	def setPermissions(self:object) -> bool: # (0b00000001 | 0b00000010 -> 0b00000011, 0b01111111 + 0b01000000 -> 0b10111111)
-		if self.__flag & 0b00111111 and self.__flag >> 6 >= 1:
+		if self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100 and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 1:
 			self.__flag = self.__flag & 0b00111111 | 0b01000000
 		elif self.__flag & 0b00000001:
 			self.__flag &= 0b00000001
@@ -216,14 +216,14 @@ class RegularUpdater:
 				print("{0} -> {1} -> {2}".format(repr(filePath), oct(permission), repr(baseException)))
 			return False
 		else:
-			if self.__flag & 0b00111111 and self.__flag >> 6 >= 1:
+			if self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100 and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 1:
 				self.__flag += 0b01000000
 			elif self.__flag & 0b00000001:
 				self.__flag |= 0b00000010
 			print("Successfully set permissions. ")
 			return True
 	def loadDatabase(self:object) -> bool: # 0b00?00011 + 0b00000100 -> 0b00?00111
-		if self.__flag & 0b00000011:
+		if self.__flag & 0b00000010 and self.__flag & 0b00000001:
 			self.__flag &= 0b00100011
 			validity, information = self.__databaseManager.load()
 			if validity:
@@ -239,7 +239,7 @@ class RegularUpdater:
 			print("Please initialize the updater and set permissions before loading the database. ")
 		return False
 	def checkDatabase(self:object) -> bool: # (0b00?00111, 0b00?01111) + 0b00000100 -> (0b00?01011, 0b00?10011)
-		if self.__flag & 0b00000011:
+		if self.__flag & 0b00000010 and self.__flag & 0b00000001:
 			localFlag = self.__flag >> 2 & 0b111
 			if localFlag >= 3:
 				self.__flag = self.__flag & 0b00100011 | 0b00001100
@@ -265,7 +265,7 @@ class RegularUpdater:
 			print("Failed to check the database according to the equation system due to {0}. ".format(repr(d)))
 		return False
 	def synchronizeDatabase(self:object, targetURLs:OrderedDict|dict) -> bool: # 0b00?01011 + 0b00000100 -> 0b00?01111
-		if self.__flag & 0b00000011 and self.__flag >> 2 & 0b111 >= 2 and isinstance(targetURLs, (OrderedDict, dict)):
+		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 2 and isinstance(targetURLs, (OrderedDict, dict)):
 			self.__flag, localFlag = self.__flag & 0b00100011 | 0b00001000, bool(targetURLs)
 			for key, value in targetURLs.items():
 				if isinstance(key, str) and len(key) == 1 and 'A' <= key <= 'Z':
@@ -288,7 +288,7 @@ class RegularUpdater:
 			print("Please check the database and the parameter types before synchronizing. ")
 		return False
 	def saveDatabase(self:object) -> bool: # 0b00?10011 + 0b00000100 -> 0b00?10111
-		if self.__flag & 0b00000011 and self.__flag >> 2 & 0b111 >= 4:
+		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 4:
 			self.__flag = self.__flag & 0b00100011 | 0b00010000
 			validity, exception = self.__databaseManager.save()
 			if validity:
@@ -301,7 +301,7 @@ class RegularUpdater:
 			print("Please check the database again before saving. ")
 		return False
 	def compileCPP(self:object, cppSourceFolderPath:str, cppSourceMainFileName:str) -> bool: # 0b00?10111 + 0b00000100 -> 0b00?11011
-		if self.__flag & 0b00000011 and self.__flag >> 2 & 0b111 >= 5:
+		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 5:
 			self.__flag = self.__flag & 0b00100011 | 0b00010100
 			try:
 				cppSourceFilePath = os.path.join(cppSourceFolderPath, cppSourceMainFileName + ".cpp")
@@ -324,7 +324,7 @@ class RegularUpdater:
 			print("Please save the database before compiling the CPP. ")
 		return False
 	def compress(self:object, extensionsExcluded:tuple|list|set) -> bool: # 0b00?11011 | 0b00011100 -> 0b00?11111
-		if self.__flag & 0b00000011 and self.__flag >> 2 & 0b111 >= 6 and isinstance(extensionsExcluded, (tuple, list, set)):
+		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 6 and isinstance(extensionsExcluded, (tuple, list, set)):
 			self.__flag = self.__flag & 0b00100011 | 0b00011000
 			if os.path.isdir(self.__webrootFolderPath):
 				try:
@@ -349,7 +349,7 @@ class RegularUpdater:
 			print("Please compile the CPP before compressing the webroot folder. ")
 		return False
 	def checkShell(self:object) -> bool: # 0b000???11 | 0b00100000 -> 0b001???11
-		if self.__flag & 0b00000011:
+		if self.__flag & 0b00000010 and self.__flag & 0b00000001:
 			filePaths = []
 			try:
 				for root, _, fileNames in os.walk(self.__srcFolderPath):
@@ -392,7 +392,7 @@ class RegularUpdater:
 			print("Please initialize the updater before checking differences. ")
 		return False
 	def updateSHA512(self:object, encoding:str = "utf-8") -> bool: # 0b00111111 + 0b01000000 -> 0b01111111
-		if self.__flag & 0b00111111:
+		if self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100 and self.__flag & 0b00000010 and self.__flag & 0b00000001:
 			self.__flag &= 0b00111111
 			filePaths = []
 			try:
@@ -448,7 +448,7 @@ class RegularUpdater:
 			print("Please compress the webroot folder and check the shell scripts before updating SHA-512. ")
 		return False
 	def gitPush(self:object, pushConfirmed:bool = False) -> bool: # 0b10111111 | 0b11000000 -> 0b11111111
-		if self.__flag & 0b00111111 and self.__flag >> 6 >= 2:
+		if self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100 and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 2:
 			self.__flag = self.__flag & 0b00111111 | 0b10000000
 			if "posix" == os.name:
 				try:

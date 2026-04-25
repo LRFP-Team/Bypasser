@@ -393,6 +393,7 @@
 		"com.example.ourom",
 		"com.example.vcam",
 		"com.ext.star.wars",
+		"com.fan.edgex",
 		"com.fankes.apperrorstracking",
 		"com.fankes.coloros.notify",
 		"com.fankes.enforcehighrefreshrate",
@@ -405,6 +406,7 @@
 		"com.fkzhang.wechatxposed",
 		"com.fkzhang.wxencoder",
 		"com.flass.layoutinspect",
+		"com.follow.clash",
 		"com.forbidad4tieba.hook",
 		"com.fuck.android.rimet",
 		"com.fuck.risk",
@@ -442,6 +444,7 @@
 		"com.gswxxn.unlockmilink",
 		"com.gswxxn.xmsfnotichannel",
 		"com.guoshi.httpcanary",
+		"com.haostoo.wetypehookr",
 		"com.hcgstudio.miui.fuck.gesture",
 		"com.hchen.appretention",
 		"com.hchen.autoseffswitch",
@@ -594,6 +597,7 @@
 		"com.souleven.photosfix",
 		"com.spoofmydevice",
 		"com.ss.android.ugc.aweme.removeblindwatermark",
+		"com.statusbarmod.hook",
 		"com.strawing.alwaysthemedicon",
 		"com.strawing.duckdevicepolicy",
 		"com.strawing.fuckdevicepolicy",
@@ -720,6 +724,7 @@
 		"eu.faircode.xlua",
 		"eu.hxreborn.amznkiller",
 		"eu.hxreborn.cleanshare",
+		"eu.hxreborn.discoveradsfilter",
 		"eu.hxreborn.gboardmaterialexpressiveblack",
 		"eu.hxreborn.ghfastpass",
 		"eu.hxreborn.phdp",
@@ -803,8 +808,10 @@
 		"io.github.jqssun.gpssetter",
 		"io.github.jqssun.maceditor",
 		"io.github.jqssun.seaccess",
+		"io.github.khalil212002.unmockgps",
 		"io.github.khiqwq.pinguard",
 		"io.github.kvmy666.autoexpand",
+		"io.github.kwensiu.dpis",
 		"io.github.lamprose.mi_ultra",
 		"io.github.liuran001.fakebluetoothconnect",
 		"io.github.liusj5257",
@@ -816,6 +823,7 @@
 		"io.github.lzghzr.xperiaservicemenu",
 		"io.github.lzghzr.xperiaupdatecenter",
 		"io.github.magisk317.xinyi.relay",
+		"io.github.mirukurusan.wificountrycode",
 		"io.github.nexalloy",
 		"io.github.nitsuya.aa.display",
 		"io.github.nitsuya.donottryaccessibility",
@@ -844,6 +852,7 @@
 		"io.github.zensu357.camswap",
 		"io.kazutoiris.infinite.illusion",
 		"io.kazutoiris.mrga",
+		"io.kazutoiris.pure.shot",
 		"io.mesalabs.knoxpatch",
 		"io.noisyfox.oplongshotxposed",
 		"it.eldavo.pib",
@@ -935,6 +944,8 @@
 		"org.strawing.customiuizermod",
 		"org.swiftapps.swiftbackup",
 		"org.torproject.torbrowser",
+		"org.xiyu.githubdirect",
+		"org.xiyu.starx",
 		"org.zwanoo.android.speedtest",
 		"pansong291.xposed.quickenergy",
 		"pansong291.xposed.quickenergy.qiufeng",
@@ -1025,15 +1036,15 @@
 		"yuu.xposed"
 	],
 	"N": {
-		"com.google.android.gms": [
-			"+com.follow.clash"
-		]
+		"com.google.android.gms": {
+			"com.follow.clash": true
+		}
 	},
 	"S": [],
-	"T": [
-		"-com.bochk.app.aos",
-		"-com.bochk.bocpay"
-	],
+	"T": {
+		"com.bochk.app.aos": false,
+		"com.bochk.bocpay": false
+	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.6.2+HKT20260420234442565696"
+	"V": "3.6.3+HKT20260426053231227566"
 }
