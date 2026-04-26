@@ -16,12 +16,12 @@ jobs:
       
       - name: Install the Android C++ compiler
         run: |
-          cd "${{ github.workspace }}"
+          cd "${HOME}"
           NDK_VERSION="r29"
           wget "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip"
           unzip "android-ndk-${NDK_VERSION}-linux.zip"
           rm "android-ndk-${NDK_VERSION}-linux.zip"
-          echo "android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
+          echo "${HOME}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
       
       - name: Build
         run: |

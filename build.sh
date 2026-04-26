@@ -66,7 +66,6 @@ readonly differences="$(echo -e "< readonly currentAB=\"A\"\n\
 > readonly currentAB=\"B\"\n\
 > readonly targetAB=\"A\"")"
 
-find . -name "*.sh" -exec bash -n {} \;
 if [[ -z "$(find . -name "*.sh" -exec bash -n {} \; 2>&1)" ]];
 then
 	echo "All the scripts successfully passed the local shell syntax check (bash). "
