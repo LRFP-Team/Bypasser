@@ -451,10 +451,14 @@ readonly cppBinaryFileName="generate"
 readonly cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}_$(getprop ro.product.cpu.abi)"
 readonly databaseFileName="database.json"
 readonly databaseFilePath="${webrootFolderPath}/${databaseFileName}"
-readonly whitelistConfigurationFileName=".v92HMAWhitelistModeConfiguration.json"
-readonly whitelistConfigurationFilePath="${downloadFolderPath}/${whitelistConfigurationFileName}"
-readonly blacklistConfigurationFileName=".v92HMABlacklistModeConfiguration.json"
-readonly blacklistConfigurationFilePath="${downloadFolderPath}/${blacklistConfigurationFileName}"
+readonly whitelist92ConfigurationFileName=".v92HMAWhitelistModeConfiguration.json"
+readonly whitelist92ConfigurationFilePath="${downloadFolderPath}/${whitelistConfigurationFileName}"
+readonly blacklist92ConfigurationFileName=".v92HMABlacklistModeConfiguration.json"
+readonly blacklist92ConfigurationFilePath="${downloadFolderPath}/${blacklistConfigurationFileName}"
+readonly whitelist93ConfigurationFileName=".v93HMAOSSWhitelistModeConfiguration.json"
+readonly whitelist93ConfigurationFilePath="${downloadFolderPath}/${whitelistConfigurationFileName}"
+readonly blacklist93ConfigurationFileName=".v93HMAOSSBlacklistModeConfiguration.json"
+readonly blacklist93ConfigurationFilePath="${downloadFolderPath}/${blacklistConfigurationFileName}"
 readonly pathTesterFileName=".pathTester.sh"
 readonly pathTesterFilePath="${downloadFolderPath}/${pathTesterFileName}"
 gapTime=0
@@ -676,22 +680,36 @@ if [[ $? -eq ${EXIT_SUCCESS} && -d "${downloadFolderPath}" ]];
 then
 	echo "Successfully prepared the folder \"${downloadFolderPath}\". "
 	chmod u+x "${cppBinaryFilePath}"
-	"${cppBinaryFilePath}" -i "${databaseFilePath}" -ow "${whitelistConfigurationFilePath}" -ob "${blacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
+	"${cppBinaryFilePath}" -i "${databaseFilePath}" -ow92 "${whitelist92ConfigurationFilePath}" -ob92 "${blacklist92ConfigurationFilePath}" -ow93 "${whitelist93ConfigurationFilePath}" -ob93 "${blacklist93ConfigurationFilePath}" -op "${pathTesterFilePath}"
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
-		if [[ -f "${whitelistConfigurationFilePath}" ]];
+		if [[ -f "${whitelist92ConfigurationFilePath}" ]];
 		then
-			echo "Successfully generated the configuration file \"${whitelistConfigurationFilePath}\". "
+			echo "Successfully generated the configuration file \"${whitelist92ConfigurationFilePath}\". "
 		else
 			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the configuration file \"${whitelistConfigurationFilePath}\". "
+			echo "Failed to generate the configuration file \"${whitelist92ConfigurationFilePath}\". "
 		fi
-		if [[ -f "${blacklistConfigurationFilePath}" ]];
+		if [[ -f "${blacklist92ConfigurationFilePath}" ]];
 		then
-			echo "Successfully generated the configuration file \"${blacklistConfigurationFilePath}\". "
+			echo "Successfully generated the configuration file \"${blacklist92ConfigurationFilePath}\". "
 		else
 			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the configuration file \"${blacklistConfigurationFilePath}\". "
+			echo "Failed to generate the configuration file \"${blacklist92ConfigurationFilePath}\". "
+		fi
+		if [[ -f "${whitelist93ConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the configuration file \"${whitelist93ConfigurationFilePath}\". "
+		else
+			exitCode=$(expr ${exitCode} \| 4)
+			echo "Failed to generate the configuration file \"${whitelist93ConfigurationFilePath}\". "
+		fi
+		if [[ -f "${blacklist93ConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the configuration file \"${blacklist93ConfigurationFilePath}\". "
+		else
+			exitCode=$(expr ${exitCode} \| 4)
+			echo "Failed to generate the configuration file \"${blacklist93ConfigurationFilePath}\". "
 		fi
 		if [[ -f "${pathTesterFilePath}" ]];
 		then
