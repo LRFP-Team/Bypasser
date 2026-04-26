@@ -1116,7 +1116,13 @@ int main(int argc, char* argv[])
 	if (exitFlag)
 		return EXIT_SUCCESS;
 	else if (parsingFlag && generator.parseJSON())
-		return generator.generateHMAConfigurations() && generator.generateHMAOSSConfigurations() && generator.generatePathTester() && generator.generateTrickyStoreTarget() ? EXIT_SUCCESS : EXIT_FAILURE;
+	{
+		bool generationFlag = generator.generateHMAConfigurations();
+		generationFlag = generator.generateHMAOSSConfigurations() && generationFlag;
+		generationFlag = generator.generatePathTester() && generationFlag;
+		generationFlag = generator.generateTrickyStoreTarget() && generationFlag;
+		return generationFlag ? EXIT_SUCCESS : EXIT_FAILURE;
+	}
 	else
 		return EOF;
 }
