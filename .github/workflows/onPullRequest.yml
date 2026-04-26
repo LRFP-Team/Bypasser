@@ -29,7 +29,7 @@ jobs:
       - name: Build
         run: |
           cd "${{ github.workspace }}"
-          sed '/^# Log (31--33) #$/,/^# Exit #$/d' build.sh | bash
+          sed '/^# Changelog (31--33) #$/,/^# Exit #$/d' build.sh | bash
         env:
           TZ: 'Asia/Hong_Kong'
       

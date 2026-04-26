@@ -200,7 +200,7 @@ else
 	exit 27
 fi
 
-# ChangeLog (31--33) #
+# Changelog (31--33) #
 readonly changelogFolderPath="Changelog"
 readonly changelogFileName="${moduleName}_v${moduleVersion}.md"
 readonly changelogFilePath="${changelogFolderPath}/${changelogFileName}"
