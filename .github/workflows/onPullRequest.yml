@@ -17,13 +17,14 @@ jobs:
             src
             build.sh
       
-      - name: Install Android C++ compiler
+      - name: Install the Android C++ compiler
         run: |
           cd "${{ github.workspace }}"
-          wget -q https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
-          unzip -q android-ndk-r27c-linux.zip
-          rm android-ndk-r27c-linux.zip
-          echo "android-ndk-r27c/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
+          NDK_VERSION="r29"
+          wget "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip"
+          unzip "android-ndk-${NDK_VERSION}-linux.zip"
+          rm "android-ndk-${NDK_VERSION}-linux.zip"
+          echo "android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
       
       - name: Build
         run: |
