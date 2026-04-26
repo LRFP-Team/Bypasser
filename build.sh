@@ -88,13 +88,36 @@ readonly cppSourceFilePath="${cppSourceFolderPath}/${cppSourceFileName}"
 readonly webrootName="webroot"
 readonly webrootFolderPath="${srcFolderPath}/${webrootName}"
 readonly cppBinaryFileName="generate"
-readonly cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}"
-aarch64-linux-android21-clang++ -O3 -Wall -Wextra -Wpedantic -I "${cppSourceFolderPath}" "${cppSourceFilePath}" -o "${cppBinaryFilePath}" -static-libstdc++ -fPIE -pie
-if [[ $? == ${EXIT_SUCCESS} && -f "${cppBinaryFilePath}" ]];
+readonly mappingABI=(
+	"aarch64-linux-android21=arm64-v8a"
+	"armv7a-linux-androideabi21=armeabi-v7a"
+	"x86_64-linux-android21=x86_64"
+	"i686-linux-android21=x86"
+)
+compilationFlag=${EXIT_SUCCESS}
+for entryABI in "${mappingABI[@]}";
+do
+	keyABI="${entryABI%=*}"
+	valueABI="${entryABI#*=}"
+	cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}_${valueABI}"
+	compilationOutputs="$(${keyABI}-clang++ -O3 -Wall -Wextra -Wpedantic -I "${cppSourceFolderPath}" "${cppSourceFilePath}" -o "${cppBinaryFilePath}" -static-libstdc++ -fPIE -pie 2>&1)"
+	returnCode=$?
+	if [[ ${EXIT_SUCCESS} == ${returnCode} && -z "${compilationOutputs}" && -f "${cppBinaryFilePath}" ]];
+	then
+		echo "Successfully compiled \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\". "
+	else
+		compilationFlag=${EXIT_FAILURE}
+		if [[ -n "${compilationOutputs}" ]];
+		then
+			echo "Failed to compile \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\", or warnings occurred during the compilation. Details are as follows. "
+			echo "${compilationOutputs}"
+		else
+			echo "Failed to compile \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\", or warnings occurred during the compilation. "
+		fi
+	fi
+done
+if [[ ${EXIT_SUCCESS} -ne ${compilationFlag} ]];
 then
-	echo "Successfully compiled \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\". "
-else
-	echo "Failed to compile \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\". "
 	exit 15
 fi
 
@@ -118,7 +141,7 @@ if [[ -d "${srcFolderPath}" && -d "${srcFolderPath}/META-INF" && -d "${srcFolder
 	if [[ -d "${webrootFolderPath}" ]];
 	then
 		echo "The web UI folder was found to be packed. "
-		(cd "${webrootFolderPath}" && find . -type f ! -name "*.sha512" ! -name "*.prop" | zip -J -ll -r -v -@ -) > "${webrootFilePath}"
+		(cd "${webrootFolderPath}" && find . -type f ! -name "*.sha512" ! -name "*.prop" | zip -J -r -v -@ -) > "${webrootFilePath}"
 		if [[ $? -eq ${EXIT_SUCCESS} && -f "${webrootFilePath}" ]];
 		then
 			echo "Successfully packed the web UI folder. "
@@ -175,12 +198,14 @@ if [[ -d "${srcFolderPath}" && -d "${srcFolderPath}/META-INF" && -d "${srcFolder
 		then
 			exit 23
 		fi
-		if [[ ! -d "${zipFolderPath}" ]]; then
+		if [[ ! -d "${zipFolderPath}" ]];
+		then
 			mkdir -p "${zipFolderPath}"
 		fi
-		if [[ -d "${zipFolderPath}" ]]; then
+		if [[ -d "${zipFolderPath}" ]];
+		then
 			echo "Successfully created the ZIP folder path \"${zipFolderPath}\". "
-			(cd "${srcFolderPath}" && zip -J -ll -r -v - * -x "${webrootName}.zip" -x "${webrootName}.zip.sha512") > "${zipFilePath}"
+			(cd "${srcFolderPath}" && zip -J -r -v - * -x "${webrootName}.zip" -x "${webrootName}.zip.sha512") > "${zipFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -f "${zipFilePath}" ]]; then
 				echo "Successfully packed the ${moduleName} rooting-layer system module to \"${zipFilePath}\" via the ``zip`` command! "
 			else

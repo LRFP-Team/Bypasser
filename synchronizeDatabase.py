@@ -303,23 +303,30 @@ class RegularUpdater:
 	def compileCPP(self:object, cppSourceFolderPath:str, cppSourceMainFileName:str) -> bool: # 0b00?10111 + 0b00000100 -> 0b00?11011
 		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 5:
 			self.__flag = self.__flag & 0b00100011 | 0b00010100
-			try:
-				cppSourceFilePath = os.path.join(cppSourceFolderPath, cppSourceMainFileName + ".cpp")
-				cppBinaryFilePath = os.path.join(self.__webrootFolderPath, cppSourceMainFileName)
-				result = run((
-					"aarch64-linux-android21-clang++", "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceFolderPath, 
-					cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
-				), capture_output = True, text = True)
-				if result.returncode != EXIT_SUCCESS:
-					print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
-				elif result.stdout or result.stderr:
-					print("Compiled {0} to {1} with warnings {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
-				else:
-					self.__flag += 0b00000100
-					print("Successfully compiled {0} to {1} without errors or warnings. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath)))
-					return True
-			except BaseException as e:
-				print("Failed to compile the CPP due to {0}. ".format(repr(e)))
+			localFlag = True
+			mappingABI = (("aarch64-linux-android21", "arm64-v8a"), ("armv7a-linux-androideabi21", "armeabi-v7a"), ("x86_64-linux-android21", "x86_64"), ("i686-linux-android21", "x86"))
+			for keyABI, valueABI in mappingABI:
+				try:
+					cppSourceFilePath = os.path.join(cppSourceFolderPath, cppSourceMainFileName + ".cpp")
+					cppBinaryFilePath = os.path.join(self.__webrootFolderPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
+					result = run((
+						"{0}-clang++".format(keyABI), "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceFolderPath, 
+						cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
+					), capture_output = True, text = True)
+					if result.returncode != EXIT_SUCCESS:
+						localFlag = False
+						print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
+					elif result.stdout or result.stderr:
+						localFlag = False
+						print("Compiled {0} to {1} with warnings {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
+					else:
+						print("Successfully compiled {0} to {1} without errors or warnings. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath)))
+				except BaseException as e:
+					localFlag = False
+					print("Failed to compile the CPP due to {0}. ".format(repr(e)))
+			if localFlag:
+				self.__flag += 0b00000100
+				return True
 		else:
 			print("Please save the database before compiling the CPP. ")
 		return False

@@ -448,7 +448,7 @@ else
 	readonly downloadFolderPath="/sdcard/Download"
 fi
 readonly cppBinaryFileName="generate"
-readonly cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}"
+readonly cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}_$(getprop ro.product.cpu.abi)"
 readonly databaseFileName="database.json"
 readonly databaseFilePath="${webrootFolderPath}/${databaseFileName}"
 readonly whitelistConfigurationFileName=".v92HMAWhitelistModeConfiguration.json"

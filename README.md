@@ -28,11 +28,12 @@ Whether an update commit is a module update or a regular update, the time in the
 
 ## Compilation
 
-If you want to build the module for testing purposes on your own, please use ``git clone`` to clone this repository to your local device.
-
+If you want to build the module for testing purposes on your own, please use ``git clone`` to clone this repository to your local device. 
 Execute ``./build.sh`` in the root folder of the local repository after you check carefully and grant suitable execution permissions. 
-
 Submit modifications via a pull request (PR) if you wish to. 
+
+Regarding the C++ compilation, you can use ``g++`` and [Android C++ compilers](https://github.com/android/ndk/wiki) to compile. 
+Please ensure you are using C++17 (e.g., ``-std=c++17``) or later during the compilation, as the code depends on the ``filesystem`` library. 
 
 ## Acknowledgement
 
