@@ -905,20 +905,20 @@ public:
 									std::sort(blacklistHMAOSSv93["scope"][outerEntryIt.key()]["extraAppList"].begin(), blacklistHMAOSSv93["scope"][outerEntryIt.key()]["extraAppList"].end());
 								}
 							}
-					if ("." == this->outputBlacklist92FilePath)
+					if ("." == this->outputBlacklist93FilePath)
 					{
 						std::cout << blacklistHMAOSSv93.dump() << std::endl;
-						this->flag |= 8/* 0b00001000 */;
+						this->flag |= 32/* 0b00100000 */;
 					}
-					else if (this->handleFolder(this->outputBlacklist92FilePath))
+					else if (this->handleFolder(this->outputBlacklist93FilePath))
 						try
 						{
-							std::ofstream outputBlacklist92File(this->outputBlacklist92FilePath);
-							if (outputBlacklist92File.is_open())
+							std::ofstream outputBlacklist93File(this->outputBlacklist93FilePath);
+							if (outputBlacklist93File.is_open())
 							{
-								outputBlacklist92File << blacklistHMAOSSv93.dump();
-								outputBlacklist92File.close();
-								this->flag |= 8/* 0b00001000 */;
+								outputBlacklist93File << blacklistHMAOSSv93.dump();
+								outputBlacklist93File.close();
+								this->flag |= 32/* 0b00100000 */;
 							}
 							else
 								std::cerr << "Error: Failed to open the output blacklist configuration JSON file. " << std::endl;
