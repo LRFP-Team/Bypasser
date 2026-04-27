@@ -95,17 +95,20 @@ private:
 			return false;
 		}
 	}
-	std::string array2string(const nlohmann::json& elements, const std::string& separator, const std::string& p, const std::string& s) const
+	std::string array2string(const nlohmann::json& elements, const std::string& prefix, const std::string& separator, const std::string& suffix) const
 	{
 		std::stringstream ss{};
+		ss << prefix;
 		for (nlohmann::json::const_iterator arrayIt = elements.begin(); arrayIt != elements.end(); ++arrayIt)
 			if (arrayIt->is_string())
 			{
-				ss << p + arrayIt->get<std::string>() + s;
+				ss << arrayIt->get<std::string>();
 				for (++arrayIt; arrayIt != elements.end(); ++arrayIt)
 					if (arrayIt->is_string())
-						ss << separator + p + arrayIt->get<std::string>() + s;
+						ss << separator + arrayIt->get<std::string>();
+				break;
 			}
+		ss << suffix;
 		return ss.str();
 	}
 	
@@ -970,7 +973,7 @@ public:
 				ss << "else\n";
 				ss << "\techo -e \"The execution of the path tester has begun. \"\n";
 				ss << "fi\n\n";
-				ss << "readonly D=" + this->array2string(this->j["D"], " ", "\"", "\"") + "\n";
+				ss << "readonly D=" + this->array2string(this->j["D"], "\"", " ", "\"") + "\n";
 				ss << "for d in ${D};\n";
 				ss << "do\n";
 				ss << "\tfor folder in ${folders};\n";
@@ -983,7 +986,7 @@ public:
 				ss << "\t\tfi\n";
 				ss << "\tdone\n";
 				ss << "done\n\n";
-				ss << "readonly M=" + this->array2string(this->j["M"], " ", "\"", "\"") + "\n";
+				ss << "readonly M=" + this->array2string(this->j["M"], "\"", " ", "\"") + "\n";
 				ss << "for m in ${M};\n";
 				ss << "do\n";
 				ss << "\tfor folder in ${folders};\n";

@@ -79,14 +79,12 @@ then
 	if [[ "${KSU}" == "true" ]];
 	then
 		echo "KSU (${KSU_VER_CODE}): Please "
-		echo "- patch the kernel to support SukiSU-Ultra and SUSFS, "
 		echo "- deploy the latest SukiSU-Ultra from the \`\`Actions\`\` tab of its GitHub repository with only applications requiring root privileges configured and granted in the SukiSU-Ultra Manager, "
-		echo "- install the latest BRENE SUSFS module as a system module, "
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
 		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
 		echo "- install the latest Tricky Store (TS) module as a system module with the correct configurations, "
-		echo "- install the latest Audit Patch module as a system module if the BRENE SUSFS module is not working, and"
+		echo "- install the latest Audit Patch module as a system module, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
 			echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
@@ -685,38 +683,38 @@ then
 	then
 		if [[ -f "${whitelist92ConfigurationFilePath}" ]];
 		then
-			echo "Successfully generated the configuration file \"${whitelist92ConfigurationFilePath}\". "
+			echo "Successfully generated the HMA whitelist configuration JSON file \"${whitelist92ConfigurationFilePath}\". "
 		else
 			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the configuration file \"${whitelist92ConfigurationFilePath}\". "
+			echo "Failed to generate the HMA whitelist configuration JSON file \"${whitelist92ConfigurationFilePath}\". "
 		fi
 		if [[ -f "${blacklist92ConfigurationFilePath}" ]];
 		then
-			echo "Successfully generated the configuration file \"${blacklist92ConfigurationFilePath}\". "
+			echo "Successfully generated the HMA blacklist configuration JSON file \"${blacklist92ConfigurationFilePath}\". "
 		else
 			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the configuration file \"${blacklist92ConfigurationFilePath}\". "
+			echo "Failed to generate the HMA blacklist configuration JSON file \"${blacklist92ConfigurationFilePath}\". "
 		fi
 		if [[ -f "${whitelist93ConfigurationFilePath}" ]];
 		then
-			echo "Successfully generated the configuration file \"${whitelist93ConfigurationFilePath}\". "
+			echo "Successfully generated the HMA-OSS whitelist configuration JSON file \"${whitelist93ConfigurationFilePath}\". "
 		else
 			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the configuration file \"${whitelist93ConfigurationFilePath}\". "
+			echo "Failed to generate the HMA-OSS whitelist configuration JSON file \"${whitelist93ConfigurationFilePath}\". "
 		fi
 		if [[ -f "${blacklist93ConfigurationFilePath}" ]];
 		then
-			echo "Successfully generated the configuration file \"${blacklist93ConfigurationFilePath}\". "
+			echo "Successfully generated the HMA-OSS blacklist configuration JSON file \"${blacklist93ConfigurationFilePath}\". "
 		else
 			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the configuration file \"${blacklist93ConfigurationFilePath}\". "
+			echo "Failed to generate the HMA-OSS blacklist configuration JSON file \"${blacklist93ConfigurationFilePath}\". "
 		fi
 		if [[ -f "${pathTesterFilePath}" ]];
 		then
-			echo "Successfully generated the path tester file \"${pathTesterFilePath}\". "
+			echo "Successfully generated the path tester shell script file \"${pathTesterFilePath}\". "
 		else
 			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the path tester file \"${pathTesterFilePath}\". "
+			echo "Failed to generate the path tester shell script file \"${pathTesterFilePath}\". "
 		fi
 	else
 		exitCode=$(expr ${exitCode} \| 4)
@@ -768,7 +766,7 @@ then
 			echo "Failed to move \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
 		fi
 	else
-		echo "The backing up has been skipped since the Tricky Store target file \"${trickyStoreTargetFilePath}\" did not exist. "
+		echo "The backing up has been skipped since the Tricky Store target text file \"${trickyStoreTargetFilePath}\" did not exist. "
 	fi
 	if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 	then

@@ -1,7 +1,7 @@
 id=bypasser
 name=Bypasser
-version=v2026042703
-versionCode=2026042703
+version=v2026042806
+versionCode=2026042806
 author=LRFP Team
 description=This is a developing rooting-layer system module for systematically bypassing environment detection related to LRFP for Android devices, where the abbreviation "LRFP" stands for Low-level, Rooting, Frameworks, and Plugins. 
 updateJson=https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/update.json
