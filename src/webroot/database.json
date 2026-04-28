@@ -411,6 +411,7 @@
 		"com.fuck.android.rimet",
 		"com.fuck.risk",
 		"com.fuck.snotes",
+		"com.fuckXiaomi.hookBrowser",
 		"com.fuckcoolapk",
 		"com.fun.camerahook",
 		"com.fun.mtp",
@@ -845,6 +846,7 @@
 		"io.github.vvb2060.callrecording",
 		"io.github.vvb2060.magisk",
 		"io.github.wzhy.xaudiocapture",
+		"io.github.xiaotong6666.fusehide",
 		"io.github.xyy.noad",
 		"io.github.y9hack337.oplus.display",
 		"io.github.yagiyuu.linextra",
@@ -1046,5 +1048,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.6.3+HKT20260427001636048047"
+	"V": "3.6.3+HKT20260428175518306496"
 }
