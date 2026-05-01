@@ -643,6 +643,7 @@
 		"com.w2016.fuckRealmeOTG",
 		"com.w2016.sensorfilter",
 		"com.w311ang.disable_flag_keep_screen_on",
+		"com.waenhancer",
 		"com.wecom.padbridge",
 		"com.wengui.hook",
 		"com.weverses.modempro",
@@ -771,6 +772,7 @@
 		"io.github.alexdonh.noaccessibilityservices",
 		"io.github.aoguai.sesameag",
 		"io.github.auag0.disableaudiofocus",
+		"io.github.auag0.disablecamerasound",
 		"io.github.auag0.hidemocklocation",
 		"io.github.auag0.imnotadeveloper",
 		"io.github.auag0.pokegopip",
@@ -941,6 +943,7 @@
 		"org.liuyi.mifreeformx",
 		"org.lsposed.daemon",
 		"org.lsposed.manager",
+		"org.lyf.juicesshofflinepro",
 		"org.matrix.chromext",
 		"org.pysh.janus",
 		"org.strawing.customiuizermod",
@@ -1021,6 +1024,7 @@
 		"vn.kwaiching.live",
 		"vn.kwaiching.tao",
 		"vn.kwaiching.yauyin",
+		"website.xihan.fqxs",
 		"wx.myfriends",
 		"wx.repair.tool",
 		"wx.veil",
@@ -1048,5 +1052,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.6.3+HKT20260428175518306496"
+	"V": "3.6.3+HKT20260501145717388778"
 }

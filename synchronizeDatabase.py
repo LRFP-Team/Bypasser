@@ -150,6 +150,7 @@ class DatabaseManager:
 
 
 class RegularUpdater:
+	__PositiveAnswers = ("Y", "YES", "1", "T", "TRUE")
 	def __init__(self:object, srcFolderPath:str, webrootName:str, databaseFileName:str, actionAFileName:str, actionBFileName:str) -> object: # -> 0b00000001
 		try:
 			# Parameters #
@@ -173,13 +174,28 @@ class RegularUpdater:
 		except BaseException as e:
 			self.__flag = 0b00000000
 			print("Failed to initialize the updater with the parameters passed. ")
-	def setPermissions(self:object) -> bool: # (0b00000001 | 0b00000010 -> 0b00000011, 0b01111111 + 0b01000000 -> 0b10111111)
-		if self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100 and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 1:
-			self.__flag = self.__flag & 0b00111111 | 0b01000000
-		elif self.__flag & 0b00000001:
-			self.__flag &= 0b00000001
+	def gitPull(self:object) -> bool: # 0b00000001 + 0b00000001 -> 0b00000010
+		if self.__flag & 0b00000011 >= 1:
+			self.__flag = self.__flag & 0b00000000 | 0b00000001
+			if os.system("git pull") == EXIT_SUCCESS:
+				self.__flag += 0b00000001
+				print("Successfully pulled from the remote repository. ")
+				return True
+			else:
+				print("Failed tp pull from the remote repository. ")
 		else:
-			print("Please initialize the updater before setting permissions. ")
+			print("Please initialize the updater before pulling. ")
+		return False
+	def setPermissions(self:object) -> bool: # (0b00000010 | 0b00000011 -> 0b00000011, 0b01111111 + 0b01000000 -> 0b10111111)
+		if (
+			self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100
+			and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 1
+		):
+			self.__flag = self.__flag & 0b00111111 | 0b01000000
+		elif self.__flag & 0b00000011 >= 2:
+			self.__flag = self.__flag & 0b00000000 | 0b00000010
+		else:
+			print("Please pull from the remote repository before setting permissions. ")
 			return False
 		baseExceptions = []
 		try:
@@ -216,10 +232,13 @@ class RegularUpdater:
 				print("{0} -> {1} -> {2}".format(repr(filePath), oct(permission), repr(baseException)))
 			return False
 		else:
-			if self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100 and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 1:
+			if (
+				self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100
+				and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 1
+			):
 				self.__flag += 0b01000000
-			elif self.__flag & 0b00000001:
-				self.__flag |= 0b00000010
+			elif self.__flag & 0b00000011 >= 2:
+				self.__flag |= 0b00000011
 			print("Successfully set permissions. ")
 			return True
 	def loadDatabase(self:object) -> bool: # 0b00?00011 + 0b00000100 -> 0b00?00111
@@ -300,31 +319,57 @@ class RegularUpdater:
 		else:
 			print("Please check the database again before saving. ")
 		return False
-	def compileCPP(self:object, cppSourceFolderPath:str, cppSourceMainFileName:str) -> bool: # 0b00?10111 + 0b00000100 -> 0b00?11011
+	def compileCPP(self:object, cppSourceFolderPath:str, cppSourceMainFileName:str, forceCompilation:bool = False) -> bool: # 0b00?10111 + 0b00000100 -> 0b00?11011
 		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 5:
 			self.__flag = self.__flag & 0b00100011 | 0b00010100
 			localFlag = True
-			mappingABI = (("aarch64-linux-android21", "arm64-v8a"), ("armv7a-linux-androideabi21", "armeabi-v7a"), ("x86_64-linux-android21", "x86_64"), ("i686-linux-android21", "x86"))
-			for keyABI, valueABI in mappingABI:
+			tripleABI = (
+				["aarch64-linux-android21", "arm64-v8a", None], ["armv7a-linux-androideabi21", "armeabi-v7a", None], 
+				["x86_64-linux-android21", "x86_64", None], ["i686-linux-android21", "x86", None]
+			)
+			for entryABI in tripleABI:
+				keyABI, valueABI, _ = entryABI
+				cppBinaryFilePath = os.path.join(self.__webrootFolderPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
+				entryABI[2] = cppBinaryFilePath
 				try:
-					cppSourceFilePath = os.path.join(cppSourceFolderPath, cppSourceMainFileName + ".cpp")
-					cppBinaryFilePath = os.path.join(self.__webrootFolderPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
-					result = run((
-						"{0}-clang++".format(keyABI), "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceFolderPath, 
-						cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
-					), capture_output = True, text = True)
-					if result.returncode != EXIT_SUCCESS:
+					if not os.path.isfile(cppBinaryFilePath):
 						localFlag = False
-						print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
-					elif result.stdout or result.stderr:
-						localFlag = False
-						print("Compiled {0} to {1} with warnings {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
-					else:
-						print("Successfully compiled {0} to {1} without errors or warnings. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath)))
-				except BaseException as e:
+				except:
 					localFlag = False
-					print("Failed to compile the CPP due to {0}. ".format(repr(e)))
 			if localFlag:
+				try:
+					if isinstance(forceCompilation, bool) and forceCompilation:
+						choice = True
+					else:
+						choice = input("CPP executable binaries existing, would you like to compile the CPP sources again [yN]? ").upper() in RegularUpdater.__PositiveAnswers
+				except:
+					choice = False
+			else:
+				choice = True
+			if choice:
+				localFlag = True
+				cppSourceFilePath = os.path.join(cppSourceFolderPath, cppSourceMainFileName + ".cpp")
+				for keyABI, valueABI, cppBinaryFilePath in tripleABI:
+					try:
+						result = run((
+							"{0}-clang++".format(keyABI), "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceFolderPath, 
+							cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
+						), capture_output = True, text = True)
+						if result.returncode != EXIT_SUCCESS:
+							localFlag = False
+							print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
+						elif result.stdout or result.stderr:
+							localFlag = False
+							print("Compiled {0} to {1} with warnings {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
+						else:
+							print("Successfully compiled {0} to {1} without errors or warnings. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath)))
+					except BaseException as e:
+						localFlag = False
+						print("Failed to compile the CPP due to {0}. ".format(repr(e)))
+				if localFlag:
+					self.__flag += 0b00000100
+					return True
+			else:
 				self.__flag += 0b00000100
 				return True
 		else:
@@ -357,6 +402,7 @@ class RegularUpdater:
 		return False
 	def checkShell(self:object) -> bool: # 0b000???11 | 0b00100000 -> 0b001???11
 		if self.__flag & 0b00000010 and self.__flag & 0b00000001:
+			self.__flag &= 0b00011111
 			filePaths = []
 			try:
 				for root, _, fileNames in os.walk(self.__srcFolderPath):
@@ -455,14 +501,17 @@ class RegularUpdater:
 			print("Please compress the webroot folder and check the shell scripts before updating SHA-512. ")
 		return False
 	def gitPush(self:object, pushConfirmed:bool = False) -> bool: # 0b10111111 | 0b11000000 -> 0b11111111
-		if self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100 and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 2:
+		if (
+			self.__flag & 0b00100000 and self.__flag & 0b00010000 and self.__flag & 0b00001000 and self.__flag & 0b00000100
+			and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 2
+		):
 			self.__flag = self.__flag & 0b00111111 | 0b10000000
 			if "posix" == os.name:
 				try:
 					if isinstance(pushConfirmed, bool) and pushConfirmed:
 						choice = True
 					else:
-						choice = input("Would you like to upload the files to GitHub via ``git`` [yN]? ").upper() in ("Y", "YES", "1", "T", "TRUE")
+						choice = input("Would you like to upload the files to GitHub via ``git`` [yN]? ").upper() in RegularUpdater.__PositiveAnswers
 				except:
 					choice = False
 			else:
@@ -498,7 +547,7 @@ def main() -> int:
 	
 	# Updater #
 	regularUpdater = RegularUpdater(srcFolderPath, webrootName, databaseFileName, actionAFileName, actionBFileName)
-	if regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
+	if regularUpdater.gitPull() and regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
 		databaseFlag = (
 			regularUpdater.synchronizeDatabase({"D":selfURL, "M":pluginURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
 			and regularUpdater.compileCPP(cppSourceFolderPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
