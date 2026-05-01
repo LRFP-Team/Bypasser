@@ -47,16 +47,24 @@ jobs:
       - name: Prepare information
         id: information
         run: |
-          echo "time=HKT $(TZ='Asia/Hong_Kong' date '+%Y%m%d%H%M%S')" >> "${GITHUB_OUTPUT}"
+          echo "time=HKT $(date '+%Y%m%d%H%M%S')" >> "${GITHUB_OUTPUT}"
           if git rev-parse --verify HEAD~1 >/dev/null 2>&1;
           then
             changes="$(git diff --stat HEAD~1 HEAD)"
           else
             changes="$(git show --stat HEAD)"
           fi
+          maximumLength=3072
+          if [[ ${#changes} -gt ${maximumLength} ]];
+          then
+            lastLine="$(echo "${changes}" | tail -n 1)"
+            changes="$(echo "${changes:0:${maximumLength}}" | head -n -1)"$'\n...\n'"${lastLine}"
+          fi
           echo "changes<<EOF" >> "${GITHUB_OUTPUT}"
           echo "${changes}" >> "${GITHUB_OUTPUT}"
           echo "EOF" >> "${GITHUB_OUTPUT}"
+        env:
+          TZ: 'Asia/Hong_Kong'
       
       - name: Notify updates
         uses: appleboy/telegram-action@master
