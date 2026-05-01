@@ -329,9 +329,9 @@ class RegularUpdater:
 			)
 			for entryABI in tripleABI:
 				keyABI, valueABI, _ = entryABI
-				cppBinaryFilePath = os.path.join(self.__webrootFolderPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
-				entryABI[2] = cppBinaryFilePath
 				try:
+					cppBinaryFilePath = os.path.join(self.__webrootFolderPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
+					entryABI[2] = cppBinaryFilePath
 					if not os.path.isfile(cppBinaryFilePath):
 						localFlag = False
 				except:
@@ -363,6 +363,9 @@ class RegularUpdater:
 							print("Compiled {0} to {1} with warnings {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
 						else:
 							print("Successfully compiled {0} to {1} without errors or warnings. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath)))
+					except TimeoutExpired as e:
+						localFlag = False
+						print("Failed to compile the CPP due to {0}. ".format({"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout}))
 					except BaseException as e:
 						localFlag = False
 						print("Failed to compile the CPP due to {0}. ".format(repr(e)))
@@ -421,6 +424,10 @@ class RegularUpdater:
 						if EXIT_SUCCESS == result.returncode:
 							successCount += 1
 							print("[{{0:0>{0}}}] {{1}} -> Passed (bash)".format(length).format(i, repr(filePath)))
+					except TimeoutExpired as e:
+						print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), {
+							"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
+						}))
 					except BaseException as e:
 						print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), repr(e)))
 				try:

@@ -122,20 +122,25 @@ do
 done
 if [[ ${EXIT_SUCCESS} -eq ${compilationFlag} ]];
 then
-	read -t ${timeout} -p "CPP executable binaries existing, would you like to compile the CPP sources again [yN]? " choice
-	if [[ $? -ne ${EXIT_SUCCESS} ]];
+	if [[ -t 0 && -t 1 ]];
 	then
-		choice="N"
-		echo ""
+		read -t ${timeout} -p "CPP executable binaries existing, would you like to compile the CPP sources again [yN]? " choice
+		if [[ $? -ne ${EXIT_SUCCESS} ]];
+		then
+			choice="N"
+			echo ""
+		fi
+		case "${choice^^}" in
+			Y|YES|1|T|TRUE)
+				choiceFlag=${EXIT_SUCCESS}
+				;;
+			*)
+				choiceFlag=${EXIT_FAILURE}
+				;;
+		esac
+	else
+		choiceFlag=${EXIT_FAILURE}
 	fi
-	case "${choice^^}" in
-		Y|YES|1|T|TRUE)
-			choiceFlag=${EXIT_SUCCESS}
-			;;
-		*)
-			choiceFlag=${EXIT_FAILURE}
-			;;
-	esac
 else
 	choiceFlag=${EXIT_SUCCESS}
 fi
