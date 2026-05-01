@@ -95,7 +95,7 @@ fi
 # Compile (16) #
 readonly webrootName="webroot"
 readonly webrootFolderPath="${srcFolderPath}/${webrootName}"
-timeout=10
+readonly readTimeout=10
 readonly cppSourceFolderPath="cpp"
 readonly cppSourceFileName="generate.cpp"
 readonly cppSourceFilePath="${cppSourceFolderPath}/${cppSourceFileName}"
@@ -124,7 +124,7 @@ if [[ ${EXIT_SUCCESS} -eq ${compilationFlag} ]];
 then
 	if [[ -t 0 && -t 1 ]];
 	then
-		read -t ${timeout} -p "CPP executable binaries existing, would you like to compile the CPP sources again [yN]? " choice
+		read -t ${readTimeout} -p "CPP executable binaries existing, would you like to compile the CPP sources again [yN]? " choice
 		if [[ $? -ne ${EXIT_SUCCESS} ]];
 		then
 			choice="N"

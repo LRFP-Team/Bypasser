@@ -5,7 +5,8 @@
 #include <vector>
 #include <set>
 #include <regex>
-#include "nlohmann/json.hpp"
+#include "nlohmann/json.hpp" // https://github.com/nlohmann/json
+#include "madler/unzip.h" // https://github.com/madler/zlib/blob/develop/contrib/minizip
 #ifndef DATABASE_JSON
 #define DATABASE_JSON "database.json"
 #endif
@@ -94,6 +95,24 @@ private:
 		{
 			return false;
 		}
+	}
+	char isPlugin(const std::string& apkFilePath) const
+	{
+		unzFile archive = unzOpen(apkFilePath.c_str());
+		if (archive)
+		{
+			char isFound = EXIT_FAILURE;
+			if (unzLocateFile(archive, "assets/xposed_init", 0) == UNZ_OK)
+			{
+				unz_file_info pluginInformation;
+				if (unzGetCurrentFileInfo(archive, &pluginInformation, nullptr, 0, nullptr, 0, nullptr, 0) == UNZ_OK && pluginInformation.uncompressed_size > 0)
+					isFound = EXIT_SUCCESS;
+			}
+			unzClose(archive);
+			return isFound;
+		}
+		else
+			return EOF;
 	}
 	std::string array2string(const nlohmann::json& elements, const std::string& prefix, const std::string& separator, const std::string& suffix) const
 	{
@@ -216,15 +235,15 @@ public:
 			return false;
 		else
 		{
-			this->flag = 1;
+			this->flag = 1/* 0b00000001 */;
 			return true;
 		}
 	}
 	bool parseJSON()
 	{
-		if (this->flag & 1/* 0b000001 */)
+		if (this->flag & 1/* 0b00000001 */)
 		{
-			this->flag &= 1/* 0b000001 */;
+			this->flag &= 1/* 0b00000001 */;
 			try
 			{
 				std::ifstream inputFile(this->inputFilePath);
@@ -714,7 +733,7 @@ public:
 				commonHMAOSSv93["maxLogSize"] = 1024;
 				commonHMAOSSv93["forceMountData"] = true;
 				commonHMAOSSv93["disableActivityLaunchProtection"] = false;
-				commonHMAOSSv93["altAppDataIsolation"] = false;
+				commonHMAOSSv93["altAppDataIsolation"] = true;
 				commonHMAOSSv93["altVoldAppDataIsolation"] = false;
 				commonHMAOSSv93["skipSystemAppDataIsolation"] = true;
 				commonHMAOSSv93["packageQueryWorkaround"] = false;

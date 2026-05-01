@@ -150,6 +150,7 @@ class DatabaseManager:
 
 
 class RegularUpdater:
+	__DefaultTimeout = 10
 	__PositiveAnswers = ("Y", "YES", "1", "T", "TRUE")
 	def __init__(self:object, srcFolderPath:str, webrootName:str, databaseFileName:str, actionAFileName:str, actionBFileName:str) -> object: # -> 0b00000001
 		try:
@@ -177,12 +178,20 @@ class RegularUpdater:
 	def gitPull(self:object) -> bool: # 0b00000001 + 0b00000001 -> 0b00000010
 		if self.__flag & 0b00000011 >= 1:
 			self.__flag = self.__flag & 0b00000000 | 0b00000001
-			if os.system("git pull") == EXIT_SUCCESS:
-				self.__flag += 0b00000001
-				print("Successfully pulled from the remote repository. ")
-				return True
-			else:
-				print("Failed tp pull from the remote repository. ")
+			print("Pulling from the remote repository. ")
+			try:
+				result = run(("git", "pull"), timeout = RegularUpdater.__DefaultTimeout)
+				if EXIT_SUCCESS == result.returncode:
+					self.__flag += 0b00000001
+					print("Successfully pulled from the remote repository. ")
+					return True
+				else:
+					print("Failed to pull from the remote repository. ")
+					return False
+			except TimeoutExpired as e:
+				print("Failed tp pull from the remote repository due to {0}. ".format({"cmd":e.cmd, "timeout":e.timeout}))
+			except BaseException as e:
+				print("Failed tp pull from the remote repository due to {0}. ".format(repr(e)))
 		else:
 			print("Please initialize the updater before pulling. ")
 		return False
@@ -354,7 +363,7 @@ class RegularUpdater:
 						result = run((
 							"{0}-clang++".format(keyABI), "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceFolderPath, 
 							cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
-						), capture_output = True, text = True)
+						), capture_output = True, text = True, timeout = RegularUpdater.__DefaultTimeout)
 						if result.returncode != EXIT_SUCCESS:
 							localFlag = False
 							print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
@@ -420,10 +429,14 @@ class RegularUpdater:
 				length, successCount = len(str(totalCount)), 0
 				for i, filePath in enumerate(filePaths, start = 1):
 					try:
-						result = run(("bash", "-n", filePath), capture_output = True, text = True)
+						result = run(("bash", "-n", filePath), capture_output = True, text = True, timeout = RegularUpdater.__DefaultTimeout)
 						if EXIT_SUCCESS == result.returncode:
 							successCount += 1
 							print("[{{0:0>{0}}}] {{1}} -> Passed (bash)".format(length).format(i, repr(filePath)))
+						else:
+							print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), {
+								"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
+							}))
 					except TimeoutExpired as e:
 						print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), {
 							"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout

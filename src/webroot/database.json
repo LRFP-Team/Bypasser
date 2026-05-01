@@ -382,6 +382,7 @@
 		"com.dorian15.greendothide",
 		"com.douban.fuckad",
 		"com.dr8.xposed.saax",
+		"com.drdisagree.pixellauncherenhanced",
 		"com.droserasprout.healergram",
 		"com.dszsu.tss",
 		"com.dualguard",
@@ -1052,5 +1053,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.6.3+HKT20260501184235903092"
+	"V": "3.6.3+HKT20260502000928409131"
 }
