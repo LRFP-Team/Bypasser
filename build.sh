@@ -244,7 +244,7 @@ then
 			fi
 		done
 		echo "Successfully generated ${sha512SuccessCount} / ${sha512TotalCount} sha512 file(s). "
-		if [[ sha512SuccessCount -ne sha512TotalCount ]];
+		if [[ ${sha512SuccessCount} -ne ${sha512TotalCount} ]];
 		then
 			exit 23
 		fi
