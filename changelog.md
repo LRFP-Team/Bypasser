@@ -1,7 +1,3 @@
-## Bypasser_v2026050113
-
-- Test
-
 ## Bypasser_v2026042806
 
 - Implemented the game of cat and mouse. 

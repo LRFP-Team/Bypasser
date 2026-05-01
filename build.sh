@@ -39,7 +39,8 @@ function setPermissions
 echo "Welcome to the builder for the ${moduleName} rooting-layer system module! "
 echo "The absolute path to this script is \"$(cd "$(dirname "$0")" && pwd)/$(basename "$0")\". "
 chmod 755 "${moduleFolderPath}" && cd "${moduleFolderPath}"
-if [[ $? == ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleName}" ]]; then
+if [[ $? == ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleName}" ]];
+then
 	echo "The current working directory is \"$(pwd)\". "
 else
 	echo "The working directory \"$(pwd)\" is unexpected. "
@@ -74,7 +75,7 @@ if [[
 	"$(grep -F "${currentPattern}" "${shellAFilePath}" | head -n 1)" == "${currentPattern}\"A\""
 	&& "$(grep -F "${targetPattern}" "${shellAFilePath}" | head -n 1)" == "${targetPattern}\"B\""
 	&& "$(grep -F "${currentPattern}" "${shellBFilePath}" | head -n 1)" == "${currentPattern}\"B\""
-	&& "$(grep -F "${targetPattern}" "${shellBFilePath}" | head -n 1)" == "${targetPattern}\"A\""	
+	&& "$(grep -F "${targetPattern}" "${shellBFilePath}" | head -n 1)" == "${targetPattern}\"A\""
 ]];
 then
 	echo "Successfully verified the A/B architecture in \"${shellAFilePath}\" and \"${shellBFilePath}\". "
@@ -183,7 +184,8 @@ readonly zipFolderPath="Release"
 readonly zipFileName="${moduleName}_v${moduleVersion}.zip"
 readonly zipFilePath="${zipFolderPath}/${zipFileName}"
 
-if [[ -d "${srcFolderPath}" && -d "${srcFolderPath}/META-INF" && -d "${srcFolderPath}/system" ]]; then
+if [[ -d "${srcFolderPath}" && -d "${srcFolderPath}/META-INF" && -d "${srcFolderPath}/system" ]];
+then
 	echo "Sources were found to be packed. "
 	if [[ -d "${webrootFolderPath}" ]];
 	then
@@ -198,7 +200,8 @@ if [[ -d "${srcFolderPath}" && -d "${srcFolderPath}/META-INF" && -d "${srcFolder
 		fi
 	fi
 	echo -e "${propContent}" > "${propFilePath}"
-	if [[ $? -eq ${EXIT_SUCCESS} && -f "${propFilePath}" ]]; then
+	if [[ $? -eq ${EXIT_SUCCESS} && -f "${propFilePath}" ]];
+	then
 		echo "Successfully generated the property file \"${propFilePath}\". "
 		if [[ -z "$(find "${srcFolderPath}" -type f -name "*.sha512" -delete 2>&1)" ]]
 		then
@@ -253,7 +256,8 @@ if [[ -d "${srcFolderPath}" && -d "${srcFolderPath}/META-INF" && -d "${srcFolder
 		then
 			echo "Successfully prepared the ZIP folder path \"${zipFolderPath}\". "
 			(cd "${srcFolderPath}" && zip -J -r -v - * -x "${webrootName}.zip" -x "${webrootName}.zip.sha512") > "${zipFilePath}"
-			if [[ $? -eq ${EXIT_SUCCESS} && -f "${zipFilePath}" ]]; then
+			if [[ $? -eq ${EXIT_SUCCESS} && -f "${zipFilePath}" ]];
+			then
 				echo "Successfully packed the ${moduleName} rooting-layer system module to \"${zipFilePath}\" via the ``zip`` command! "
 			else
 				echo "Failed to pack the ${moduleName} rooting-layer system module to \"${zipFilePath}\" via the ``zip`` command. "
@@ -337,7 +341,8 @@ if [[ $? -eq ${EXIT_SUCCESS} && -d "${updateFolderPath}" ]];
 then
 	echo "Successfully prepared the update folder path \"${updateFolderPath}\". "
 	echo -e -n "$updateContent" > "${updateFilePath}"
-	if [[ $? -eq ${EXIT_SUCCESS} && -f "${updateFilePath}" ]]; then
+	if [[ $? -eq ${EXIT_SUCCESS} && -f "${updateFilePath}" ]];
+	then
 		echo "Successfully created the update JSON file \"${updateFilePath}\". "
 	else
 		echo "Failed to create the update JSON file \"${updateFilePath}\". "
@@ -358,7 +363,8 @@ fi
 
 # Git (37) #
 git add . && git commit -m "Module Update (${moduleVersion})" && git push
-if [[ $? -eq ${EXIT_SUCCESS} ]]; then
+if [[ $? -eq ${EXIT_SUCCESS} ]];
+then
 	echo "Successfully pushed to GitHub. "
 else
 	echo "Failed to push to GitHub. "
