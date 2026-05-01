@@ -526,7 +526,7 @@ then
 		fi
 		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 		then
-			curl -s -m ${curlTimeout} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootFolderPath}" && rm -f "${webrootFilePath}"
+			curl --connect-timeout ${curlTimeout} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootFolderPath}" && rm -f "${webrootFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootFolderPath}" && "$(find "${webrootFolderPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
 			then
 				echo "Successfully updated and verified the web UI. "
@@ -1011,7 +1011,7 @@ then
 		fi
 	else
 		echo "The target action \`\`${targetAction}\`\` is out-of-date and needs to be updated. "
-		shellContent="$(curl -s "${actionUrl}")"
+		shellContent="$(curl -s -m ${curlTimeout} "${actionUrl}")"
 		if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellContent}" ]];
 		then
 			echo "Successfully fetched the latest \`\`${targetAction}\`\` from GitHub. "
