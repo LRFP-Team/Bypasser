@@ -6,8 +6,9 @@ from datetime import datetime
 from getpass import getpass
 from hashlib import sha512
 from json import dump, loads
-from re import findall
+from re import compile
 from subprocess import TimeoutExpired, run
+from time import time_ns
 from zipfile import ZipFile, ZipInfo
 try:
 	os.chdir(os.path.abspath(os.path.dirname(__file__)))
@@ -22,8 +23,9 @@ class DatabaseManager:
 	__DefaultDatabaseFilePath = "database.json"
 	__DefaultTimeout = 10
 	__DefaultEncoding = "utf-8"
+	__Pattern = compile("^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$")
 	__Caches = {}
-	__Pattern = "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$"
+	__MajorVersion = 3
 	def __init__(self:object, databaseFilePath:str = __DefaultDatabaseFilePath, timeout:int = __DefaultTimeout, encoding:str = __DefaultEncoding) -> object:
 		self.__databaseFilePath = databaseFilePath if isinstance(databaseFilePath, str) else DatabaseManager.__DefaultDatabaseFilePath
 		self.__timeout = timeout if isinstance(timeout, int) and timeout >= 1 else DatabaseManager.__DefaultTimeout
@@ -33,22 +35,150 @@ class DatabaseManager:
 		except:
 			self.__encoding = DatabaseManager.__DefaultEncoding
 		self.__database = None
+	def __getVersionString(self:object) -> str:
+		if isinstance(self.__database, dict):
+			stack, keyCounts = [(value, 1) for value in reversed(self.__database.values())], [DatabaseManager.__MajorVersion, len(self.__database)]
+			while stack:
+				element, level = stack.pop()
+				if isinstance(element, dict):
+					level += 1
+					while len(keyCounts) <= level:
+						keyCounts.append(0)
+					keyCounts[level] += len(element)
+					stack.extend((child, level) for child in reversed(element.values()))
+			timestamp = time_ns()
+			return "{0}+HKT{1}{2:09d}".format(".".join(str(keyCount) for keyCount in keyCounts), datetime.fromtimestamp(timestamp // 1000000000).strftime("%Y%m%d%H%M%S"), timestamp % 1000000000)
+		else:
+			return str(DatabaseManager.__MajorVersion)
 	def load(self:object) -> tuple:
 		try:
 			with open(self.__databaseFilePath, "r", encoding = self.__encoding) as f:
 				self.__database = loads(f.read())
 			if isinstance(self.__database, dict):
-				removedKeyCount = 0
+				initializedKeys, removedKeyCounts, removedValueCount = set(), {}, 0
+				
+				# First-level #
 				for key in tuple(self.__database.keys()):
-					if key not in ("C", "D", "M", "N", "S", "T", "U", "V"):
+					if not (
+						(key in ("C", "N", "T") and isinstance(self.__database[key], dict))
+						or (key in ("D", "M", "S") and isinstance(self.__database[key], list))
+						or (key in ("U", "V") and isinstance(self.__database[key], str))
+					):
 						del self.__database[key]
-						removedKeyCount += 1
-				if "C" in self.__database:
+						removedKeyCounts.setdefault(0, 0)
+						removedKeyCounts[0] += 1
+				
+				# Second-level #
+				if "C" in self.__database and isinstance(self.__database["C"], dict):
+					if "" in self.__database["C"] and isinstance(self.__database["C"][""], list):
+						for i in range(len(self.__database["C"][""]) - 1, -1, -1):
+							if not (isinstance(self.__database["C"][""][i], str) and DatabaseManager.__Pattern.match(self.__database["C"][""][i])):
+								del self.__database["C"][""][i]
+								removedValueCount += 1
+						self.__database["C"][""] = sorted(set(self.__database["C"][""]))
+					else:
+						self.__database["C"][""] = []
+						initializedKeys.add("C ")
+					if "_" in self.__database["C"] and isinstance(self.__database["C"]["_"], dict):
+						for key in tuple(self.__database["C"]["_"].keys()):
+							if isinstance(key, str) and len(key) == 1 and 'A' <= key <= 'Z' and isinstance(self.__database["C"]["_"][key], list):
+								for i in range(len(self.__database["C"]["_"][key]) - 1, -1, -1):
+									if not (isinstance(self.__database["C"]["_"][key][i], str) and DatabaseManager.__Pattern.match(self.__database["C"]["_"][key][i])):
+										del self.__database["C"]["_"][key][i]
+										removedValueCount += 1
+								self.__database["C"]["_"][key] = sorted(set(self.__database["C"]["_"][key]))
+							else:
+								del self.__database["C"]["_"][key]
+								removedKeyCounts.setdefault(2, 0)
+								removedKeyCounts[2] += 1
+					else:
+						self.__database["C"]["_"] = {}
+						initializedKeys.add("C_")
 					for key in tuple(self.__database["C"].keys()):
-						if not (isinstance(key, str) and len(key) == 1 and 'A' <= key <= 'Z'):
+						if isinstance(key, str):
+							if len(key) == 1 and 'A' <= key <= 'Z' and isinstance(self.__database["C"][key], list):
+								# Compatible with Version 3.6.x ($C_X$) #
+								for i in range(len(self.__database["C"][key]) - 1, -1, -1):
+									if not (isinstance(self.__database["C"][key][i], str) and DatabaseManager.__Pattern.match(self.__database["C"][key][i])):
+										del self.__database["C"][key][i]
+										removedValueCount += 1
+								self.__database["C"]["_"].setdefault(key, [])
+								s = set(self.__database["C"][key])
+								s.update(self.__database["C"]["_"][key])
+								self.__database["C"]["_"][key] = sorted(s)
+								del self.__database["C"][key]
+							elif DatabaseManager.__Pattern.match(key):
+								# Compatible with Version 3.6.x ($C$) #
+								if key not in self.__database["C"][""]:
+									self.__database["C"][""].append(key)
+									self.__database["C"][""].sort()
+								del self.__database["C"][key]
+							elif key not in ("", "_"):
+								del self.__database["C"][key]
+								removedKeyCounts.setdefault(1, 0)
+								removedKeyCounts[1] += 1
+						else:
 							del self.__database["C"][key]
-							removedKeyCount += 1
-				return (True, removedKeyCount)
+							removedKeyCounts.setdefault(1, 0)
+							removedKeyCounts[1] += 1
+				else:
+					self.__database["C"] = {"":[], "_":{"A":[], "K":[], "M":[]}}
+					initializedKeys.add("C")
+				if "D" in self.__database and isinstance(self.__database["D"], list):
+					for i in range(len(self.__database["D"]) - 1, -1, -1):
+						if not (isinstance(self.__database["D"][i], str) and DatabaseManager.__Pattern.match(self.__database["D"][i])):
+							del self.__database["D"][i]
+							removedValueCount += 1
+					self.__database["D"] = sorted(set(self.__database["D"]))
+				else:
+					self.__database["D"] = []
+					initializedKeys.add("D")
+				if "M" in self.__database and isinstance(self.__database["M"], list):
+					for i in range(len(self.__database["M"]) - 1, -1, -1):
+						if not (isinstance(self.__database["M"][i], str) and DatabaseManager.__Pattern.match(self.__database["M"][i])):
+							del self.__database["M"][i]
+							removedValueCount += 1
+					self.__database["M"] = sorted(set(self.__database["M"]))
+				else:
+					self.__database["M"] = []
+					initializedKeys.add("M")
+				if "N" in self.__database and isinstance(self.__database["N"], dict):
+					for key, value in tuple(self.__database["N"].items()):
+						if isinstance(key, str) and DatabaseManager.__Pattern.match(key) and isinstance(value, dict):
+							for subKey, subValue in tuple(value.items()):
+								if not (isinstance(subKey, str) and DatabaseManager.__Pattern.match(subKey) and isinstance(subValue, bool)):
+									del self.__database["N"][key][subKey]
+									removedValueCount += 1
+						else:
+							del self.__database["N"][key]
+							removedValueCount += 1
+				else:
+					self.__database["N"] = {}
+					initializedKeys.add("N")
+				if "S" in self.__database and isinstance(self.__database["S"], list):
+					for i in range(len(self.__database["S"]) - 1, -1, -1):
+						if not (isinstance(self.__database["S"][i], str) and DatabaseManager.__Pattern.match(self.__database["S"][i])):
+							del self.__database["S"][i]
+							removedValueCount += 1
+					self.__database["S"] = sorted(set(self.__database["S"]))
+				else:
+					self.__database["S"] = []
+					initializedKeys.add("S")
+				if "T" in self.__database and isinstance(self.__database["T"], dict):
+					for key, value in tuple(self.__database["T"].items()):
+						if not (isinstance(key, str) and DatabaseManager.__Pattern.match(key) and isinstance(value, bool)):
+							del self.__database["T"][key]
+							removedValueCount += 1
+				else:
+					self.__database["T"] = {}
+					initializedKeys.add("T")
+				if not ("U" in self.__database and isinstance(self.__database["U"], str)):
+					self.__database["U"] = DatabaseManager.__Pattern.pattern
+					initializedKeys.add("U")
+				if not ("V" in self.__database and isinstance(self.__database["V"], str)):
+					self.__database["V"] = self.__getVersionString()
+					initializedKeys.add("V")
+				return (True, (initializedKeys, removedKeyCounts, removedValueCount))
 			else:
 				self.__database = None
 				return (False, ValueError("The data loaded from {0} could not be recognized. ".format(repr(self.__databaseFilePath))))
@@ -100,8 +230,8 @@ class DatabaseManager:
 				obj = loads(DatabaseManager.__Caches[URL])
 				if isinstance(obj, list):
 					for item in obj:
-						if isinstance(item, dict) and "name" in item:
-							packageNames.update(findall(DatabaseManager.__Pattern, item["name"]))
+						if isinstance(item, dict) and "name" in item and DatabaseManager.__Pattern.match(item["name"]):
+							packageNames.add(item["name"])
 				elif isinstance(obj, dict) and "$D$" in obj and isinstance(obj["$D$"], list):
 					for item in obj["$D$"]:
 						if (
@@ -110,9 +240,10 @@ class DatabaseManager:
 						):
 							if isinstance(item["packageName"], (tuple, list, set)):
 								for packageName in item["packageName"]:
-									packageNames.update(findall(DatabaseManager.__Pattern, packageName))
-							else:
-								packageNames.update(findall(DatabaseManager.__Pattern, item["packageName"]))
+									if DatabaseManager.__Pattern.match(packageName):
+										packageNames.add(packageName)
+							elif isinstance(item["packageName"], str) and DatabaseManager.__Pattern.match(item["packageName"]):
+								packageNames.add(item["packageName"])
 		return packageNames
 	def updateFromURLs(self:object, URLs:tuple|list|set|str, key:str, incrementalUpdate:bool = True) -> tuple:
 		try:
@@ -138,7 +269,7 @@ class DatabaseManager:
 			return (False, 0, e)
 	def save(self:object) -> tuple:
 		if isinstance(self.__database, dict):
-			self.__database["V"] = "3.6.3+HKT" + datetime.now().strftime("%Y%m%d%H%M%S%f")
+			self.__database["V"] = self.__getVersionString()
 			try:
 				with open(self.__databaseFilePath, "w", encoding = self.__encoding) as f:
 					dump(self.__database, f, indent = "\t", ensure_ascii = False, sort_keys = True)
@@ -255,8 +386,11 @@ class RegularUpdater:
 			self.__flag &= 0b00100011
 			validity, information = self.__databaseManager.load()
 			if validity:
-				if information:
-					print("Loaded {0} with {1} keys removed in total. ".format(repr(self.__databaseFilePath), information))
+				if any(information[0]) or any(information[1]) or information[2]:
+					keys, values = tuple(zip(*sorted(information[1].items())))
+					print("Loaded {0} with {1} key(s) initialized, {2} key(s) removed for Layer(s) {3}, and {4} value(s) removed in total. ".format(
+						repr(self.__databaseFilePath), information[0], values, keys, information[2])
+					)
 				else:
 					self.__flag += 0b00000100
 					print("Successfully loaded the database from {0}. ".format(repr(self.__databaseFilePath)))

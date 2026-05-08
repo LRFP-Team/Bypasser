@@ -204,8 +204,14 @@ then
 			exit 21
 		fi
 	fi
-	echo -e "${propContent}" > "${propFilePath}"
-	if [[ $? -eq ${EXIT_SUCCESS} && -f "${propFilePath}" ]];
+	if [[ $# -ge 1 ]];
+	then
+		echo -e -n "${propContent}" > "${propFilePath}"
+		propFlag=$?
+	else
+		propFlag=${EXIT_SUCCESS}
+	fi
+	if [[ ${EXIT_SUCCESS} -eq ${propFlag} && -f "${propFilePath}" ]];
 	then
 		echo "Successfully generated the property file \"${propFilePath}\". "
 		if [[ -z "$(find "${srcFolderPath}" -type f -name "*.sha512" -delete 2>&1)" ]]

@@ -10,7 +10,7 @@ readonly VK_DOWN=40
 readonly moduleName="Bypasser"
 readonly moduleId="bypasser"
 readonly defaultTimeout=5
-readonly actionFolderPath="$(dirname "$0")"
+readonly actionDirectoryPath="$(dirname "$0")"
 readonly adbFolder="../.."
 readonly ksuFolder="${adbFolder}/ksu"
 readonly magiskFolder="${adbFolder}/magisk"
@@ -54,10 +54,10 @@ if [[ $? -eq ${EXIT_SUCCESS} ]];
 then
 	echo "Successfully cleared caches. "
 else
-	exitCode=$(expr ${exitCode} \| ${EXIT_FAILURE})
+	exitCode=$((exitCode | ${EXIT_FAILURE}))
 	echo "Failed to clear caches. "
 fi
-chmod 755 "${actionFolderPath}" && cd "${actionFolderPath}"
+chmod 755 "${actionDirectoryPath}" && cd "${actionDirectoryPath}"
 if [[ $? -eq ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleId}" ]];
 then
 	echo "The current working directory is \"$(pwd)\". "
@@ -66,15 +66,16 @@ then
 	then
 		echo "Successfully set permissions. "
 	else
-		exitCode=$(expr ${exitCode} \| ${EXIT_FAILURE})
+		exitCode=$((exitCode | ${EXIT_FAILURE}))
 		echo "Failed to set permissions. "
 	fi
 else
 	echo "The working directory \"$(pwd)\" is unexpected. "
-	exitCode=$(expr ${exitCode} \| ${EXIT_FAILURE})
+	exitCode=$((exitCode | ${EXIT_FAILURE}))
 fi
-androidVersion=$(getprop ro.build.version.release)
-if ${BOOTMODE};
+androidVersion="$(getprop ro.build.version.release)"
+androidVersion=${androidVersion%%.*}
+if [[ "true" == "${BOOTMODE}" ]];
 then
 	if [[ "${KSU}" == "true" ]];
 	then
@@ -93,11 +94,11 @@ then
 		fi
 		if [[ -d "${apatchFolder}" ]];
 		then
-			echo "The Apatch folder exists while KSU or one of its variants is using. Please consider removing the Apatch folder. "
+			echo "The Apatch directory exists while KSU or one of its variants is using. Please consider removing the Apatch directory. "
 		fi
 		if [[ -d "${magiskFolder}" ]];
 		then
-			echo "The Magisk folder exists while KSU or one of its variants is using. Please consider removing the Magisk folder. "
+			echo "The Magisk directory exists while KSU or one of its variants is using. Please consider removing the Magisk directory. "
 		fi
 	elif [[ "${APATCH}" == "true" ]];
 	then
@@ -117,11 +118,11 @@ then
 		fi
 		if [[ -d "${magiskFolder}" ]];
 		then
-			echo "The Magisk folder exists while the Apatch is using. Please consider removing the Magisk folder. "
+			echo "The Magisk directory exists while the Apatch is using. Please consider removing the Magisk directory. "
 		fi
 		if [[ -d "${ksuFolder}" ]];
 		then
-			echo "The KSU folder exists while the Apatch is using. Please consider removing the KSU folder. "
+			echo "The KSU directory exists while the Apatch is using. Please consider removing the KSU directory. "
 		fi
 	else
 		if [[ -z "${MAGISK_VER_CODE}" ]];
@@ -185,11 +186,11 @@ then
 			fi
 			if [[ -d "${apatchFolder}" ]];
 			then
-				echo "The Apatch folder exists while the Magisk is using. Please consider removing the Apatch folder. "
+				echo "The Apatch directory exists while the Magisk is using. Please consider removing the Apatch directory. "
 			fi
 			if [[ -d "${ksuFolder}" ]];
 			then
-				echo "The KSU folder exists while the Magisk is using. Please consider removing the KSU folder. "
+				echo "The KSU directory exists while the Magisk is using. Please consider removing the KSU directory. "
 			fi
 		else
 			echo "Unknown: The rooting solution used is unknown. "
@@ -204,31 +205,31 @@ echo ""
 echo "# Zygisk Traces (0b0000X0) #"
 readonly magiskModuleFolder="${adbFolder}/modules"
 readonly zygiskSolutionModuleId="zygisksu"
-readonly zygiskNextConfigurationFolderPath="${adbFolder}/zygisksu"
+readonly zygiskNextConfigurationDirectoryPath="${adbFolder}/zygisksu"
 readonly zygiskNextDenylistEnforceConfigurationFileName="denylist_enforce"
-readonly zygiskNextDenylistEnforceConfigurationFilePath="${zygiskNextConfigurationFolderPath}/${zygiskNextDenylistEnforceConfigurationFileName}"
+readonly zygiskNextDenylistEnforceConfigurationFilePath="${zygiskNextConfigurationDirectoryPath}/${zygiskNextDenylistEnforceConfigurationFileName}"
 readonly zygiskNextDenylistPolicyConfigurationFileName="denylist_policy"
-readonly zygiskNextDenylistPolicyConfigurationFilePath="${zygiskNextConfigurationFolderPath}/${zygiskNextDenylistPolicyConfigurationFileName}"
+readonly zygiskNextDenylistPolicyConfigurationFilePath="${zygiskNextConfigurationDirectoryPath}/${zygiskNextDenylistPolicyConfigurationFileName}"
 readonly shamikoModuleId="zygisk_shamiko"
-readonly shamikoConfigurationFolderPath="${adbFolder}/shamiko"
+readonly shamikoConfigurationDirectoryPath="${adbFolder}/shamiko"
 readonly shamikoWhitelistConfigurationFileName="whitelist"
-readonly shamikoWhitelistConfigurationFilePath="${shamikoConfigurationFolderPath}/${shamikoWhitelistConfigurationFileName}"
+readonly shamikoWhitelistConfigurationFilePath="${shamikoConfigurationDirectoryPath}/${shamikoWhitelistConfigurationFileName}"
 readonly zygiskAssistantModuleId="zygisk-assistant"
 readonly noHelloModuleId="zygisk_nohello"
-readonly noHelloConfigurationFolderPath="${adbFolder}/nohello"
+readonly noHelloConfigurationDirectoryPath="${adbFolder}/nohello"
 readonly noHelloWhitelistConfigurationFileName="whitelist"
-readonly noHelloWhitelistConfigurationFilePath="${noHelloConfigurationFolderPath}/${noHelloWhitelistConfigurationFileName}"
-readonly rezygiskConfigurationFolderPath="${adbFolder}/rezygisk"
-readonly neozygiskConfigurationFolderPath="${adbFolder}/neozygisk"
+readonly noHelloWhitelistConfigurationFilePath="${noHelloConfigurationDirectoryPath}/${noHelloWhitelistConfigurationFileName}"
+readonly rezygiskConfigurationDirectoryPath="${adbFolder}/rezygisk"
+readonly neozygiskConfigurationDirectoryPath="${adbFolder}/neozygisk"
 readonly builtInZygiskFilePath="${adbFolder}/magisk/zygisk"
 
 function isModuleInstalled
 {
-	moduleInstallationFolderPath="${magiskModuleFolder}/$1"
-	if [[ -d "${moduleInstallationFolderPath}" ]];
+	moduleInstallationDirectoryPath="${magiskModuleFolder}/$1"
+	if [[ -d "${moduleInstallationDirectoryPath}" ]];
 	then
 		modulePropFileName="module.prop"
-		modulePropFilePath="${moduleInstallationFolderPath}/${modulePropFileName}"
+		modulePropFilePath="${moduleInstallationDirectoryPath}/${modulePropFileName}"
 		if [[ -f "${modulePropFilePath}" ]];
 		then
 			if grep -q "^id=$1\$" "${modulePropFilePath}";
@@ -259,10 +260,10 @@ then
 			then
 				echo "Please kindly acknowledge that the Shamiko module does not work with Magisk Delta. Please consider switching to Magisk Alpha or removing the Shamiko module. "
 			fi
-			mkdir -p "${shamikoConfigurationFolderPath}"
-			if [[ $? -eq ${EXIT_SUCCESS} && -d "${shamikoConfigurationFolderPath}" ]];
+			mkdir -p "${shamikoConfigurationDirectoryPath}"
+			if [[ $? -eq ${EXIT_SUCCESS} && -d "${shamikoConfigurationDirectoryPath}" ]];
 			then
-				echo "Successfully prepared the Shamiko configuration folder \"${shamikoConfigurationFolderPath}\". "
+				echo "Successfully prepared the Shamiko configuration directory \"${shamikoConfigurationDirectoryPath}\". "
 				if [[ -f "${shamikoWhitelistConfigurationFilePath}" ]];
 				then
 					echo "The Shamiko whitelist configuration file \"${shamikoWhitelistConfigurationFilePath}\" already existed. "
@@ -273,12 +274,12 @@ then
 					then
 						echo "Successfully created the Shamiko whitelist configuration file \"${shamikoWhitelistConfigurationFilePath}\". "
 					else
-						exitCode=$(expr ${exitCode} \| 2)
+						exitCode=$((exitCode | 2))
 						echo "Failed to create the Shamiko whitelist configuration file \"${shamikoWhitelistConfigurationFilePath}\". "
 					fi
 				fi
 			else
-				echo "Failed to prepare the Shamiko configuration folder \"${shamikoConfigurationFolderPath}\". "
+				echo "Failed to prepare the Shamiko configuration directory \"${shamikoConfigurationDirectoryPath}\". "
 			fi
 		else
 			echo "The Shamiko module was not installed. "
@@ -312,10 +313,10 @@ then
 			else
 				echo "The NoHello module was installed. "
 			fi
-			mkdir -p "${noHelloConfigurationFolderPath}"
-			if [[ $? -eq ${EXIT_SUCCESS} && -d "${noHelloConfigurationFolderPath}" ]];
+			mkdir -p "${noHelloConfigurationDirectoryPath}"
+			if [[ $? -eq ${EXIT_SUCCESS} && -d "${noHelloConfigurationDirectoryPath}" ]];
 			then
-				echo "Successfully prepared the NoHello configuration folder \"${noHelloConfigurationFolderPath}\". "
+				echo "Successfully prepared the NoHello configuration directory \"${noHelloConfigurationDirectoryPath}\". "
 				if [[ -f "${noHelloWhitelistConfigurationFilePath}" ]];
 				then
 					echo "The NoHello whitelist configuration file \"${noHelloWhitelistConfigurationFilePath}\" already existed. "
@@ -326,22 +327,22 @@ then
 					then
 						echo "Successfully created the NoHello whitelist configuration file \"${noHelloWhitelistConfigurationFilePath}\". "
 					else
-						exitCode=$(expr ${exitCode} \| 2)
+						exitCode=$((exitCode | 2))
 						echo "Failed to create the NoHello whitelist configuration file \"${noHelloWhitelistConfigurationFilePath}\". "
 					fi
 				fi
 			else
-				echo "Failed to prepare the NoHello configuration folder \"${noHelloConfigurationFolderPath}\". "
+				echo "Failed to prepare the NoHello configuration directory \"${noHelloConfigurationDirectoryPath}\". "
 			fi
 		else
 			echo "The NoHello module was not installed. "
 		fi
 		if [[ "Zygisk Next" == "${zygiskSolutionModuleName}" ]];
 		then
-			mkdir -p "${zygiskNextConfigurationFolderPath}"
-			if [[ $? -eq ${EXIT_SUCCESS} && -d "${zygiskNextConfigurationFolderPath}" ]];
+			mkdir -p "${zygiskNextConfigurationDirectoryPath}"
+			if [[ $? -eq ${EXIT_SUCCESS} && -d "${zygiskNextConfigurationDirectoryPath}" ]];
 			then
-				echo "Successfully prepared the Zygisk Next configuration folder \"${zygiskNextConfigurationFolderPath}\". "
+				echo "Successfully prepared the Zygisk Next configuration directory \"${zygiskNextConfigurationDirectoryPath}\". "
 				if [[ -f "${zygiskNextDenylistPolicyConfigurationFilePath}" && "1" == "$(cat "${zygiskNextDenylistPolicyConfigurationFilePath}")" ]];
 				then
 					echo "The Zygisk Next denylist policy configuration file \"${zygiskNextDenylistPolicyConfigurationFilePath}\" is already configured. "
@@ -352,7 +353,7 @@ then
 					then
 						echo "Successfully wrote \"1\" to the Zygisk Next denylist policy configuration file \"${zygiskNextDenylistPolicyConfigurationFilePath}\". "
 					else
-						exitCode=$(expr ${exitCode} \| 2)
+						exitCode=$((exitCode | 2))
 						echo "Failed to write \"1\" to the Zygisk Next denylist policy configuration file \"${zygiskNextDenylistPolicyConfigurationFilePath}\". "
 					fi
 				fi
@@ -366,40 +367,40 @@ then
 					then
 						echo "Successfully wrote \"${toBeWritten}\" to the Zygisk Next denylist enforce configuration file \"${zygiskNextDenylistEnforceConfigurationFilePath}\". "
 					else
-						exitCode=$(expr ${exitCode} \| 2)
+						exitCode=$((exitCode | 2))
 						echo "Failed to write \"${toBeWritten}\" to the Zygisk Next denylist enforce configuration file \"${zygiskNextDenylistEnforceConfigurationFilePath}\". "
 					fi
 				fi
 			else
-				echo "Failed to prepare the Zygisk Next configuration folder \"${zygiskNextConfigurationFolderPath}\". "
+				echo "Failed to prepare the Zygisk Next configuration directory \"${zygiskNextConfigurationDirectoryPath}\". "
 			fi
-			if [[ -d "${rezygiskConfigurationFolderPath}" ]];
+			if [[ -d "${rezygiskConfigurationDirectoryPath}" ]];
 			then
-				echo "The ReZygisk configuration folder exists while the Zygisk Next is using. Please consider removing the ReZygisk configuration folder. "
+				echo "The ReZygisk configuration directory exists while the Zygisk Next is using. Please consider removing the ReZygisk configuration directory. "
 			fi
-			if [[ -d "${neozygiskConfigurationFolderPath}" ]];
+			if [[ -d "${neozygiskConfigurationDirectoryPath}" ]];
 			then
-				echo "The NeoZygisk configuration folder exists while the Zygisk Next is using. Please consider removing the NeoZygisk configuration folder. "
+				echo "The NeoZygisk configuration directory exists while the Zygisk Next is using. Please consider removing the NeoZygisk configuration directory. "
 			fi
 		elif [[ "ReZygisk" == "${zygiskSolutionModuleName}" ]];
 		then
-			if [[ -d "${zygiskNextConfigurationFolderPath}" ]];
+			if [[ -d "${zygiskNextConfigurationDirectoryPath}" ]];
 			then
-				echo "The Zygisk Next configuration folder exists while the ReZygisk is using. Please consider removing the Zygisk Next configuration folder. "
+				echo "The Zygisk Next configuration directory exists while the ReZygisk is using. Please consider removing the Zygisk Next configuration directory. "
 			fi
-			if [[ -d "${neozygiskConfigurationFolderPath}" ]];
+			if [[ -d "${neozygiskConfigurationDirectoryPath}" ]];
 			then
-				echo "The NeoZygisk configuration folder exists while the ReZygisk is using. Please consider removing the NeoZygisk configuration folder. "
+				echo "The NeoZygisk configuration directory exists while the ReZygisk is using. Please consider removing the NeoZygisk configuration directory. "
 			fi
 		elif [[ "NeoZygisk" == "${zygiskSolutionModuleName}" ]];
 		then
-			if [[ -d "${zygiskNextConfigurationFolderPath}" ]];
+			if [[ -d "${zygiskNextConfigurationDirectoryPath}" ]];
 			then
-				echo "The Zygisk Next configuration folder exists while the NeoZygisk is using. Please consider removing the Zygisk Next configuration folder. "
+				echo "The Zygisk Next configuration directory exists while the NeoZygisk is using. Please consider removing the Zygisk Next configuration directory. "
 			fi
-			if [[ -d "${rezygiskConfigurationFolderPath}" ]];
+			if [[ -d "${rezygiskConfigurationDirectoryPath}" ]];
 			then
-				echo "The ReZygisk configuration folder exists while the NeoZygisk is using. Please consider removing the ReZygisk configuration folder. "
+				echo "The ReZygisk configuration directory exists while the NeoZygisk is using. Please consider removing the ReZygisk configuration directory. "
 			fi
 			if isModuleInstalled "${shamikoModuleId}" > /dev/null;
 			then
@@ -429,36 +430,46 @@ echo ""
 # HMA Configurations (0b000X00) #
 echo "# HMA Configurations (0b000X00) #"
 readonly webrootName="webroot"
-readonly webrootFolderPath="${webrootName}"
-readonly webrootFilePath="${webrootName}.zip"
-readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/webroot.zip"
-readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/webroot.zip.sha512"
 readonly curlTimeout=10
+readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip.sha512"
+readonly webrootDirectoryPath="${webrootName}"
+readonly downloadTimeout=30
+readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip"
+readonly webrootFilePath="${webrootName}.zip"
+readonly currentAB="B"
+readonly targetAB="A"
 readonly actionPropFileName="action.prop"
-readonly actionPropFilePath="${webrootFolderPath}/${actionPropFileName}"
-readonly dataAppFolder="/data/app"
-readonly largerOldScanningScope="/data"
-readonly smallerOldScanningScope="/data/misc"
+readonly actionPropFilePath="${webrootDirectoryPath}/${actionPropFileName}"
+readonly databaseFileName="database.json"
+readonly databaseFilePath="${webrootDirectoryPath}/${databaseFileName}"
+readonly cppBinaryFileName="generate"
+readonly cppBinaryFilePath="${webrootDirectoryPath}/${cppBinaryFileName}_$(getprop ro.product.cpu.abi)"
+readonly dataApplicationDirectoryPath="/data/app"
+readonly productApplicationDirectoryPath="/product/app"
+readonly systemApplicationDirectoryPath="/system/app"
+readonly vendorApplicationDirectoryPath="/vendor/app"
 if [[ -n "${EXTERNAL_STORAGE}" ]];
 then
-	readonly downloadFolderPath="${EXTERNAL_STORAGE}/Download"
+	readonly downloadDirectoryPath="${EXTERNAL_STORAGE}/Download/.${moduleName}"
 else
-	readonly downloadFolderPath="/sdcard/Download"
+	readonly downloadDirectoryPath="/sdcard/Download/.${moduleName}"
 fi
-readonly cppBinaryFileName="generate"
-readonly cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}_$(getprop ro.product.cpu.abi)"
-readonly databaseFileName="database.json"
-readonly databaseFilePath="${webrootFolderPath}/${databaseFileName}"
-readonly whitelist92ConfigurationFileName=".v92HMAWhitelistConfiguration.json"
-readonly whitelist92ConfigurationFilePath="${downloadFolderPath}/${whitelist92ConfigurationFileName}"
-readonly blacklist92ConfigurationFileName=".v92HMABlacklistConfiguration.json"
-readonly blacklist92ConfigurationFilePath="${downloadFolderPath}/${blacklist92ConfigurationFileName}"
-readonly whitelist93ConfigurationFileName=".v93HMAOSSWhitelistConfiguration.json"
-readonly whitelist93ConfigurationFilePath="${downloadFolderPath}/${whitelist93ConfigurationFileName}"
-readonly blacklist93ConfigurationFileName=".v93HMAOSSBlacklistConfiguration.json"
-readonly blacklist93ConfigurationFilePath="${downloadFolderPath}/${blacklist93ConfigurationFileName}"
+readonly hmaV92WhitelistConfigurationFileName=".hmaV92WhitelistConfiguration.json"
+readonly hmaV92WhitelistConfigurationFilePath="${downloadDirectoryPath}/${hmaV92WhitelistConfigurationFileName}"
+readonly hmaV92BlacklistConfigurationFileName=".hmaV92BlacklistConfiguration.json"
+readonly hmaV92BlacklistConfigurationFilePath="${downloadDirectoryPath}/${hmaV92BlacklistConfigurationFileName}"
+readonly hmaV93WhitelistConfigurationFileName=".hmaV93WhitelistConfiguration.json"
+readonly hmaV93WhitelistConfigurationFilePath="${downloadDirectoryPath}/${hmaV93WhitelistConfigurationFileName}"
+readonly hmaV93BlacklistConfigurationFileName=".hmaV93BlacklistConfiguration.json"
+readonly hmaV93BlacklistConfigurationFilePath="${downloadDirectoryPath}/${hmaV93BlacklistConfigurationFileName}"
+readonly hmaossV93WhitelistConfigurationFileName=".hmaossV93WhitelistConfiguration.json"
+readonly hmaossV93WhitelistConfigurationFilePath="${downloadDirectoryPath}/${hmaossV93WhitelistConfigurationFileName}"
+readonly hmaossV93BlacklistConfigurationFileName=".hmaossV93BlacklistConfiguration.json"
+readonly hmaossV93BlacklistConfigurationFilePath="${downloadDirectoryPath}/${hmaossV93BlacklistConfigurationFileName}"
 readonly pathTesterFileName=".pathTester.sh"
-readonly pathTesterFilePath="${downloadFolderPath}/${pathTesterFileName}"
+readonly pathTesterFilePath="${downloadDirectoryPath}/${pathTesterFileName}"
+readonly largerOldScanningScope="/data"
+readonly smallerOldScanningScope="/data/misc"
 gapTime=0
 
 function getTheKeyPressed
@@ -500,80 +511,147 @@ function getTheKeyPressed
 	fi
 }
 
-webrootDigest="$(curl -s -m ${curlTimeout} "${webrootDigestUrl}")"
+webrootDigest="$(curl -sSfL -m ${curlTimeout} "${webrootDigestUrl}")"
 if [[ $? -eq ${EXIT_SUCCESS} && -n "${webrootDigest}" ]];
 then
 	echo "Successfully fetched the SHA-512 value of the latest ZIP file of the web UI. "
-	if [[ -d "${webrootFolderPath}" && "$(find "${webrootFolderPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
+	if [[ -d "${webrootDirectoryPath}" && "$(find "${webrootDirectoryPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
 	then
 		echo "The current web UI is already up-to-date. "
 	else
 		echo "The current web UI is out-of-date and needs to be updated. "
 		abortFlag=${EXIT_SUCCESS}
-		if [[ -d "${webrootFolderPath}" ]];
+		if [[ -d "${webrootDirectoryPath}" ]];
 		then
-			rm -rf "${webrootFolderPath}.bak" && mv -fT "${webrootFolderPath}" "${webrootFolderPath}.bak"
-			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootFolderPath}.bak" ]];
+			rm -rf "${webrootDirectoryPath}.bak" && mv -fT "${webrootDirectoryPath}" "${webrootDirectoryPath}.bak"
+			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}.bak" ]];
 			then
-				echo "Successfully moved \"${webrootFolderPath}\" to \"${webrootFolderPath}.bak\". "
+				echo "Successfully moved \"${webrootDirectoryPath}\" to \"${webrootDirectoryPath}.bak\". "
 			else
 				abortFlag=${EXIT_FAILURE}
-				exitCode=$(expr ${exitCode} \| 32)
-				echo "Failed to move \"${webrootFolderPath}\" to \"${webrootFolderPath}.bak\". "
+				exitCode=$((exitCode | 32))
+				echo "Failed to move \"${webrootDirectoryPath}\" to \"${webrootDirectoryPath}.bak\". "
 			fi
 		else
-			echo "No old web UI folders were found to be backed up. "
+			echo "No old web UI directories were found to be backed up. "
 		fi
 		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 		then
-			curl --connect-timeout ${curlTimeout} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootFolderPath}" && rm -f "${webrootFilePath}"
-			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootFolderPath}" && "$(find "${webrootFolderPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
+			echo "Trying to download the latest web UI within ${downloadTimeout} seconds. "
+			curl -sSfL --connect-timeout ${curlTimeout} -m ${downloadTimeout} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootDirectoryPath}" && rm -f "${webrootFilePath}"
+			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}" && "$(find "${webrootDirectoryPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
 			then
 				echo "Successfully updated and verified the web UI. "
-				if [[ -d "${webrootFolderPath}.bak" ]];
+				if [[ -d "${webrootDirectoryPath}.bak" ]];
 				then
-					cp -fp "${webrootFolderPath}.bak/${actionPropFileName}" "${actionPropFilePath}"
-					if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootFolderPath}.bak" ]];
+					rm -f "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}"
+					if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootDirectoryPath}.bak" ]];
 					then
-						echo "Successfully restored the action slot. "
-						rm -rf "${webrootFolderPath}.bak"
-						if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootFolderPath}.bak" ]];
+						echo "Successfully restored the action slot \"${currentAB}\". "
+						rm -rf "${webrootDirectoryPath}.bak"
+						if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootDirectoryPath}.bak" ]];
 						then
-							echo "Successfully removed \"${webrootFolderPath}.bak\". "
+							echo "Successfully removed \"${webrootDirectoryPath}.bak\". "
 						else
-							echo "Failed to remove \"${webrootFolderPath}.bak\". "
+							echo "Failed to remove \"${webrootDirectoryPath}.bak\". "
 						fi
 					else
-						echo "Failed to restore the action slot. "
+						echo "Failed to restore the action slot \"${currentAB}\". "
 					fi
 				else
-					echo "No old web UI folders that should be removed were found. "
+					echo "No old web UI directories that should be removed were found. "
 				fi
 			else
-				exitCode=$(expr ${exitCode} \| 32)
+				exitCode=$((exitCode | 32))
 				echo "Failed to update or verify the web UI. "
-				if [[ -d "${webrootFolderPath}.bak" ]];
+				if [[ -d "${webrootDirectoryPath}.bak" ]];
 				then
-					rm -rf "${webrootFolderPath}" && mv -fT "${webrootFolderPath}.bak" "${webrootFolderPath}"
-					if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootFolderPath}" ]];
+					rm -rf "${webrootDirectoryPath}" && mv -fT "${webrootDirectoryPath}.bak" "${webrootDirectoryPath}"
+					if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}" ]];
 					then
-						echo "Successfully restored \"${webrootFolderPath}.bak\" to \"${webrootFolderPath}\". "
+						echo "Successfully restored \"${webrootDirectoryPath}.bak\" to \"${webrootDirectoryPath}\". "
 					else
-						echo "Failed to restore \"${webrootFolderPath}.bak\" to \"${webrootFolderPath}\". "
+						echo "Failed to restore \"${webrootDirectoryPath}.bak\" to \"${webrootDirectoryPath}\". "
 					fi
 				else
-					echo "No old web UI folders were found for restoring. "
+					echo "No old web UI directories were found for restoring. "
 				fi
 			fi
 		fi
 	fi
 else
-	exitCode=$(expr ${exitCode} \| 32)
+	exitCode=$((exitCode | 32))
 	echo "Failed to fetch the SHA-512 value of the latest ZIP file of the web UI. "
 fi
-if [[ $(expr ${exitCode} \& 32) -ne ${EXIT_SUCCESS} ]];
+if [[ $((exitCode & 32)) -ne ${EXIT_SUCCESS} ]];
 then
 	echo "The updating of the \`\`${databaseFileName}\`\` might fail. This will use the cache to generate the configurations for HMA and its variants. "
+fi
+mkdir -p "${downloadDirectoryPath}"
+if [[ $? -eq ${EXIT_SUCCESS} && -d "${downloadDirectoryPath}" ]];
+then
+	echo "Successfully prepared the directory \"${downloadDirectoryPath}\". "
+	chmod u+x "${cppBinaryFilePath}"
+	"${cppBinaryFilePath}" -i "${databaseFilePath}" -dd "${dataApplicationDirectoryPath}" -dp "${productApplicationDirectoryPath}" -ds "${systemApplicationDirectoryPath}" -dv "${vendorApplicationDirectoryPath}" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
+	if [[ $? -eq ${EXIT_SUCCESS} ]];
+	then
+		if [[ -f "${hmaV92WhitelistConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the HMA v92 whitelist configuration JSON file \"${hmaV92WhitelistConfigurationFilePath}\". "
+		else
+			exitCode=$((exitCode | 4))
+			echo "Failed to generate the HMA v92 whitelist configuration JSON file \"${hmaV92WhitelistConfigurationFilePath}\". "
+		fi
+		if [[ -f "${hmaV92BlacklistConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the HMA v92 blacklist configuration JSON file \"${hmaV92BlacklistConfigurationFilePath}\". "
+		else
+			exitCode=$((exitCode | 4))
+			echo "Failed to generate the HMA v92 blacklist configuration JSON file \"${hmaV92BlacklistConfigurationFilePath}\". "
+		fi
+		if [[ -f "${hmaV93WhitelistConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the HMA v93 whitelist configuration JSON file \"${hmaV93WhitelistConfigurationFilePath}\". "
+		else
+			exitCode=$((exitCode | 4))
+			echo "Failed to generate the HMA v93 whitelist configuration JSON file \"${hmaV93WhitelistConfigurationFilePath}\". "
+		fi
+		if [[ -f "${hmaV93BlacklistConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the HMA v93 blacklist configuration JSON file \"${hmaV93BlacklistConfigurationFilePath}\". "
+		else
+			exitCode=$((exitCode | 4))
+			echo "Failed to generate the HMA v93 blacklist configuration JSON file \"${hmaV93BlacklistConfigurationFilePath}\". "
+		fi
+		if [[ -f "${hmaossV93WhitelistConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the HMA-OSS v93 whitelist configuration JSON file \"${hmaossV93WhitelistConfigurationFilePath}\". "
+		else
+			exitCode=$((exitCode | 4))
+			echo "Failed to generate the HMA-OSS v93 whitelist configuration JSON file \"${hmaossV93WhitelistConfigurationFilePath}\". "
+		fi
+		if [[ -f "${hmaossV93BlacklistConfigurationFilePath}" ]];
+		then
+			echo "Successfully generated the HMA-OSS v93 blacklist configuration JSON file \"${hmaossV93BlacklistConfigurationFilePath}\". "
+		else
+			exitCode=$((exitCode | 4))
+			echo "Failed to generate the HMA-OSS v93 blacklist configuration JSON file \"${hmaossV93BlacklistConfigurationFilePath}\". "
+		fi
+		if [[ -f "${pathTesterFilePath}" ]];
+		then
+			echo "Successfully generated the path tester shell script file \"${pathTesterFilePath}\". "
+		else
+			exitCode=$((exitCode | 4))
+			echo "Failed to generate the path tester shell script file \"${pathTesterFilePath}\". "
+		fi
+	else
+		exitCode=$((exitCode | 4))
+		echo "Failed to generate relevant files for HMA and its variants. "
+	fi
+	chmod -x "${cppBinaryFilePath}"
+else
+	exitCode=$((exitCode | 4))
+	echo "Failed to prepare the directory \"${downloadDirectoryPath}\". "
 fi
 if [[ $# -ge 1 ]];
 then
@@ -584,82 +662,38 @@ else
 	getTheKeyPressed
 	keyCode=$?
 	endGapTime=$(date +%s%N)
-	gapTime=$(expr ${endGapTime} - ${startGapTime})
+	gapTime=$((endGapTime - startGapTime))
 fi
 if [[ ${VK_UP} -eq ${keyCode} || ${VK_DOWN} -eq ${keyCode} ]];
 then
-	folderCount=0
-	fileCount=0
-	failureInstallationCount=0
-	failureInstallationRemovedCount=0
-	for item in "${dataAppFolder}/"*
-	do
-		if [[ -d "${item}" ]];
-		then
-			if basename "${item}" | grep -qE "^vmdl[0-9]+\\.tmp\$";
-			then
-				failureInstallationCount=$(expr ${failureInstallationCount} + 1)
-				if rm -rf "${item}";
-				then
-					failureInstallationRemovedCount=$(expr ${failureInstallationRemovedCount} + 1)
-					echo "[${failureInstallationRemovedCount}/${failureInstallationCount}] Found a failure installation at \"${item}\", which has been removed. "
-				else
-					echo "[${failureInstallationRemovedCount}/${failureInstallationCount}] Found a failure installation at \"${item}\", which could not be removed. "
-				fi
-			else
-				folderCount=$(expr ${folderCount} + 1)
-				subItems="$(ls -1 "${item}")"
-				if [[ $(echo "${subItems}" | wc -l) -ne 1 ]];
-				then
-					echo "- There is at least 1 additional item in \"${item}\", which should not exist. "
-				fi
-			fi
-		elif [ -f "${item}" ];
-		then
-			if [[ "${item}" == *.apk ]];
-			then
-				fileCount=$(expr ${fileCount} + 1)
-			else
-				echo "- A file that should not exist was found at \"${item}\". "
-			fi
-		fi
-	done
-	if [[ ${folderCount} -gt 0 ]] && [[ ${fileCount} -gt 0 ]];
-	then
-		echo "A mixture of folders and files was detected in the \"${dataAppFolder}\" directory. "
-	fi
-	if [[ ${failureInstallationCount} -ge 1 ]];
-	then
-		echo "Found ${failureInstallationCount} failure installation(s) in the \"${dataAppFolder}\" directory with ${failureInstallationRemovedCount} removed successfully. "
-	fi
 	oldConfigurationFolderCount=0
 	removedOldConfigurationFolderCount=0
 	echo "Removing old configuration directories of HMA and its variants. "
-	for oldPath in $(find "${largerOldScanningScope}" -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
+	for oldConfigurationDirectoryPath in $(find "${largerOldScanningScope}" -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
 	do
-		if [[ -e "${oldPath}/config.json" && -d "${oldPath}/log" ]];
+		if [[ -e "${oldConfigurationDirectoryPath}/config.json" && -d "${oldConfigurationDirectoryPath}/log" ]];
 		then
-			oldConfigurationFolderCount=$(expr ${oldConfigurationFolderCount} + 1)
-			if rm -rf "${oldPath}";
+			oldConfigurationFolderCount=$((oldConfigurationFolderCount + 1))
+			if rm -rf "${oldConfigurationDirectoryPath}";
 			then
-				removedOldConfigurationFolderCount=$(expr ${removedOldConfigurationFolderCount} + 1)
-				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Successfully removed \"${oldPath}\" (L). "
+				removedOldConfigurationFolderCount=$((removedOldConfigurationFolderCount + 1))
+				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Successfully removed \"${oldConfigurationDirectoryPath}\" (L). "
 			else
-				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Failed to remove \"${oldPath}\" (L). "
+				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Failed to remove \"${oldConfigurationDirectoryPath}\" (L). "
 			fi
 		fi
 	done
-	for oldPath in $(find "${smallerOldScanningScope}" -mindepth 2 -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
+	for oldConfigurationDirectoryPath in $(find "${smallerOldScanningScope}" -mindepth 2 -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
 	do
-		if [[ -z "$(ls -A "${oldPath}")" ]];
+		if [[ -z "$(ls -A "${oldConfigurationDirectoryPath}")" ]];
 		then
-			oldConfigurationFolderCount=$(expr ${oldConfigurationFolderCount} + 1)
-			if rm -rf "${oldPath}";
+			oldConfigurationFolderCount=$((oldConfigurationFolderCount + 1))
+			if rm -rf "${oldConfigurationDirectoryPath}";
 			then
-				removedOldConfigurationFolderCount=$(expr ${removedOldConfigurationFolderCount} + 1)
-				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Successfully removed \"${oldPath}\" (S). "
+				removedOldConfigurationFolderCount=$((removedOldConfigurationFolderCount + 1))
+				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Successfully removed \"${oldConfigurationDirectoryPath}\" (S). "
 			else
-				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Failed to remove \"${oldPath}\" (S). "
+				echo "[${removedOldConfigurationFolderCount}/${oldConfigurationFolderCount}] Failed to remove \"${oldConfigurationDirectoryPath}\" (S). "
 			fi
 		fi
 	done
@@ -673,73 +707,19 @@ then
 		echo "No old configuration directories of HMA or its variants were found. "
 	fi
 fi
-mkdir -p "${downloadFolderPath}"
-if [[ $? -eq ${EXIT_SUCCESS} && -d "${downloadFolderPath}" ]];
-then
-	echo "Successfully prepared the folder \"${downloadFolderPath}\". "
-	chmod u+x "${cppBinaryFilePath}"
-	"${cppBinaryFilePath}" -i "${databaseFilePath}" -ow92 "${whitelist92ConfigurationFilePath}" -ob92 "${blacklist92ConfigurationFilePath}" -ow93 "${whitelist93ConfigurationFilePath}" -ob93 "${blacklist93ConfigurationFilePath}" -op "${pathTesterFilePath}"
-	if [[ $? -eq ${EXIT_SUCCESS} ]];
-	then
-		if [[ -f "${whitelist92ConfigurationFilePath}" ]];
-		then
-			echo "Successfully generated the HMA whitelist configuration JSON file \"${whitelist92ConfigurationFilePath}\". "
-		else
-			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the HMA whitelist configuration JSON file \"${whitelist92ConfigurationFilePath}\". "
-		fi
-		if [[ -f "${blacklist92ConfigurationFilePath}" ]];
-		then
-			echo "Successfully generated the HMA blacklist configuration JSON file \"${blacklist92ConfigurationFilePath}\". "
-		else
-			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the HMA blacklist configuration JSON file \"${blacklist92ConfigurationFilePath}\". "
-		fi
-		if [[ -f "${whitelist93ConfigurationFilePath}" ]];
-		then
-			echo "Successfully generated the HMA-OSS whitelist configuration JSON file \"${whitelist93ConfigurationFilePath}\". "
-		else
-			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the HMA-OSS whitelist configuration JSON file \"${whitelist93ConfigurationFilePath}\". "
-		fi
-		if [[ -f "${blacklist93ConfigurationFilePath}" ]];
-		then
-			echo "Successfully generated the HMA-OSS blacklist configuration JSON file \"${blacklist93ConfigurationFilePath}\". "
-		else
-			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the HMA-OSS blacklist configuration JSON file \"${blacklist93ConfigurationFilePath}\". "
-		fi
-		if [[ -f "${pathTesterFilePath}" ]];
-		then
-			echo "Successfully generated the path tester shell script file \"${pathTesterFilePath}\". "
-		else
-			exitCode=$(expr ${exitCode} \| 4)
-			echo "Failed to generate the path tester shell script file \"${pathTesterFilePath}\". "
-		fi
-	else
-		exitCode=$(expr ${exitCode} \| 4)
-		echo "Failed to generate relevant files for HMA and its variants. "
-	fi
-	chmod -x "${cppBinaryFilePath}"
-else
-	exitCode=$(expr ${exitCode} \| 4)
-	echo "Failed to prepare the folder \"${downloadFolderPath}\". "
-fi
 echo ""
 
 # Tricky Store (0b00X000) #
 echo "# Tricky Store (0b00X000) #"
-readonly trickyStoreConfigurationFolderPath="${adbFolder}/tricky_store"
+readonly trickyStoreConfigurationDirectoryPath="${adbFolder}/tricky_store"
 readonly trickyStoreSecurityPatchFileName="security_patch.txt"
-readonly trickyStoreSecurityPatchFilePath="${trickyStoreConfigurationFolderPath}/${trickyStoreSecurityPatchFileName}"
-readonly trickyStoreTargetExclusionFileName="trickyStoreTargetExclusions.txt"
-readonly trickyStoreTargetExclusionFilePath="${classificationFolderPath}/${trickyStoreTargetExclusionFileName}"
+readonly trickyStoreSecurityPatchFilePath="${trickyStoreConfigurationDirectoryPath}/${trickyStoreSecurityPatchFileName}"
 readonly trickyStoreTargetFileName="target.txt"
-readonly trickyStoreTargetFilePath="${trickyStoreConfigurationFolderPath}/${trickyStoreTargetFileName}"
+readonly trickyStoreTargetFilePath="${trickyStoreConfigurationDirectoryPath}/${trickyStoreTargetFileName}"
 
-if [[ -d "${trickyStoreConfigurationFolderPath}" ]];
+if [[ -d "${trickyStoreConfigurationDirectoryPath}" ]];
 then
-	echo "The Tricky Store configuration folder was found at \"${trickyStoreConfigurationFolderPath}\". "
+	echo "The Tricky Store configuration directory was found at \"${trickyStoreConfigurationDirectoryPath}\". "
 	if [[ -f "${trickyStoreSecurityPatchFilePath}" ]];
 	then
 		echo "The security patch file was found at \"${trickyStoreSecurityPatchFilePath}\". "
@@ -747,7 +727,7 @@ then
 		then
 			echo "Successfully removed \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		else
-			exitCode=$(expr ${exitCode} \| 8)
+			exitCode=$((exitCode | 8))
 			echo "Failed to remove \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		fi
 	else
@@ -791,7 +771,7 @@ then
 		fi
 	fi
 else
-	echo "The Tricky Store configuration folder did not exist. "
+	echo "The Tricky Store configuration directory did not exist. "
 fi
 echo ""
 
@@ -803,7 +783,6 @@ readonly propertiesToBeSet="ro.boot.vbmeta.device_state:locked ro.boot.verifiedb
 readonly propertiesToExist="ro.boot.vbmeta.avb_version ro.boot.vbmeta.hash_alg ro.boot.vbmeta.size ro.boot.vbmeta.digest"
 readonly propertiesToBeDeleted="persist.sys.vold_app_data_isolation_enabled persist.zygote.app_data_isolation ro.oem_unlock_supported"
 readonly persistentPropertyFilePath="/data/property/persistent_properties"
-readonly directoryForTesting="/data/data/com.android.settings"
 readonly bannedSubStrings="-AICP -arter97 -blu_spark -CAF -cm- -crDroid -crdroid -CyanogenMod -Deathly -EAS- -eas- -ElementalX -Elite -franco -hadesKernel -Lineage- -lineage- -LineageOS -lineageos -mokee -MoRoKernel -Noble -Optimus -SlimRoms -Sultan -sultan"
 readonly sourceXmlFilePath="/etc/compatconfig/services-platform-compat-config.xml"
 readonly replacementEntry="system"
@@ -817,13 +796,13 @@ for sensitiveApplication in ${sensitiveApplications}
 do
 	if echo "${packageList}" | grep -qF "${sensitiveApplication}";
 	then
-		sensitiveApplicationCount=$(expr ${sensitiveApplicationCount} + 1)
+		sensitiveApplicationCount=$((sensitiveApplicationCount + 1))
 		if pm disable "${sensitiveApplication}" &> /dev/null;
 		then
-			disabledSensitiveApplicationCount=$(expr ${disabledSensitiveApplicationCount} + 1)
+			disabledSensitiveApplicationCount=$((disabledSensitiveApplicationCount + 1))
 			echo "- The sensitive application \"${sensitiveApplication}\" was detected, which has been disabled. "
 		else
-			exitCode=$(expr ${exitCode} \| 16)
+			exitCode=$((exitCode | 16))
 			echo "- The sensitive application \"${sensitiveApplication}\" was detected, which failed to be disabled. "
 		fi
 	fi
@@ -842,7 +821,7 @@ do
 	then
 		echo "- The execution of \`\`settings delete global ${policyToBeDeleted}\`\` succeeded. "
 	else
-		exitCode=$(expr ${exitCode} \| 16)
+		exitCode=$((exitCode | 16))
 		echo "- The execution of \`\`settings delete global ${policyToBeDeleted}\`\` failed. "
 	fi
 done
@@ -862,7 +841,7 @@ do
 			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be and successfully set to \"${propertyValue}\". "
 		else
 			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be but failed to set to \"${propertyValue}\". "
-			exitCode=$(expr ${exitCode} \| 16)
+			exitCode=$((exitCode | 16))
 		fi
 	fi
 done
@@ -880,7 +859,7 @@ do
 	resetprop --delete "${propertyToBeDeleted}"
 	if getprop "${propertyToBeDeleted}" | grep -qE "[A-Za-z0-9_-]";
 	then
-		exitCode=$(expr ${exitCode} \| 16)
+		exitCode=$((exitCode | 16))
 		echo "- The execution of \`\`resetprop --delete \"${propertyToBeDeleted}\"\`\` failed. "
 	fi
 done
@@ -891,7 +870,7 @@ then
 	then
 		echo "- Successfully removed persistent property traces from \"${persistentPropertyFilePath}\". "
 	else
-		exitCode=$(expr ${exitCode} \| 16)
+		exitCode=$((exitCode | 16))
 		echo "- Failed to remove persistent property traces from \"${persistentPropertyFilePath}\". "
 	fi
 else
@@ -940,22 +919,22 @@ then
 		echo "The current \"${sourceXmlFilePath}\" is already a replaced one. "
 	else
 		echo "Generating replacement, the \"${sourceXmlFilePath}\" will be replaced after the device reboots. "
-		targetXmlFolderPath="$(dirname "${targetXmlFilePath}")"
-		if mkdir -p "${targetXmlFolderPath}";
+		targetXmlDirectoryPath="$(dirname "${targetXmlFilePath}")"
+		if mkdir -p "${targetXmlDirectoryPath}";
 		then
-			echo "Successfully created the folder \"${targetXmlFolderPath}\". "
+			echo "Successfully created the directory \"${targetXmlDirectoryPath}\". "
 			toBeWritten=$(sed -E 's/(enableAfterTargetSdk=")[0-9]+(" id="143937733")/\10\2/g' "${sourceXmlFilePath}")
 			echo -n "${toBeWritten}" > "${targetXmlFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -f "${targetXmlFilePath}" ]];
 			then
 				echo "Successfully generated \"${targetXmlFilePath}\". "
 			else
-				exitCode=$(expr ${exitCode} \| 16)
+				exitCode=$((exitCode | 16))
 				echo "Failed to generate \"${targetXmlFilePath}\". "
 			fi
 		else
-			exitCode=$(expr ${exitCode} \| 16)
-			echo "Failed to create the folder \"${targetXmlFolderPath}\". "
+			exitCode=$((exitCode | 16))
+			echo "Failed to create the directory \"${targetXmlDirectoryPath}\". "
 		fi
 	fi
 else
@@ -982,13 +961,11 @@ echo ""
 
 # Update (0bX00000) #
 echo "# Update (0bX00000) #"
-readonly currentAB="B"
-readonly targetAB="A"
 readonly targetAction="action${targetAB}.sh"
 readonly actionUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}"
 readonly actionDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}.sha512"
 
-shellDigest="$(curl -s -m ${curlTimeout} "${actionDigestUrl}")"
+shellDigest="$(curl -sSfL -m ${curlTimeout} "${actionDigestUrl}")"
 if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellDigest}" ]];
 then
 	echo "Successfully fetched the SHA-512 value of the latest \`\`${targetAction}\`\` from GitHub. "
@@ -1005,13 +982,13 @@ then
 			then
 				echo "Successfully synchronized the actual action slot to \"${actionPropFilePath}\". "
 			else
-				exitCode=$(expr ${exitCode} \| 32)
+				exitCode=$((exitCode | 32))
 				echo "Failed to synchronize the actual action slot to \"${actionPropFilePath}\". "
 			fi
 		fi
 	else
 		echo "The target action \`\`${targetAction}\`\` is out-of-date and needs to be updated. "
-		shellContent="$(curl -s -m ${curlTimeout} "${actionUrl}")"
+		shellContent="$(curl -sSfL -m ${curlTimeout} "${actionUrl}")"
 		if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellContent}" ]];
 		then
 			echo "Successfully fetched the latest \`\`${targetAction}\`\` from GitHub. "
@@ -1031,44 +1008,44 @@ then
 						then
 							echo "Successfully switched the action slot to ${targetAB} in \"${actionPropFilePath}\". "
 						else
-							exitCode=$(expr ${exitCode} \| 32)
+							exitCode=$((exitCode | 32))
 							echo "Failed to switch the action slot to ${targetAB} in \"${actionPropFilePath}\". "
 						fi
 					else
-						exitCode=$(expr ${exitCode} \| 32)
+						exitCode=$((exitCode | 32))
 						echo "Failed to update \`\`${targetAction}\`\`. "
 					fi
 				else
-					exitCode=$(expr ${exitCode} \| 32)
+					exitCode=$((exitCode | 32))
 					echo "The latest \`\`${targetAction}\`\` failed to pass the local shell syntax check (sh). "
 				fi
 			else
-				exitCode=$(expr ${exitCode} \| 32)
+				exitCode=$((exitCode | 32))
 				echo "Failed to verify the latest \`\`${targetAction}\`\`. "
 			fi
 		else
-			exitCode=$(expr ${exitCode} \| 32)
+			exitCode=$((exitCode | 32))
 			echo "Failed to fetch the latest \`\`${targetAction}\`\` from GitHub. "
 		fi
 	fi
 else
-	exitCode=$(expr ${exitCode} \| 32)
+	exitCode=$((exitCode | 32))
 	echo "Failed to fetch the SHA-512 value of the latest \`\`${targetAction}\`\` from GitHub. "
 fi
 echo ""
 
 # Exit #
 readonly endTime=$(date +%s%N)
-readonly timeDelta=$(expr ${endTime} - ${startTime} - ${gapTime})
+readonly timeDelta=$((endTime - startTime - gapTime))
 
-if [[ ${EXIT_SUCCESS} -eq $(expr ${exitCode} \& ${EXIT_FAILURE}) ]];
+if [[ ${EXIT_SUCCESS} -eq $((exitCode & EXIT_FAILURE)) ]];
 then
-	setPermissions && chmod 755 "${actionFolderPath}"
+	setPermissions && chmod 755 "${actionDirectoryPath}"
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
 		echo "Successfully set permissions. "
 	else
-		exitCode=$(expr ${exitCode} \| ${EXIT_FAILURE})
+		exitCode=$((exitCode | ${EXIT_FAILURE}))
 		echo "Failed to set permissions. "
 	fi
 fi
@@ -1077,8 +1054,8 @@ if [[ $? -eq ${EXIT_SUCCESS} ]];
 then
 	echo "Successfully cleared caches. "
 else
-	exitCode=$(expr ${exitCode} \| ${EXIT_FAILURE})
+	exitCode=$((exitCode | ${EXIT_FAILURE}))
 	echo "Failed to clear caches. "
 fi
-echo "Finished executing the \`\`action.sh\`\` in $(expr ${timeDelta} / 1000000000).$(expr ${timeDelta} % 1000000000) second(s) (${exitCode}). "
+echo "Finished executing the \`\`action.sh\`\` in $((timeDelta / 1000000000)).$((timeDelta % 1000000000)) second(s) (${exitCode}). "
 exit ${exitCode}
