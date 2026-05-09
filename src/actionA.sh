@@ -444,10 +444,6 @@ readonly databaseFileName="database.json"
 readonly databaseFilePath="${webrootDirectoryPath}/${databaseFileName}"
 readonly cppBinaryFileName="generate"
 readonly cppBinaryFilePath="${webrootDirectoryPath}/${cppBinaryFileName}_$(getprop ro.product.cpu.abi)"
-readonly dataApplicationDirectoryPath="/data/app"
-readonly productApplicationDirectoryPath="/product/app"
-readonly systemApplicationDirectoryPath="/system/app"
-readonly vendorApplicationDirectoryPath="/vendor/app"
 if [[ -n "${EXTERNAL_STORAGE}" ]];
 then
 	readonly downloadDirectoryPath="${EXTERNAL_STORAGE}/Download/.${moduleName}"
@@ -592,7 +588,7 @@ if [[ $? -eq ${EXIT_SUCCESS} && -d "${downloadDirectoryPath}" ]];
 then
 	echo "Successfully prepared the directory \"${downloadDirectoryPath}\". "
 	chmod u+x "${cppBinaryFilePath}"
-	"${cppBinaryFilePath}" -i "${databaseFilePath}" -dd "${dataApplicationDirectoryPath}" -dp "${productApplicationDirectoryPath}" -ds "${systemApplicationDirectoryPath}" -dv "${vendorApplicationDirectoryPath}" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
+	"${cppBinaryFilePath}" -i "${databaseFilePath}" -l "Info" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
 		if [[ -f "${hmaV92WhitelistConfigurationFilePath}" ]];

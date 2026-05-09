@@ -39,6 +39,7 @@ private:
 	static const std::vector<std::string> ApplicationPartitions{ "/data", "/product", "/system", "/system_ext", "/vendor" };
 	static const std::vector<std::string> ApplicationDirectoryNames{ "app", "app-private", "priv-app" };
 	static const std::string HexadecimalCharacterSet = "0123456789ABCDEF";
+	static const std::string ReportLink = "https://github.com/LRFP-Team/Bypasser/issues";
 	
 	unsigned short flag = 0 /* 0b 0000 0000 0000 0000 */;
 	std::string inputDatabaseFilePath = Generator::DefaultDatabaseFilePath;
@@ -210,10 +211,40 @@ private:
 		formattedMessage += "\"";
 		return formattedMessage;
 	}
-	bool traverseUserApplicationDirectory(const std::string& userApplicationDirectoryPath, size_t& newPluginCount, size_t& newNonPluginCount)
+	bool addToDatabase(const std::string& packageName, const bool isPlugin, size_t& unrecordedPluginCount, size_t& unrecordedNonPluginCount)
 	{
-		std::filesystem::path directoryPath(userApplicationDirectoryPath);
-		if (std::filesystem::exists(directoryPath) && std::filesystem::is_directory(directoryPath))
+		if (isPlugin)
+		{
+			if (std::find(this->j["M"].begin(), this->j["M"].end(), packageName) == this->j["M"].end())
+			{
+				this->j["M"].push_back(packageName);
+				++unrecordedPluginCount;
+				return true;
+			}
+		}
+		else
+		{
+			bool notInDatabase = std::find(this->j["C"][""].begin(), this->j["C"][""].end(), packageName) == this->j["C"][""].end() && std::find(this->j["D"].begin(), this->j["D"].end(), packageName) == this->j["D"].end() && std::find(this->j["S"].begin(), this->j["S"].end(), packageName) == this->j["S"].end();
+			if (notInDatabase)
+				for (nlohmann::json::iterator entryIt = this->j["C"]["_"].begin(); entryIt != this->j["C"]["_"].end(); ++entryIt)
+					if (entryIt->value().is_array() && std::find(entryIt->value().begin(), entryIt->value().end(), packageName) != entryIt->value().end())
+					{
+						notInDatabase = false;
+						break;
+					}
+			if (notInDatabase)
+			{
+				if (this->j["C"]["_"].contains("L"))
+					this->j["C"]["_"]["L"].push_back(packageName);
+				++unrecordedNonPluginCount;
+				return true;
+			}
+		}
+		return false;
+	}
+	bool traverseApplicationDirectory(const std::filesystem::path& directoryPath, size_t& unrecordedPluginCount, size_t& unrecordedNonPluginCount)
+	{
+		if (!std::filesystem::is_symlink(directoryPath) && std::filesystem::is_directory(directoryPath))
 		{
 			/**
 			 * formCount = directoryFormCount + fileFormCount + invalidFormCount
@@ -221,8 +252,9 @@ private:
 			 * validDirectoryFormCount = validDirectoryFormSuccessCount + validDirectoryFormFailureCount
 			 * failureInstallationCount = failureInstallationRemovedCount + failureInstallationUnremovedCount
 			 * fileFormCount = validFileFormCount + invalidFileFormCount
+			 * validFileFormCount = validFileFormSuccessCount + validFileFormFailureCount
 			 */
-			size_t formCount = 0, directoryFormCount = 0, validDirectoryFormCount = 0, validDirectoryFormSuccessCount = 0, validDirectoryFormFailureCount = 0, invalidDirectoryFormCount = 0, failureInstallationCount = 0, failureInstallationRemovedCount = 0, failureInstallationUnremovedCount = 0, fileFormCount = 0, validFileFormCount = 0, invalidFileFormCount = 0, invalidFormCount = 0;
+			size_t formCount = 0, directoryFormCount = 0, validDirectoryFormCount = 0, validDirectoryFormSuccessCount = 0, validDirectoryFormFailureCount = 0, invalidDirectoryFormCount = 0, failureInstallationCount = 0, failureInstallationRemovedCount = 0, failureInstallationUnremovedCount = 0, fileFormCount = 0, validFileFormCount = 0, validFileFormSuccessCount = 0, validFileFormFailureCount = 0, invalidFileFormCount = 0, invalidFormCount = 0;
 			try
 			{
 				for (const std::filesystem::directory_entry& firstLayerEntry : std::filesystem::directory_iterator(directoryPath))
@@ -329,26 +361,7 @@ private:
 													if (this->checkoutApplication(thirdLayerEntry.path().string(), isPlugin))
 													{
 														++validDirectoryFormSuccessCount;
-														if (isPlugin)
-														{
-															if (std::find(this->j["M"].begin(), this->j["M"].end(), packageName) == this->j["M"].end())
-															{
-																this->j["M"].push_back(packageName);
-																std::sort(this->j["M"].begin(), this->j["M"].end());
-																++newPluginCount;
-															}
-														}
-														else
-														{
-															bool alreadyInDatabase = false;
-															for (nlohmann::json::const_iterator databaseIt = this->j["D"].begin(); databaseIt != this->j["D"].end(); ++databaseIt)
-																if (databaseIt->is_object() && databaseIt->contains("P") && (*databaseIt)["P"].is_string() && packageName == (*databaseIt)["P"].get<std::string>())
-																{
-																	alreadyInDatabase = true;
-																	break;
-																}
-															++newNonPluginCount;
-														}
+														this->addToDatabase(packageName, isPlugin, unrecordedPluginCount, unrecordedNonPluginCount);
 													}
 													else
 													{
@@ -377,10 +390,24 @@ private:
 					{
 						/* Analyze the application installed as a file */
 						++fileFormCount;
-						const std::string packageName = firstLayerEntry.path().stem().string();
+						std::string packageName = firstLayerEntry.path().stem().string();
+						size_t position = packageName.find('-');
+						if (std::string::npos != position)
+							packageName = packageName.substr(0, position);
 						if (std::regex_match(packageName, Generator::Pattern))
 						{
-
+							++validFileFormCount;
+							bool isPlugin = false;
+							if (this->checkoutApplication(firstLayerEntry.path().string(), isPlugin))
+							{
+								++validFileFormSuccessCount;
+								this->addToDatabase(packageName, isPlugin, unrecordedPluginCount, unrecordedNonPluginCount);
+							}
+							else
+							{
+								this->print("Failed to checkout " + this->formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Warning);
+								++validFileFormFailureCount;
+							}
 						}
 						else
 							++invalidFileFormCount;
@@ -392,18 +419,6 @@ private:
 			{
 				return false;
 			}
-
-			// 杈撳嚭缁熻缁撴灉锛堝疄闄呴」鐩腑鍙浛鎹负瀛樺偍鍒板閮ㄥ鍣ㄦ垨閫氳繃鍥炶皟杩斿洖锛?			std::cout << "Folder-based applications count: " << folderAppCount << std::endl;
-			for (const auto& name : folderPackageNames) {
-				std::cout << "  Package: " << name << std::endl;
-			}
-
-			std::cout << "File-based applications count: " << fileAppCount << std::endl;
-			for (const auto& name : filePackageNames) {
-				std::cout << "  Package: " << name << std::endl;
-			}
-
-			return true;
 		}
 		else
 			return false;
@@ -643,7 +658,7 @@ public:
 						
 						/* First-level */
 						const std::vector<std::string> keysToKeep{ "C", "D", "M", "N", "S", "T", "U", "V" };
-						int removedKeyCount = 0;
+						size_t removedKeyCount = 0;
 						for (nlohmann::json::iterator entryIt = this->j.begin(); entryIt != this->j.end(); )
 							if (std::find(keysToKeep.begin(), keysToKeep.end(), entryIt.key()) != keysToKeep.end())
 								++entryIt;
@@ -670,12 +685,22 @@ public:
 						removedKeyCount = 0;
 						if (this->j.contains("C") && this->j["C"].is_object())
 						{
-							if (this->j["C"].contains("") && this->j["C"][""].is_array() && this->j["C"].contains("_") && this->j["C"]["_"].is_object())
-							{
+							size_t removedValueCount = 0;
+							if (this->j["C"].contains("") && this->j["C"][""].is_array())
+								for (nlohmann::json::iterator arrayIt = this->j["C"][""].begin(); arrayIt != this->j["C"][""].end(); )
+									if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Generator::Pattern))
+										++arrayIt;
+									else
+									{
+										arrayIt = this->j["C"][""].erase(arrayIt);
+										++removedValueCount;
+									}
+							else
+								this->j["C"][""] = nlohmann::json::array();
+							if (this->j["C"].contains("_") && this->j["C"]["_"].is_object())
 								for (nlohmann::json::iterator entryIt = this->j["C"]["_"].begin(); entryIt != this->j["C"]["_"].end(); )
 									if (entryIt.key().length() == 1 && 'A' <= entryIt.key()[0] && entryIt.key()[0] <= 'Z' && entryIt.value().is_array())
 									{
-										int removedValueCount = 0;
 										for (nlohmann::json::iterator arrayIt = entryIt.value().begin(); arrayIt != entryIt.value().end(); )
 											if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Generator::Pattern))
 												++arrayIt;
@@ -684,28 +709,66 @@ public:
 												arrayIt = entryIt.value().erase(arrayIt);
 												++removedValueCount;
 											}
-										if (1 == removedValueCount)
-											this->print("A value in $C_" + entryIt.key() + "$ is invalid, which has been removed. ", LogLevel::Warning);
-										else if (removedValueCount)
-											this->print(std::to_string(removedValueCount) + " values in $C_" + entryIt.key() + "$ are invalid, which have been removed. ", LogLevel::Warning);
 										++entryIt;
 									}
-									else if (!(regex_match(entryIt.key(), Generator::Pattern) && entryIt.value().is_null()))
+									else
 									{
 										entryIt = this->j["C"]["_"].erase(entryIt);
 										++removedKeyCount;
 									}
-								if (1 == removedKeyCount)
-									this->print("A key in $C$ is invalid, which has been removed. ", LogLevel::Warning);
-								else if (removedKeyCount)
-									this->print(std::to_string(removedKeyCount) + " keys in $C$ are invalid, which have been removed. ", LogLevel::Warning);
-							}
 							else
-
+								this->j["C"]["_"] = nlohmann::json::object();
+							for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); )
+								if ("" == entryIt.key() || "_" == entryIt.key())
+									++entryIt;
+								else if (entryIt.key().length() == 1 && 'A' <= entryIt.key()[0] && entryIt.key()[0] <= 'Z' && entryIt.value().is_array())
+								{
+									/* Compatible with Version 3.6.x ($C_X$) */
+									if (!this->j["C"]["_"].contains(entryIt.key()))
+										this->j["C"]["_"][entryIt.key()] = nlohmann::json::array();
+									for (const nlohmann::json& value : entryIt.value())
+										if (value.is_string() && std::regex_match(value.get<std::string>(), Generator::Pattern))
+											this->j["C"]["_"][entryIt.key()].push_back(value.get<std::string>());
+										else
+											++removedValueCount;
+									entryIt = this->j["C"].erase(entryIt);
+								}
+								else if (std::regex_match(entryIt.key(), Generator::__Pattern)/* && entryIt.value().is_null() */)
+								{
+									/* Compatible with Version 3.6.x ($C$) */
+									this->j["C"][""].push_back(entryIt.key());
+									entryIt = this->j["C"].erase(entryIt);
+								}
+								else
+								{
+									entryIt = this->j["C"].erase(entryIt);
+									++removedKeyCount;
+								}
+							std::sort(this->j["C"][""].begin(), this->j["C"][""].end());
+							this->j["C"][""].erase(std::unique(this->j["C"][""].begin(), this->j["C"][""].end()), this->j["C"][""].end());
+							for (nlohmann::json::iterator entryIt = this->j["C"]["_"].begin(); entryIt != this->j["C"]["_"].end(); )
+								if (this->j["C"]["_"][entryIt.key()].empty()) // different from Python
+									entryIt = this->j["C"]["_"].erase(entryIt);
+								else
+								{
+									std::sort(this->j["C"]["_"][entryIt.key()].begin(), this->j["C"]["_"][entryIt.key()].end());
+									this->j["C"]["_"][entryIt.key()].erase(std::unique(this->j["C"]["_"][entryIt.key()].begin(), this->j["C"]["_"][entryIt.key()].end()), this->j["C"]["_"][entryIt.key()].end());
+									++entryIt;
+								}
+							if (1 == removedKeyCount)
+								this->print("A key in $C$ and its descendants is invalid, which has been removed. ", LogLevel::Warning);
+							else if (removedKeyCount)
+								this->print(std::to_string(removedKeyCount) + " keys in $C$ and its descendants are invalid, which have been removed. ", LogLevel::Warning);
+							if (1 == removedValueCount)
+								this->print("A value in $C$ and its descendants is invalid, which has been removed. ", LogLevel::Warning);
+							else if (removedValueCount)
+								this->print(std::to_string(removedValueCount) + " values in $C$ and its descendants are invalid, which have been removed. ", LogLevel::Warning);
 						}
 						else
 						{
 							this->j["C"] = nlohmann::json::object();
+							this->j["C"][""] = nlohmann::json::array();
+							this->j["C"]["_"] = nlohmann::json::object();
 							this->print("Initialized $C$ as an empty dictionary. ", LogLevel::Warning);
 						}
 						if (this->j.contains("D") && this->j["D"].is_array())
@@ -719,6 +782,8 @@ public:
 									arrayIt = this->j["D"].erase(arrayIt);
 									++removedValueCount;
 								}
+							std::sort(this->j["D"].begin(), this->j["D"].end());
+							this->j["D"].erase(std::unique(this->j["D"].begin(), this->j["D"].end()), this->j["D"].end()); ]
 							if (1 == removedValueCount)
 								this->print("A value in $D$ is invalid, which has been removed. ", LogLevel::Warning);
 							else if (removedValueCount)
@@ -740,6 +805,8 @@ public:
 									arrayIt = this->j["M"].erase(arrayIt);
 									++removedValueCount;
 								}
+							std::sort(this->j["M"].begin(), this->j["M"].end());
+							this->j["M"].erase(std::unique(this->j["M"].begin(), this->j["M"].end()), this->j["M"].end());
 							if (1 == removedValueCount)
 								this->print("A value in $M$ is invalid, which has been removed. ", LogLevel::Warning);
 							else if (removedValueCount)
@@ -797,6 +864,8 @@ public:
 									arrayIt = this->j["S"].erase(arrayIt);
 									++removedValueCount;
 								}
+							std::sort(this->j["S"].begin(), this->j["S"].end());
+							this->j["S"].erase(std::unique(this->j["S"].begin(), this->j["S"].end()), this->j["S"].end());
 							if (1 == removedValueCount)
 								this->print("A value in $S$ is invalid, which has been removed. ", LogLevel::Warning);
 							else if (removedValueCount)
@@ -852,21 +921,41 @@ public:
 			return false;
 		}
 	}
-	bool scanApplicationDirectories() // 0b 0000 0000 0000 0011 | 0b 0000 0000 0011 1100 -> 0b 0000 0000 0011 1111
+	bool scanApplicationDirectories() // 0b 0000 0000 0000 0011 | 0b 0000 0000 0111 1100 -> 0b 0000 0000 0111 1111
 	{
 		if (this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */)
 		{
 			this->flag &= 3/* 0b 0000 0000 0000 0011 */;
-			size_t newPluginCount = 0, newNonPluginCount = 0;
-			if (this->traverseApplicationDirectory(this->inputDataApplicationDirectoryPath, newPluginCount, newNonPluginCount))
-				this->flag |= 4/* 0b 0000 0000 0000 0100 */;
-			if (this->traverseApplicationDirectory(this->inputProductApplicationDirectoryPath, newPluginCount, newNonPluginCount))
-				this->flag |= 8/* 0b 0000 0000 0000 1000 */;
-			if (this->traverseApplicationDirectory(this->inputSystemApplicationDirectoryPath, newPluginCount, newNonPluginCount))
-				this->flag |= 16/* 0b 0000 0000 0001 0000 */;
-			if (this->traverseApplicationDirectory(this->inputVendorApplicationDirectoryPath, newPluginCount, newNonPluginCount))
-				this->flag |= 32/* 0b 0000 0000 0010 0000 */;
-			return this->flag && 32/* 0b 0000 0000 0010 0000 */ && this->flag & 16/* 0b 0000 0000 0001 0000 */ && this->flag & 8/* 0b 0000 0000 0000 1000 */ && this->flag & 4/* 0b 0000 0000 0000 0100 */ && this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */;
+			const size_t applicationPartitionCount = min(Generator::ApplicationPartitions.size(), 6);
+			size_t unrecordedPluginCount = 0, unrecordedNonPluginCount = 0;
+			for (size_t i = 0; i < applicationPartitionCount; ++i)
+			{
+				bool localFlag = true;
+				for (const std::string applicationDirectoryName : Generator::ApplicationDirectoryNames)
+				{
+					std::filesystem::path applicationDirectoryPath = Generator::ApplicationPartitions[i];
+					applicationDirectoryPath /= applicationDirectoryName;
+					if (!std::filesystem::is_symlink(applicationDirectoryPath) && std::filesystem::is_directory(applicationDirectoryPath) && !this->traverseApplicationDirectory(applicationDirectoryPath, unrecordedPluginCount, unrecordedNonPluginCount))
+						localFlag = false;
+				}
+				if (localFlag)
+					this->flag |= 1 << (i + 2)/* 0b 0000 0000 (?)??? ??00 */;
+			}
+			if (unrecordedPluginCount || unrecordedNonPluginCount)
+				this->print("Found " + std::to_string(unrecordedPluginCount) + " unrecorded plugin(s) ($M$) and " + std::to_string(unrecordedNonPluginCount) + " unrecorded plain application(s) ($C$ or $M$). You are invited to report your configurations to " + Generator::ReportLink, LogLevel::Info);
+			const size_t effectiveHighestBit = applicationPartitionCount + 2, highestBit = 8;
+			bool localFlag = applicationPartitionCount >= 1;
+			size_t index = 2;
+			for (; index < effectiveHighestBit; ++index)
+				if (!((this->flag >> index) & 1/* 0b 0000 0000 0000 0001 */))
+				{
+					localFlag = false;
+					break;
+				}
+			if (localFlag)
+				for (; index < highestBit; ++index)
+					this->flag |= 1 << index/* 0b 0000 0000 ???? ??00 */;
+			return this->flag & 128/* 0b 0000 0000 1000 0000 */ && this->flag & 64/* 0b 0000 0000 0100 0000 */ && this->flag & 32/* 0b 0000 0000 0010 0000 */ && this->flag & 16/* 0b 0000 0000 0001 0000 */ && this->flag & 8/* 0b 0000 0000 0000 1000 */ && this->flag & 4/* 0b 0000 0000 0000 0100 */ && this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */;
 		}
 		else
 		{
@@ -874,13 +963,13 @@ public:
 			return false;
 		}
 	}
-	bool generateHMAConfigurations() // 0b ???? ??00 0011 1111 | 0b 0000 0011 1100 0000 -> 0b ???? ??11 1111 1111
+	bool generateHMAConfigurations() // 0b ???? 0000 1111 1111 | 0b 0000 1111 0000 0000 -> 0b ???? 1111 1111 1111
 	{
 		if (this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */)
 		{
-			this->flag &= 243/* 0b 1111 0011 */;
-			if (this->outputHmaV92WhitelistFilePath.empty() && this->outputHmaV92BlacklistFilePath.empty())
-				this->flag |= 12/* 0b00001100 */;
+			this->flag &= 61695/* 0b 1111 0000 1111 1111 */;
+			if (this->outputHmaV92WhitelistFilePath.empty() && this->outputHmaV92BlacklistFilePath.empty() && this->outputHmaV93WhitelistFilePath.empty() && this->outputHmaV93BlacklistFilePath.empty())
+				this->flag |= 3840/* 0b 0000 1111 0000 0000 */;
 			else
 			{
 				/* hmaConfiguration */

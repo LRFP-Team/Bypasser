@@ -75,7 +75,6 @@ class DatabaseManager:
 							if not (isinstance(self.__database["C"][""][i], str) and DatabaseManager.__Pattern.match(self.__database["C"][""][i])):
 								del self.__database["C"][""][i]
 								removedValueCount += 1
-						self.__database["C"][""] = sorted(set(self.__database["C"][""]))
 					else:
 						self.__database["C"][""] = []
 						initializedKeys.add("C ")
@@ -86,7 +85,6 @@ class DatabaseManager:
 									if not (isinstance(self.__database["C"]["_"][key][i], str) and DatabaseManager.__Pattern.match(self.__database["C"]["_"][key][i])):
 										del self.__database["C"]["_"][key][i]
 										removedValueCount += 1
-								self.__database["C"]["_"][key] = sorted(set(self.__database["C"]["_"][key]))
 							else:
 								del self.__database["C"]["_"][key]
 								removedKeyCounts.setdefault(2, 0)
@@ -98,20 +96,16 @@ class DatabaseManager:
 						if isinstance(key, str):
 							if len(key) == 1 and 'A' <= key <= 'Z' and isinstance(self.__database["C"][key], list):
 								# Compatible with Version 3.6.x ($C_X$) #
-								for i in range(len(self.__database["C"][key]) - 1, -1, -1):
-									if not (isinstance(self.__database["C"][key][i], str) and DatabaseManager.__Pattern.match(self.__database["C"][key][i])):
-										del self.__database["C"][key][i]
-										removedValueCount += 1
 								self.__database["C"]["_"].setdefault(key, [])
-								s = set(self.__database["C"][key])
-								s.update(self.__database["C"]["_"][key])
-								self.__database["C"]["_"][key] = sorted(s)
+								for value in self.__database["C"][key]:
+									if isinstance(value, str) and DatabaseManager.__Pattern.match(value):
+										self.__database["C"]["_"][key].append(value)
+									else:
+										removedValueCount += 1
 								del self.__database["C"][key]
 							elif DatabaseManager.__Pattern.match(key):
 								# Compatible with Version 3.6.x ($C$) #
-								if key not in self.__database["C"][""]:
-									self.__database["C"][""].append(key)
-									self.__database["C"][""].sort()
+								self.__database["C"][""].append(key)
 								del self.__database["C"][key]
 							elif key not in ("", "_"):
 								del self.__database["C"][key]
@@ -121,15 +115,27 @@ class DatabaseManager:
 							del self.__database["C"][key]
 							removedKeyCounts.setdefault(1, 0)
 							removedKeyCounts[1] += 1
+					self.__database["C"][""].sort()
+					for i in range(len(self.__database["C"][""]) - 1, 0, -1):
+						if self.__database["C"][""][i - 1] == self.__database["C"][""][i]:
+							del self.__database["C"][""][i]
+					for key in self.__database["C"]["_"].keys():
+						self.__database["C"]["_"][key].sort()
+						for i in range(len(self.__database["C"]["_"][key]) - 1, 0, -1):
+							if self.__database["C"]["_"][key][i - 1] == self.__database["C"]["_"][key][i]:
+								del self.__database["C"]["_"][key][i]
 				else:
-					self.__database["C"] = {"":[], "_":{"A":[], "K":[], "M":[]}}
+					self.__database["C"] = {"":[], "_":{}}
 					initializedKeys.add("C")
 				if "D" in self.__database and isinstance(self.__database["D"], list):
 					for i in range(len(self.__database["D"]) - 1, -1, -1):
 						if not (isinstance(self.__database["D"][i], str) and DatabaseManager.__Pattern.match(self.__database["D"][i])):
 							del self.__database["D"][i]
 							removedValueCount += 1
-					self.__database["D"] = sorted(set(self.__database["D"]))
+					self.__database["D"].sort()
+					for i in range(len(self.__database["D"]) - 1, 0, -1):
+						if self.__database["D"][i - 1] == self.__database["D"][i]:
+							del self.__database["D"][i]
 				else:
 					self.__database["D"] = []
 					initializedKeys.add("D")
@@ -138,7 +144,10 @@ class DatabaseManager:
 						if not (isinstance(self.__database["M"][i], str) and DatabaseManager.__Pattern.match(self.__database["M"][i])):
 							del self.__database["M"][i]
 							removedValueCount += 1
-					self.__database["M"] = sorted(set(self.__database["M"]))
+					self.__database["M"].sort()
+					for i in range(len(self.__database["M"]) - 1, 0, -1):
+						if self.__database["M"][i - 1] == self.__database["M"][i]:
+							del self.__database["M"][i]
 				else:
 					self.__database["M"] = []
 					initializedKeys.add("M")
@@ -160,7 +169,10 @@ class DatabaseManager:
 						if not (isinstance(self.__database["S"][i], str) and DatabaseManager.__Pattern.match(self.__database["S"][i])):
 							del self.__database["S"][i]
 							removedValueCount += 1
-					self.__database["S"] = sorted(set(self.__database["S"]))
+					self.__database["S"].sort()
+					for i in range(len(self.__database["S"]) - 1, 0, -1):
+						if self.__database["S"][i - 1] == self.__database["S"][i]:
+							del self.__database["S"][i]
 				else:
 					self.__database["S"] = []
 					initializedKeys.add("S")
@@ -186,21 +198,14 @@ class DatabaseManager:
 			return (False, e)
 	def check(self:object) -> tuple:
 		if isinstance(self.__database, dict):
-			d, C = OrderedDict(), set()
-			if "C" in self.__database and isinstance(self.__database["C"], dict):
-				keys = tuple(
-					key for key in self.__database["C"].keys() if isinstance(key, str) and len(key) == 1
-					and 'A' <= key <= 'Z' and isinstance(self.__database["C"][key], (tuple, list, set))
-				)
-				keyLength = len(keys)
-				for i in range(keyLength - 1):
-					for j in range(i + 1, keyLength):
-						intersection = set(self.__database["C"][keys[i]]) & set(self.__database["C"][keys[j]])
-						if intersection:
-							d[("$C_{0}$".format(keys[i]), "$C_{0}$".format(keys[j]))] = intersection
-				for key in keys:
-					C.update(self.__database["C"][key])
-			orderedDict = OrderedDict([("C", C)])
+			orderedDict, d = OrderedDict(), OrderedDict()
+			if "C" in self.__database and isinstance(self.__database["C"], dict)):
+				if "" in self.__database["C"] and isinstance(self.__database["C"][""], (tuple, list, set)):
+					orderedDict["C"] = set(self.__database["C"][""])
+				if "_" in self.__database["C"] and isinstance(self.__database["C"]["_"], dict):
+					for key in self.__database["C"]["_"].keys():
+						if isinstance(key, str) and isinstance(self.__database["C"]["_"][key], (tuple, list, set)):
+							orderedDict["C" + key] = set(self.__database["C"]["_"][key])
 			if "D" in self.__database and isinstance(self.__database["D"], (tuple, list, set)):
 				orderedDict["D"] = set(self.__database["D"])
 			if "M" in self.__database and isinstance(self.__database["M"], (tuple, list, set)):
@@ -386,8 +391,8 @@ class RegularUpdater:
 			self.__flag &= 0b00100011
 			validity, information = self.__databaseManager.load()
 			if validity:
-				if any(information[0]) or any(information[1]) or information[2]:
-					keys, values = tuple(zip(*sorted(information[1].items())))
+				if any(information[0]) or information[1] or information[2]:
+					keys, values = tuple(zip(*sorted(information[1].items()))) if information[1] else ((), ())
 					print("Loaded {0} with {1} key(s) initialized, {2} key(s) removed for Layer(s) {3}, and {4} value(s) removed in total. ".format(
 						repr(self.__databaseFilePath), information[0], values, keys, information[2])
 					)
@@ -430,7 +435,7 @@ class RegularUpdater:
 		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 2 and isinstance(targetURLs, (OrderedDict, dict)):
 			self.__flag, localFlag = self.__flag & 0b00100011 | 0b00001000, bool(targetURLs)
 			for key, value in targetURLs.items():
-				if isinstance(key, str) and len(key) == 1 and 'A' <= key <= 'Z':
+				if key in ('D', 'M'):
 					validity, delta, d = self.__databaseManager.updateFromURLs(value, key)
 					if validity:
 						if d:
@@ -440,9 +445,11 @@ class RegularUpdater:
 								print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
 						else:
 							print("Successfully updated {0} package name(s) of ${1}$ from {2}. ".format(delta, key, value))
+					else:
+						localFlag = False
+						print("Failed to update package names of ${0}$ from {1} due to {2}. ".format(key, value, repr(d)))
 				else:
-					localFlag = False
-					print("Failed to update package names of ${0}$ from {1} due to {2}. ".format(key, value, repr(d)))
+					print("The key passed was neither \'D\' nor \'M\'. ")
 			if localFlag:
 				self.__flag += 0b00000100
 				return True
@@ -568,9 +575,7 @@ class RegularUpdater:
 							successCount += 1
 							print("[{{0:0>{0}}}] {{1}} -> Passed (bash)".format(length).format(i, repr(filePath)))
 						else:
-							print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), {
-								"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
-							}))
+							print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), result))
 					except TimeoutExpired as e:
 						print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), {
 							"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
