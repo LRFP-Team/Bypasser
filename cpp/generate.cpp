@@ -2,10 +2,8 @@
 #include <fstream>
 #include <filesystem>
 #include <vector>
-#include <set>
 #include <regex>
 #include "nlohmann/json.hpp" // https://github.com/nlohmann/json
-#include "madler/unzip.h" // https://github.com/madler/zlib/blob/develop/contrib/minizip
 #ifndef MODULE_NAME
 #define MODULE_NAME "Bypasser"
 #endif
@@ -15,6 +13,54 @@
 #ifndef REGEX_PATTERN
 #define REGEX_PATTERN "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$"
 #endif
+
+
+#pragma pack(push, 1)
+struct LocalFileHeader {
+    uint32_t signature; // 0x04034b50
+    uint16_t versionNeeded;
+    uint16_t generalPurposeBitFlag;
+    uint16_t compressionMethod;
+    uint16_t lastModFileTime;
+    uint16_t lastModFileDate;
+    uint32_t crc32;
+    uint32_t compressedSize;
+    uint32_t uncompressedSize;
+    uint16_t fileNameLength;
+    uint16_t extraFieldLength;
+};
+
+struct CentralDirectoryFileHeader {
+    uint32_t signature; // 0x02014b50
+    uint16_t versionMadeBy;
+    uint16_t versionNeeded;
+    uint16_t generalPurposeBitFlag;
+    uint16_t compressionMethod;
+    uint16_t lastModFileTime;
+    uint16_t lastModFileDate;
+    uint32_t crc32;
+    uint32_t compressedSize;
+    uint32_t uncompressedSize;
+    uint16_t fileNameLength;
+    uint16_t extraFieldLength;
+    uint16_t fileCommentLength;
+    uint16_t diskNumberStart;
+    uint16_t internalFileAttributes;
+    uint32_t externalFileAttributes;
+    uint32_t localHeaderOffset;
+};
+
+struct EndOfCentralDirectoryRecord {
+    uint32_t signature; // 0x06054b50
+    uint16_t numberOfThisDisk;
+    uint16_t diskWhereCentralDirectoryStarts;
+    uint16_t numberOfCentralDirectoryRecordsOnThisDisk;
+    uint16_t totalNumberOfCentralDirectoryRecords;
+    uint32_t sizeOfCentralDirectory;
+    uint32_t offsetOfStartOfCentralDirectory;
+    uint16_t commentLength;
+};
+#pragma pack(pop)
 
 
 enum class LogLevel : unsigned char
@@ -33,13 +79,13 @@ enum class LogLevel : unsigned char
 class Generator
 {
 private:
-	static const std::string DefaultDatabaseFilePath = "database.json";
-	static const LogLevel DefaultLevel = LogLevel::Warning;
-	inline static const std::regex Pattern(REGEX_PATTERN);
-	static const std::vector<std::string> ApplicationPartitions{ "/data", "/product", "/system", "/system_ext", "/vendor" };
-	static const std::vector<std::string> ApplicationDirectoryNames{ "app", "app-private", "priv-app" };
-	static const std::string HexadecimalCharacterSet = "0123456789ABCDEF";
-	static const std::string ReportLink = "https://github.com/LRFP-Team/Bypasser/issues";
+	inline static const std::string DefaultDatabaseFilePath = "database.json";
+	inline static const LogLevel DefaultLevel = LogLevel::Info;
+	inline static const std::regex Pattern = std::regex(REGEX_PATTERN);
+	inline static const std::vector<std::string> ApplicationPartitions{ "/data", "/product", "/system", "/system_ext", "/vendor" };
+	inline static const std::vector<std::string> ApplicationDirectoryNames{ "app", "app-private", "priv-app" };
+	inline static const std::string HexadecimalCharacterSet = "0123456789ABCDEF";
+	inline static const std::string ReportLink = "https://github.com/LRFP-Team/Bypasser/issues";
 	
 	unsigned short flag = 0 /* 0b 0000 0000 0000 0000 */;
 	std::string inputDatabaseFilePath = Generator::DefaultDatabaseFilePath;
@@ -79,7 +125,7 @@ private:
 		return s;
 	}
 	std::string vector2string(const std::vector<std::string>& arguments) const { return this->vector2string(arguments, "[", "|", "]"); }
-	std::string logLevel2string(const LogLevel level)
+	std::string logLevel2string(const LogLevel level) const
 	{
 		switch (level)
 		{
@@ -115,7 +161,7 @@ private:
 		std::cout << "\t" << this->vector2string(this->outputHmaossV93WhitelistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 whitelist configuration JSON file path. " << std::endl;
 		std::cout << "\t" << this->vector2string(this->outputHmaossV93BlacklistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 blacklist configuration JSON file path. " << std::endl;
 		std::cout << "\t" << this->vector2string(this->outputPathTesterArguments) << "<path>\t\tSpecify the output path tester shell script file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputTargetArguments) << "<path>\t\tSpecify the output Tricky Store target text file path. " << std::endl << std::endl;
+		std::cout << "\t" << this->vector2string(this->outputTrickyStoreTargetArguments) << "<path>\t\tSpecify the output Tricky Store target text file path. " << std::endl << std::endl;
 		std::cout << "Notes:" << std::endl;
 		std::cout << "\t1) All the arguments are optional and processed sequentially. If the same argument is provided multiple times, the last valid one will overwrite the previous ones. Unrecognized arguments, invalid argument values, or missing argument values will be skipped with a warning. " << std::endl;
 		std::cout << "\t2) If an input path is not specified, the program will use the corresponding default value. The program will return EOF (" << EOF << ") if the input database JSON file cannot be parsed. Parsing failures for other inputs will be skipped, and a warning will be issued. " << std::endl;
@@ -151,20 +197,63 @@ private:
 		else
 			return false;
 	}
-	bool checkoutApplication(const std::string& apkFilePath, bool& isPlugin) const
+	bool checkoutApplication(const std::string& apkFilePath, bool& isPlugin)
 	{
-		unzFile archive = unzOpen(apkFilePath.c_str());
-		if (archive)
+		std::ifstream apkFile(apkFilePath, std::ios::binary | std::ios::ate);
+		if (apkFile.is_open())
 		{
-			isPlugin = false;
-			if (unzLocateFile(archive, "assets/xposed_init", 0) == UNZ_OK)
+			const std::streampos fileSize = apkFile.tellg();
+			if (0 == fileSize)
+				return false;
+			else
 			{
-				unz_file_info pluginInformation;
-				if (unzGetCurrentFileInfo(archive, &pluginInformation, nullptr, 0, nullptr, 0, nullptr, 0) == UNZ_OK && pluginInformation.uncompressed_size > 0)
-					isPlugin = true;
+				/* Seek the EOCD signature (0x06054b50) whose minimum size is 32 bytes from the end of the file */
+				const size_t maxSearch = (fileSize > static_cast<std::streampos>(65557)) ? 65557 : static_cast<size_t>(fileSize);
+				std::vector<char> buffer(maxSearch);
+				apkFile.seekg(fileSize - static_cast<std::streampos>(maxSearch));
+				apkFile.read(buffer.data(), maxSearch);
+				long long int eocdOffset = EOF;
+				for (long long int i = static_cast<long long int>(maxSearch) - 22; i >= 0; --i)
+				{
+					uint32_t signature;
+					std::memcpy(&signature, &buffer[i], sizeof(signature));
+					if (0x06054b50 == signature)
+					{
+						eocdOffset = i;
+						break;
+					}
+				}
+				if (EOF == eocdOffset) // broken ZIP signature
+					return false;
+				else
+				{
+					/* Walk the ZIP */
+					EndOfCentralDirectoryRecord eocd;
+					std::memcpy(&eocd, &buffer[eocdOffset], sizeof(EndOfCentralDirectoryRecord));
+					apkFile.seekg(eocd.offsetOfStartOfCentralDirectory);
+					for (uint16_t i = 0; i < eocd.totalNumberOfCentralDirectoryRecords; ++i)
+					{
+						CentralDirectoryFileHeader cdfh;
+						apkFile.read(reinterpret_cast<char*>(&cdfh), sizeof(CentralDirectoryFileHeader));
+						if (0x02014b50 == cdfh.signature)
+						{
+							std::vector<char> nameBuf(cdfh.fileNameLength);
+							apkFile.read(nameBuf.data(), cdfh.fileNameLength);
+							std::string fileName(nameBuf.data(), cdfh.fileNameLength);
+							if ("assets/xposed_init" == fileName)
+							{
+								isPlugin = cdfh.uncompressedSize > 0;
+								return true;
+							}
+							apkFile.seekg(cdfh.extraFieldLength + cdfh.fileCommentLength, std::ios::cur);
+						}
+						else // broken item signature
+							return false;
+					}
+					isPlugin = false;
+					return true;
+				}
 			}
-			unzClose(archive);
-			return true;
 		}
 		else
 			return false;
@@ -199,7 +288,8 @@ private:
 			case '\"':
 			case '\'':
 			case '\\':
-				formattedMessage += "\\" + character;
+				formattedMessage += "\\";
+				formattedMessage += character;
 				break;
 			default:
 				if (character <= 31 || 127 == character)
@@ -215,27 +305,31 @@ private:
 	{
 		if (isPlugin)
 		{
-			if (std::find(this->j["M"].begin(), this->j["M"].end(), packageName) == this->j["M"].end())
+			if (std::find(this->j["M"].cbegin(), this->j["M"].cend(), packageName) == this->j["M"].cend())
 			{
 				this->j["M"].push_back(packageName);
+				std::sort(this->j["M"].begin(), this->j["M"].end());
 				++unrecordedPluginCount;
 				return true;
 			}
 		}
 		else
 		{
-			bool notInDatabase = std::find(this->j["C"][""].begin(), this->j["C"][""].end(), packageName) == this->j["C"][""].end() && std::find(this->j["D"].begin(), this->j["D"].end(), packageName) == this->j["D"].end() && std::find(this->j["S"].begin(), this->j["S"].end(), packageName) == this->j["S"].end();
+			bool notInDatabase = std::find(this->j["C"][""].cbegin(), this->j["C"][""].cend(), packageName) == this->j["C"][""].cend() && std::find(this->j["D"].cbegin(), this->j["D"].cend(), packageName) == this->j["D"].cend() && std::find(this->j["S"].cbegin(), this->j["S"].cend(), packageName) == this->j["S"].cend();
 			if (notInDatabase)
-				for (nlohmann::json::iterator entryIt = this->j["C"]["_"].begin(); entryIt != this->j["C"]["_"].end(); ++entryIt)
-					if (entryIt->value().is_array() && std::find(entryIt->value().begin(), entryIt->value().end(), packageName) != entryIt->value().end())
+				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
+					if (entryIt.value().is_array() && std::find(entryIt.value().cbegin(), entryIt.value().cend(), packageName) != entryIt.value().cend())
 					{
 						notInDatabase = false;
 						break;
 					}
 			if (notInDatabase)
 			{
-				if (this->j["C"]["_"].contains("L"))
+				if (!this->j["C"]["_"].contains("L"))
+					this->j["C"]["_"]["L"] = nlohmann::json::array();
+				if (this->j["C"]["_"]["L"].is_array())
 					this->j["C"]["_"]["L"].push_back(packageName);
+				std::sort(this->j["C"]["_"]["L"].begin(), this->j["C"]["_"]["L"].end());
 				++unrecordedNonPluginCount;
 				return true;
 			}
@@ -245,18 +339,17 @@ private:
 	bool traverseApplicationDirectory(const std::filesystem::path& directoryPath, size_t& unrecordedPluginCount, size_t& unrecordedNonPluginCount)
 	{
 		if (!std::filesystem::is_symlink(directoryPath) && std::filesystem::is_directory(directoryPath))
-		{
-			/**
-			 * formCount = directoryFormCount + fileFormCount + invalidFormCount
-			 * directoryFormCount = validDirectoryFormCount + invalidDirectoryFormCount + failureInstallationCount
-			 * validDirectoryFormCount = validDirectoryFormSuccessCount + validDirectoryFormFailureCount
-			 * failureInstallationCount = failureInstallationRemovedCount + failureInstallationUnremovedCount
-			 * fileFormCount = validFileFormCount + invalidFileFormCount
-			 * validFileFormCount = validFileFormSuccessCount + validFileFormFailureCount
-			 */
-			size_t formCount = 0, directoryFormCount = 0, validDirectoryFormCount = 0, validDirectoryFormSuccessCount = 0, validDirectoryFormFailureCount = 0, invalidDirectoryFormCount = 0, failureInstallationCount = 0, failureInstallationRemovedCount = 0, failureInstallationUnremovedCount = 0, fileFormCount = 0, validFileFormCount = 0, validFileFormSuccessCount = 0, validFileFormFailureCount = 0, invalidFileFormCount = 0, invalidFormCount = 0;
 			try
 			{
+				/**
+				 * formCount = directoryFormCount + fileFormCount + invalidFormCount
+				 * directoryFormCount = validDirectoryFormCount + invalidDirectoryFormCount + failureInstallationCount
+				 * validDirectoryFormCount = validDirectoryFormSuccessCount + validDirectoryFormFailureCount
+				 * failureInstallationCount = failureInstallationRemovedCount + failureInstallationUnremovedCount
+				 * fileFormCount = validFileFormCount + invalidFileFormCount
+				 * validFileFormCount = validFileFormSuccessCount + validFileFormFailureCount
+				 */
+				size_t formCount = 0, directoryFormCount = 0, validDirectoryFormCount = 0, validDirectoryFormSuccessCount = 0, validDirectoryFormFailureCount = 0, invalidDirectoryFormCount = 0, failureInstallationCount = 0, failureInstallationRemovedCount = 0, failureInstallationUnremovedCount = 0, fileFormCount = 0, validFileFormCount = 0, validFileFormSuccessCount = 0, validFileFormFailureCount = 0, invalidFileFormCount = 0, invalidFormCount = 0;
 				for (const std::filesystem::directory_entry& firstLayerEntry : std::filesystem::directory_iterator(directoryPath))
 				{
 					++formCount;
@@ -329,7 +422,6 @@ private:
 												{
 													if (directoryIt->is_symlink())
 													{
-														++invalidDirectoryFormCount;
 														isValid = false;
 														break;
 													}
@@ -337,7 +429,6 @@ private:
 													{
 														if ("lib" != directoryIt->path().filename().string() && "oat" != directoryIt->path().filename().string())
 														{
-															++invalidDirectoryFormCount;
 															isValid = false;
 															break;
 														}
@@ -349,12 +440,11 @@ private:
 													}
 													else
 													{
-														++invalidDirectoryFormCount;
 														isValid = false;
 														break;
 													}
 												}
-												if (isValid)
+												if (isValid && !thirdLayerEntry.path().empty())
 												{
 													++validDirectoryFormCount;
 													bool isPlugin = false;
@@ -369,6 +459,8 @@ private:
 														++validDirectoryFormFailureCount;
 													}
 												}
+												else
+													++invalidDirectoryFormCount;
 											}
 											else
 												++invalidDirectoryFormCount;
@@ -414,14 +506,20 @@ private:
 					}
 					else
 						++invalidFormCount;
+				}
+				this->print("Finished local scanning with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(validDirectoryFormCount) + "(" + std::to_string(validDirectoryFormSuccessCount) + " + " + std::to_string(validDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Info);
+				return true;
 			}
 			catch (...)
 			{
 				return false;
 			}
-		}
 		else
 			return false;
+	}
+	bool checkInputFlags() const
+	{
+		return this->flag & 128/* 0b 0000 0000 1000 0000 */ && this->flag & 64/* 0b 0000 0000 0100 0000 */ && this->flag & 32/* 0b 0000 0000 0010 0000 */ && this->flag & 16/* 0b 0000 0000 0001 0000 */ && this->flag & 8/* 0b 0000 0000 0000 1000 */ && this->flag & 4/* 0b 0000 0000 0000 0100 */ && this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */;
 	}
 	bool handleDirectory(const std::string& filePath)
 	{
@@ -444,11 +542,11 @@ private:
 	std::string array2string(const nlohmann::json& elements, const std::string& prefix, const std::string& separator, const std::string& suffix) const
 	{
 		std::string s = prefix;
-		for (nlohmann::json::const_iterator arrayIt = elements.begin(); arrayIt != elements.end(); ++arrayIt)
+		for (nlohmann::json::const_iterator arrayIt = elements.cbegin(); arrayIt != elements.cend(); ++arrayIt)
 			if (arrayIt->is_string())
 			{
 				s += arrayIt->get<std::string>();
-				for (++arrayIt; arrayIt != elements.end(); ++arrayIt)
+				for (++arrayIt; arrayIt != elements.cend(); ++arrayIt)
 					if (arrayIt->is_string())
 						s += separator + arrayIt->get<std::string>();
 				break;
@@ -468,11 +566,7 @@ public:
 		if (resetBeforeParsing)
 		{
 			this->inputDatabaseFilePath = Generator::DefaultDatabaseFilePath;
-			this->inputDataApplicationDirectoryPath = Generator::DefaultDataApplicationDirectoryPath;
-			this->inputProductApplicationDirectoryPath = Generator::DefaultProductApplicationDirectoryPath;
-			this->inputSystemApplicationDirectoryPath = Generator::DefaultSystemApplicationDirectoryPath;
-			this->inputVendorApplicationDirectoryPath = Generator::DefaultVendorApplicationDirectoryPath;
-			this->logLevel = Generator::DefaultLogLevel;
+			this->logLevel = Generator::DefaultLevel;
 			this->outputHmaV92WhitelistFilePath.clear();
 			this->outputHmaV92BlacklistFilePath.clear();
 			this->outputHmaV93WhitelistFilePath.clear();
@@ -485,13 +579,13 @@ public:
 		bool missingArgument = false;
 		std::vector<size_t> invalidArgumentIndexes{};
 		for (int i = 1; i < argc; ++i)
-			if (std::find(helpArguments.begin(), helpArguments.end(), argv[i]) != helpArguments.end())
+			if (std::find(helpArguments.cbegin(), helpArguments.cend(), argv[i]) != helpArguments.cend())
 			{
 				this->printHelp();
 				exitFlag = true;
 				return true;
 			}
-			else if (std::find(inputDatabaseArguments.begin(), inputDatabaseArguments.end(), argv[i]) != inputDatabaseArguments.end())
+			else if (std::find(inputDatabaseArguments.cbegin(), inputDatabaseArguments.cend(), argv[i]) != inputDatabaseArguments.cend())
 				if (++i < argc)
 					this->inputDatabaseFilePath = argv[i];
 				else
@@ -499,57 +593,64 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(logLevelArguments.begin(), logLevelArguments.end(), argv[i]) != logLevelArguments.end())
+			else if (std::find(logLevelArguments.cbegin(), logLevelArguments.cend(), argv[i]) != logLevelArguments.cend())
 				if (++i < argc)
-					if (argv[i].empty())
-						this->print("The passed log level cannot be recognized, which has been skipped. ", LogLevel::Warning);
-					else
-						switch (argv[i][0])
+					switch (argv[i][0])
+					{
+					case 'A':
+					case 'a':
+						this->logLevel = LogLevel::All;
+						break;
+					case 'T':
+					case 't':
+						this->logLevel = LogLevel::Trace;
+						break;
+					case 'D':
+					case 'd':
+						this->logLevel = LogLevel::Debug;
+						break;
+					case 'I':
+					case 'i':
+						this->logLevel = LogLevel::Info;
+						break;
+					case 'W':
+					case 'w':
+						this->logLevel = LogLevel::Warning;
+						break;
+					case 'E':
+					case 'e':
+						this->logLevel = LogLevel::Error;
+						break;
+					case 'F':
+					case 'f':
+						this->logLevel = LogLevel::Fatal;
+						break;
+					case 'O':
+					case 'o':
+						this->logLevel = LogLevel::Off;
+						break;
+					default:
+					{
+						const unsigned char lowerBound = static_cast<unsigned char>(LogLevel::All), upperBound = static_cast<unsigned char>(LogLevel::Off);
+						if constexpr (/*0 <= lowerBound && */lowerBound <= upperBound && upperBound <= 9)
 						{
-						case 'A':
-						case 'a':
-							this->logLevel = LogLevel::All;
-							break;
-						case 'T':
-						case 't':
-							this->logLevel = LogLevel::Trace;
-							break;
-						case 'D':
-						case 'd':
-							this->logLevel = LogLevel::Debug;
-							break;
-						case 'I':
-						case 'i':
-							this->logLevel = LogLevel::Info;
-						case 'W':
-						case 'w':
-							this->logLevel = LogLevel::Warning;
-							break;
-						case 'E':
-						case 'e':
-							this->logLevel = LogLevel::Error;
-							break;
-						case 'F':
-						case 'f':
-							this->logLevel = LogLevel::Fatal;
-							break;
-						case 'O':
-						case 'o':
-							this->logLevel = LogLevel::Off;
-							break;
-						default:
-							if (static_cast<char>(LogLevel::All) <= argv[i][0] && argv[i][0] <= static_cast<char>(LogLevel::Off))
-								this->logLevel = static_cast<LogLevel>(argv[i][0]);
+							const unsigned char x = argv[i][0] >= '0' ? static_cast<unsigned char>(argv[i][0]) - '0' : static_cast<unsigned char>(argv[i][0]);
+							if (lowerBound <= x && x <= upperBound)
+								this->logLevel = static_cast<LogLevel>(x);
 							else
 								this->print("The passed log level cannot be recognized, which has been skipped. ", LogLevel::Warning);
-							break;
 						}
+						else
+							this->print("The passed log level cannot be recognized, which has been skipped. ", LogLevel::Warning);
+						break;
+					}
+					}
 				else
 				{
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaV92WhitelistArguments.begin(), outputHmaV92WhitelistArguments.end(), argv[i]) != outputHmaV92WhitelistArguments.end())
+			else if (std::find(outputHmaV92WhitelistArguments.cbegin(), outputHmaV92WhitelistArguments.cend(), argv[i]) != outputHmaV92WhitelistArguments.cend())
 				if (++i < argc)
 					this->outputHmaV92WhitelistFilePath = argv[i];
 				else
@@ -557,7 +658,7 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaV92BlacklistArguments.begin(), outputHmaV92BlacklistArguments.end(), argv[i]) != outputHmaV92BlacklistArguments.end())
+			else if (std::find(outputHmaV92BlacklistArguments.cbegin(), outputHmaV92BlacklistArguments.cend(), argv[i]) != outputHmaV92BlacklistArguments.cend())
 				if (++i < argc)
 					this->outputHmaV92BlacklistFilePath = argv[i];
 				else
@@ -565,7 +666,7 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaV93WhitelistArguments.begin(), outputHmaV93WhitelistArguments.end(), argv[i]) != outputHmaV93WhitelistArguments.end())
+			else if (std::find(outputHmaV93WhitelistArguments.cbegin(), outputHmaV93WhitelistArguments.cend(), argv[i]) != outputHmaV93WhitelistArguments.cend())
 				if (++i < argc)
 					this->outputHmaV93WhitelistFilePath = argv[i];
 				else
@@ -573,7 +674,7 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaV93BlacklistArguments.begin(), outputHmaV93BlacklistArguments.end(), argv[i]) != outputHmaV93BlacklistArguments.end())
+			else if (std::find(outputHmaV93BlacklistArguments.cbegin(), outputHmaV93BlacklistArguments.cend(), argv[i]) != outputHmaV93BlacklistArguments.cend())
 				if (++i < argc)
 					this->outputHmaV93BlacklistFilePath = argv[i];
 				else
@@ -581,7 +682,7 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaossV93WhitelistArguments.begin(), outputHmaossV93WhitelistArguments.end(), argv[i]) != outputHmaossV93WhitelistArguments.end())
+			else if (std::find(outputHmaossV93WhitelistArguments.cbegin(), outputHmaossV93WhitelistArguments.cend(), argv[i]) != outputHmaossV93WhitelistArguments.cend())
 				if (++i < argc)
 					this->outputHmaossV93WhitelistFilePath = argv[i];
 				else
@@ -589,7 +690,7 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaossV93BlacklistArguments.begin(), outputHmaossV93BlacklistArguments.end(), argv[i]) != outputHmaossV93BlacklistArguments.end())
+			else if (std::find(outputHmaossV93BlacklistArguments.cbegin(), outputHmaossV93BlacklistArguments.cend(), argv[i]) != outputHmaossV93BlacklistArguments.cend())
 				if (++i < argc)
 					this->outputHmaossV93BlacklistFilePath = argv[i];
 				else
@@ -597,7 +698,7 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputPathTesterArguments.begin(), outputPathTesterArguments.end(), argv[i]) != outputPathTesterArguments.end())
+			else if (std::find(outputPathTesterArguments.cbegin(), outputPathTesterArguments.cend(), argv[i]) != outputPathTesterArguments.cend())
 				if (++i < argc)
 					this->outputPathTesterFilePath = argv[i];
 				else
@@ -605,7 +706,7 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputTargetArguments.begin(), outputTargetArguments.end(), argv[i]) != outputTargetArguments.end())
+			else if (std::find(outputTrickyStoreTargetArguments.cbegin(), outputTrickyStoreTargetArguments.cend(), argv[i]) != outputTrickyStoreTargetArguments.cend())
 				if (++i < argc)
 					this->outputTrickyStoreTargetFilePath = argv[i];
 				else
@@ -641,7 +742,7 @@ public:
 			return true;
 		}
 	}
-	bool parseArguments(int argc, char* argv[], bool& exitFlag) { return this->parseArguments(argc, argv, exitFlag, true); }
+	bool parseArguments(int argc, char* argv[], bool& exitFlag) { return this->parseArguments(argc, argv, exitFlag, true); } // 0b 0000 0000 0000 0000 | 0b 0000 0000 0000 0001 -> 0b 0000 0000 0000 0001
 	bool parseJSON() // 0b 0000 0000 0000 0001 | 0b 0000 0000 0000 0010 -> 0b 0000 0000 0000 0011
 	{
 		if (this->flag & 1/* 0b 0000 0000 0000 0001 */)
@@ -660,7 +761,7 @@ public:
 						const std::vector<std::string> keysToKeep{ "C", "D", "M", "N", "S", "T", "U", "V" };
 						size_t removedKeyCount = 0;
 						for (nlohmann::json::iterator entryIt = this->j.begin(); entryIt != this->j.end(); )
-							if (std::find(keysToKeep.begin(), keysToKeep.end(), entryIt.key()) != keysToKeep.end())
+							if (std::find(keysToKeep.cbegin(), keysToKeep.cend(), entryIt.key()) != keysToKeep.cend())
 								++entryIt;
 							else
 							{
@@ -733,7 +834,7 @@ public:
 											++removedValueCount;
 									entryIt = this->j["C"].erase(entryIt);
 								}
-								else if (std::regex_match(entryIt.key(), Generator::__Pattern)/* && entryIt.value().is_null() */)
+								else if (std::regex_match(entryIt.key(), Generator::Pattern)/* && entryIt.value().is_null() */)
 								{
 									/* Compatible with Version 3.6.x ($C$) */
 									this->j["C"][""].push_back(entryIt.key());
@@ -783,7 +884,7 @@ public:
 									++removedValueCount;
 								}
 							std::sort(this->j["D"].begin(), this->j["D"].end());
-							this->j["D"].erase(std::unique(this->j["D"].begin(), this->j["D"].end()), this->j["D"].end()); ]
+							this->j["D"].erase(std::unique(this->j["D"].begin(), this->j["D"].end()), this->j["D"].end());
 							if (1 == removedValueCount)
 								this->print("A value in $D$ is invalid, which has been removed. ", LogLevel::Warning);
 							else if (removedValueCount)
@@ -921,17 +1022,17 @@ public:
 			return false;
 		}
 	}
-	bool scanApplicationDirectories() // 0b 0000 0000 0000 0011 | 0b 0000 0000 0111 1100 -> 0b 0000 0000 0111 1111
+	bool scanApplicationDirectories() // 0b 0000 0000 0000 0011 | 0b 0000 0000 1111 1100 -> 0b 0000 0000 1111 1111
 	{
 		if (this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */)
 		{
 			this->flag &= 3/* 0b 0000 0000 0000 0011 */;
-			const size_t applicationPartitionCount = min(Generator::ApplicationPartitions.size(), 6);
+			const size_t applicationPartitionCount = std::min(Generator::ApplicationPartitions.size(), static_cast<size_t>(6));
 			size_t unrecordedPluginCount = 0, unrecordedNonPluginCount = 0;
 			for (size_t i = 0; i < applicationPartitionCount; ++i)
 			{
 				bool localFlag = true;
-				for (const std::string applicationDirectoryName : Generator::ApplicationDirectoryNames)
+				for (const std::string& applicationDirectoryName : Generator::ApplicationDirectoryNames)
 				{
 					std::filesystem::path applicationDirectoryPath = Generator::ApplicationPartitions[i];
 					applicationDirectoryPath /= applicationDirectoryName;
@@ -955,7 +1056,7 @@ public:
 			if (localFlag)
 				for (; index < highestBit; ++index)
 					this->flag |= 1 << index/* 0b 0000 0000 ???? ??00 */;
-			return this->flag & 128/* 0b 0000 0000 1000 0000 */ && this->flag & 64/* 0b 0000 0000 0100 0000 */ && this->flag & 32/* 0b 0000 0000 0010 0000 */ && this->flag & 16/* 0b 0000 0000 0001 0000 */ && this->flag & 8/* 0b 0000 0000 0000 1000 */ && this->flag & 4/* 0b 0000 0000 0000 0100 */ && this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */;
+			return this->checkInputFlags();
 		}
 		else
 		{
@@ -965,13 +1066,14 @@ public:
 	}
 	bool generateHMAConfigurations() // 0b ???? 0000 1111 1111 | 0b 0000 1111 0000 0000 -> 0b ???? 1111 1111 1111
 	{
-		if (this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */)
+		if (this->checkInputFlags())
 		{
-			this->flag &= 61695/* 0b 1111 0000 1111 1111 */;
 			if (this->outputHmaV92WhitelistFilePath.empty() && this->outputHmaV92BlacklistFilePath.empty() && this->outputHmaV93WhitelistFilePath.empty() && this->outputHmaV93BlacklistFilePath.empty())
 				this->flag |= 3840/* 0b 0000 1111 0000 0000 */;
 			else
 			{
+				this->flag &= 61695/* 0b 1111 0000 1111 1111 */;
+				
 				/* hmaConfiguration */
 				nlohmann::ordered_json hmaConfiguration{};
 				hmaConfiguration["configVersion"] = 92;
@@ -980,7 +1082,12 @@ public:
 				hmaConfiguration["forceMountData"] = true;
 				hmaConfiguration["aggressiveFilter"] = true;
 				hmaConfiguration["templates"] = nlohmann::ordered_json::object();
-				for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
+				hmaConfiguration["templates"]["WhitelistC"] = nlohmann::ordered_json::object();
+				hmaConfiguration["templates"]["WhitelistC"]["isWhitelist"] = true;
+				hmaConfiguration["templates"]["WhitelistC"]["appList"] = nlohmann::ordered_json::array();
+				for (const nlohmann::json& value : this->j["C"][""])
+					hmaConfiguration["templates"]["WhitelistC"]["appList"].push_back(value.get<std::string>());
+				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 				{
 					const std::string whitelistName = "WhitelistC" + entryIt.key();
 					hmaConfiguration["templates"][whitelistName] = nlohmann::ordered_json::object();
@@ -989,7 +1096,7 @@ public:
 					for (const nlohmann::json& value : entryIt.value())
 						hmaConfiguration["templates"][whitelistName]["appList"].push_back(value.get<std::string>());
 				}
-				for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
+				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 				{
 					const std::string blacklistName = "BlacklistC" + entryIt.key();
 					hmaConfiguration["templates"][blacklistName] = nlohmann::ordered_json::object();
@@ -1010,13 +1117,25 @@ public:
 					hmaConfiguration["templates"]["BlacklistM"]["appList"].push_back(value.get<std::string>());
 				
 				/* hmaV92WhitelistConfiguration */
-				if (this->outputHmaV92WhitelistFilePath.empty())
-					this->flag |= 4/* 0b00000100 */;
+				if (this->outputHmaV92WhitelistFilePath.empty() && this->outputHmaV93WhitelistFilePath.empty())
+					this->flag |= 1280/* 0b 0000 0101 0000 0000 */;
 				else
 				{
 					nlohmann::ordered_json hmaV92WhitelistConfiguration(hmaConfiguration);
 					hmaV92WhitelistConfiguration["scope"] = nlohmann::json::object();
-					for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
+					for (const nlohmann::json& value : this->j["C"][""])
+					{
+						const std::string packageName = value.get<std::string>();
+						hmaV92WhitelistConfiguration["scope"][packageName] = nlohmann::ordered_json::object();
+						hmaV92WhitelistConfiguration["scope"][packageName]["useWhitelist"] = true;
+						hmaV92WhitelistConfiguration["scope"][packageName]["excludeSystemApps"] = true;
+						hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+						hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC");
+						for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
+							hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
+						hmaV92WhitelistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
+					}
+					for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 						for (const nlohmann::json& value : entryIt.value())
 						{
 							const std::string packageName = value.get<std::string>();
@@ -1024,6 +1143,7 @@ public:
 							hmaV92WhitelistConfiguration["scope"][packageName]["useWhitelist"] = true;
 							hmaV92WhitelistConfiguration["scope"][packageName]["excludeSystemApps"] = true;
 							hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+							hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC");
 							hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
 							hmaV92WhitelistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
 						}
@@ -1034,14 +1154,14 @@ public:
 						hmaV92WhitelistConfiguration["scope"][packageName]["useWhitelist"] = true;
 						hmaV92WhitelistConfiguration["scope"][packageName]["excludeSystemApps"] = true;
 						hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-						for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
+						for (nlohmann::json::const_iterator entryIt = this->j["C"].cbegin(); entryIt != this->j["C"].cend(); ++entryIt)
 							hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
 						hmaV92WhitelistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
 						hmaV92WhitelistConfiguration["scope"][packageName]["extraAppList"].push_back(packageName);
 					}
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].begin(); outerEntryIt != this->j["N"].end(); ++outerEntryIt)
+					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
 						if (hmaV92WhitelistConfiguration["scope"].contains(outerEntryIt.key()))
-							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().begin(); innerEntryIt != outerEntryIt.value().end(); ++innerEntryIt)
+							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
 							{
 								if (innerEntryIt.value().get<bool>()) // add to the ``extraAppList`` if it is not in any of the templates applied
 								{
@@ -1063,7 +1183,7 @@ public:
 									for (nlohmann::ordered_json::iterator templateArrayIt = hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].begin(); templateArrayIt != hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].end(); )
 									{
 										const std::string templateName = templateArrayIt.value().get<std::string>();
-										if (hmaV92WhitelistConfiguration["templates"].contains(templateName) && hmaV92WhitelistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].is_boolean() && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92WhitelistConfiguration["templates"][templateName].contains("appList") && hmaV92WhitelistConfiguration["templates"][templateName]["appList"].is_array() && std::find(hmaV92WhitelistConfiguration["templates"][templateName]["appList"].begin(), hmaV92WhitelistConfiguration["templates"][templateName]["appList"].end(), innerEntryIt.key()) != hmaV92WhitelistConfiguration["templates"][templateName]["appList"].end())
+										if (hmaV92WhitelistConfiguration["templates"].contains(templateName) && hmaV92WhitelistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].is_boolean() && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92WhitelistConfiguration["templates"][templateName].contains("appList") && hmaV92WhitelistConfiguration["templates"][templateName]["appList"].is_array() && std::find(hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cbegin(), hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cend(), innerEntryIt.key()) != hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cend())
 										{
 											for (const nlohmann::ordered_json& value : hmaV92WhitelistConfiguration["templates"][templateName]["appList"])
 											{
@@ -1076,14 +1196,16 @@ public:
 										else
 											++templateArrayIt;
 										std::sort(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
-										if (std::find(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end(), innerEntryIt.key()) != hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end())
+										if (std::find(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cbegin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend(), innerEntryIt.key()) != hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend())
 											hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].erase(std::remove(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end(), innerEntryIt.key()), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
 									}
 							}
-					if ("." == this->outputHmaV92WhitelistFilePath)
+					if (this->outputHmaV92WhitelistFilePath.empty())
+						this->flag |= 256/* 0b 0000 0001 0000 0000 */;
+					else if ("." == this->outputHmaV92WhitelistFilePath)
 					{
-						std:cout << hmaV92WhitelistConfiguration.dump() << std::endl;
-						this->flag |= 4/* 0b00000100 */;
+						std::cout << hmaV92WhitelistConfiguration.dump() << std::endl;
+						this->flag |= 256/* 0b 0000 0001 0000 0000 */;
 					}
 					else if (this->handleDirectory(this->outputHmaV92WhitelistFilePath))
 						try
@@ -1093,27 +1215,80 @@ public:
 							{
 								outputHmaV92WhitelistFile << hmaV92WhitelistConfiguration.dump();
 								outputHmaV92WhitelistFile.close();
-								this->flag |= 4/* 0b00000100 */;
+								this->flag |= 256/* 0b 0000 0001 0000 0000 */;
 							}
 							else
-								this->print("Failed to open the output whitelist configuration JSON file. ", LogLevel::Error);
+								this->print("Failed to open the output HMA v92 whitelist configuration JSON file. ", LogLevel::Error);
 						}
 						catch (...)
 						{
-							this->print("Failed to generate the output whitelist configuration JSON file. ", LogLevel::Error);
+							this->print("Failed to generate the output HMA v92 whitelist configuration JSON file. ", LogLevel::Error);
 						}
 					else
-						this->print("Failed to handle the parent directory for the output whitelist configuration JSON file. ", LogLevel::Error);
+						this->print("Failed to handle the parent directory for the output HMA v92 whitelist configuration JSON file. ", LogLevel::Error);
+					
+					/* hmaV93WhitelistConfiguration */
+					if (this->outputHmaV93WhitelistFilePath.empty())
+						this->flag |= 1024/* 0b 0000 0100 0000 0000 */;
+					else
+					{
+						nlohmann::ordered_json hmaV93WhitelistConfiguration(hmaV92WhitelistConfiguration);
+						hmaV93WhitelistConfiguration["configVersion"] = 93;
+						for (nlohmann::ordered_json::const_iterator outerEntryIt = hmaV93WhitelistConfiguration["scope"].cbegin(); outerEntryIt != hmaV93WhitelistConfiguration["scope"].cend(); ++outerEntryIt)
+							if (outerEntryIt.value().is_object())
+							{
+								nlohmann::ordered_json value(outerEntryIt.value());
+								hmaV93WhitelistConfiguration["scope"][outerEntryIt.key()] = nlohmann::ordered_json::object();
+								hmaV93WhitelistConfiguration["scope"][outerEntryIt.key()]["aggressiveFilter"] = true;
+								for (nlohmann::ordered_json::const_iterator innerEntryIt = value.cbegin(); innerEntryIt != value.cend(); ++innerEntryIt)
+									hmaV93WhitelistConfiguration["scope"][outerEntryIt.key()][innerEntryIt.key()] = innerEntryIt.value();
+							}
+						if ("." == this->outputHmaV93WhitelistFilePath)
+						{
+							std::cout << hmaV93WhitelistConfiguration.dump() << std::endl;
+							this->flag |= 1024/* 0b 0000 0100 0000 0000 */;
+						}
+						else if (this->handleDirectory(this->outputHmaV93WhitelistFilePath))
+							try
+							{
+								std::ofstream outputHmaV93WhitelistFile(this->outputHmaV93WhitelistFilePath);
+								if (outputHmaV93WhitelistFile.is_open())
+								{
+									outputHmaV93WhitelistFile << hmaV93WhitelistConfiguration.dump();
+									outputHmaV93WhitelistFile.close();
+									this->flag |= 1024/* 0b 0000 0100 0000 0000 */;
+								}
+								else
+									this->print("Failed to open the output HMA v93 whitelist configuration JSON file. ", LogLevel::Error);
+							}
+							catch (...)
+							{
+								this->print("Failed to generate the output HMA v93 whitelist configuration JSON file. ", LogLevel::Error);
+							}
+						else
+							this->print("Failed to handle the parent directory for the output HMA v93 whitelist configuration JSON file. ", LogLevel::Error);
+					}
 				}
 				
 				/* hmaV92BlacklistConfiguration */
-				if (this->outputHmaV92BlacklistFilePath.empty())
-					this->flag |= 8/* 0b00001000 */;
+				if (this->outputHmaV92BlacklistFilePath.empty() && this->outputHmaV93BlacklistFilePath.empty())
+					this->flag |= 2560/* 0b 0000 1010 0000 0000 */;
 				else
 				{
 					nlohmann::ordered_json hmaV92BlacklistConfiguration(hmaConfiguration);
 					hmaV92BlacklistConfiguration["scope"] = nlohmann::json::object();
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["C"].begin(); outerEntryIt != this->j["C"].end(); ++outerEntryIt)
+					for (const nlohmann::json& value : this->j["C"][""])
+					{
+						const std::string packageName = value.get<std::string>();
+						hmaV92BlacklistConfiguration["scope"][packageName] = nlohmann::ordered_json::object();
+						hmaV92BlacklistConfiguration["scope"][packageName]["useWhitelist"] = false;
+						hmaV92BlacklistConfiguration["scope"][packageName]["excludeSystemApps"] = false;
+						hmaV92BlacklistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+						hmaV92BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistD");
+						hmaV92BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistM");
+						hmaV92BlacklistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
+					}
+					for (nlohmann::json::const_iterator outerEntryIt = this->j["C"]["_"].cbegin(); outerEntryIt != this->j["C"]["_"].cend(); ++outerEntryIt)
 						for (const nlohmann::json& value : outerEntryIt.value())
 						{
 							const std::string packageName = value.get<std::string>();
@@ -1121,7 +1296,7 @@ public:
 							hmaV92BlacklistConfiguration["scope"][packageName]["useWhitelist"] = false;
 							hmaV92BlacklistConfiguration["scope"][packageName]["excludeSystemApps"] = false;
 							hmaV92BlacklistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-							for (nlohmann::json::const_iterator innerEntryIt = this->j["C"].begin(); innerEntryIt != this->j["C"].end(); ++innerEntryIt)
+							for (nlohmann::json::const_iterator innerEntryIt = this->j["C"]["_"].cbegin(); innerEntryIt != this->j["C"]["_"].cend(); ++innerEntryIt)
 								if (innerEntryIt != outerEntryIt)
 									hmaV92BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistC" + innerEntryIt.key());
 							hmaV92BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistD");
@@ -1144,15 +1319,15 @@ public:
 								hmaV92BlacklistConfiguration["scope"][outerPackageName]["extraAppList"].push_back(innerPackageName);
 						}
 					}
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].begin(); outerEntryIt != this->j["N"].end(); ++outerEntryIt)
+					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
 						if (hmaV92BlacklistConfiguration["scope"].contains(outerEntryIt.key()))
-							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().begin(); innerEntryIt != outerEntryIt.value().end(); ++innerEntryIt)
+							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
 							{
-									if (innerEntryIt.value().get<bool>()) // Search for all the blacklist-type templates where the package name is located from the applied template list and unzip the templates to "extraAppList" without the package name
+								if (innerEntryIt.value().get<bool>()) // Search for all the blacklist-type templates where the package name is located from the applied template list and unzip the templates to "extraAppList" without the package name
 									for (nlohmann::ordered_json::iterator templateArrayIt = hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].begin(); templateArrayIt != hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].end(); )
 									{
 										const std::string templateName = templateArrayIt.value().get<std::string>();
-										if (hmaV92BlacklistConfiguration["templates"].contains(templateName) && hmaV92BlacklistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].is_boolean() && !hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92BlacklistConfiguration["templates"][templateName].contains("appList") && hmaV92BlacklistConfiguration["templates"][templateName]["appList"].is_array() && std::find(hmaV92BlacklistConfiguration["templates"][templateName]["appList"].begin(), hmaV92BlacklistConfiguration["templates"][templateName]["appList"].end(), innerEntryIt.key()) != hmaV92BlacklistConfiguration["templates"][templateName]["appList"].end())
+										if (hmaV92BlacklistConfiguration["templates"].contains(templateName) && hmaV92BlacklistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].is_boolean() && !hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92BlacklistConfiguration["templates"][templateName].contains("appList") && hmaV92BlacklistConfiguration["templates"][templateName]["appList"].is_array() && std::find(hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cbegin(), hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cend(), innerEntryIt.key()) != hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cend())
 										{
 											for (const nlohmann::ordered_json& value : hmaV92BlacklistConfiguration["templates"][templateName]["appList"])
 											{
@@ -1165,7 +1340,7 @@ public:
 										else
 											++templateArrayIt;
 										std::sort(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
-										if (std::find(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end(), innerEntryIt.key()) != hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end())
+										if (std::find(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cbegin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend(), innerEntryIt.key()) != hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend())
 											hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].erase(std::remove(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end(), innerEntryIt.key()), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
 									}
 								else // add to the ``extraAppList`` if it is not in any of the templates applied
@@ -1185,10 +1360,12 @@ public:
 										hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
 								}
 							}
-					if ("." == this->outputHmaV92BlacklistFilePath)
+					if (this->outputHmaV92BlacklistFilePath.empty())
+						this->flag |= 512/* 0b 0000 0010 0000 0000 */;
+					else if ("." == this->outputHmaV92BlacklistFilePath)
 					{
-						std:cout << hmaV92BlacklistConfiguration.dump() << std::endl;
-						this->flag |= 8/* 0b00001000 */;
+						std::cout << hmaV92BlacklistConfiguration.dump() << std::endl;
+						this->flag |= 512/* 0b 0000 0010 0000 0000 */;
 					}
 					else if (this->handleDirectory(this->outputHmaV92BlacklistFilePath))
 						try
@@ -1198,148 +1375,196 @@ public:
 							{
 								outputHmaV92BlacklistFile << hmaV92BlacklistConfiguration.dump();
 								outputHmaV92BlacklistFile.close();
-								this->flag |= 8/* 0b00001000 */;
+								this->flag |= 512/* 0b 0000 0010 0000 0000 */;
 							}
 							else
-								this->print("Failed to open the output blacklist configuration JSON file. ", LogLevel::Error);
+								this->print("Failed to open the output HMA v92 blacklist configuration JSON file. ", LogLevel::Error);
 						}
 						catch (...)
 						{
-							this->print("Failed to generate the output blacklist configuration JSON file. ", LogLevel::Error);
+							this->print("Failed to generate the output HMA v92 blacklist configuration JSON file. ", LogLevel::Error);
 						}
 					else
-						this->print("Failed to handle the parent directory for the output blacklist configuration JSON file. ", LogLevel::Error);
+						this->print("Failed to handle the parent directory for the output HMA v92 blacklist configuration JSON file. ", LogLevel::Error);
+					
+					/* hmaV93BlacklistConfiguration */
+					if (this->outputHmaV93BlacklistFilePath.empty())
+						this->flag |= 2048/* 0b 0000 1000 0000 0000 */;
+					else
+					{
+						nlohmann::ordered_json hmaV93BlacklistConfiguration(hmaV92BlacklistConfiguration);
+						hmaV93BlacklistConfiguration["configVersion"] = 93;
+						for (nlohmann::ordered_json::const_iterator outerEntryIt = hmaV93BlacklistConfiguration["scope"].cbegin(); outerEntryIt != hmaV93BlacklistConfiguration["scope"].cend(); ++outerEntryIt)
+							if (outerEntryIt.value().is_object())
+							{
+								nlohmann::ordered_json value(outerEntryIt.value());
+								hmaV93BlacklistConfiguration["scope"][outerEntryIt.key()] = nlohmann::ordered_json::object();
+								hmaV93BlacklistConfiguration["scope"][outerEntryIt.key()]["aggressiveFilter"] = true;
+								for (nlohmann::ordered_json::const_iterator innerEntryIt = value.cbegin(); innerEntryIt != value.cend(); ++innerEntryIt)
+									hmaV93BlacklistConfiguration["scope"][outerEntryIt.key()][innerEntryIt.key()] = innerEntryIt.value();
+							}
+						if ("." == this->outputHmaV93BlacklistFilePath)
+						{
+							std::cout << hmaV93BlacklistConfiguration.dump() << std::endl;
+							this->flag |= 2048/* 0b 0000 1000 0000 0000 */;
+						}
+						else if (this->handleDirectory(this->outputHmaV93BlacklistFilePath))
+							try
+							{
+								std::ofstream outputHmaV93BlacklistFile(this->outputHmaV93BlacklistFilePath);
+								if (outputHmaV93BlacklistFile.is_open())
+								{
+									outputHmaV93BlacklistFile << hmaV93BlacklistConfiguration.dump();
+									outputHmaV93BlacklistFile.close();
+									this->flag |= 2048/* 0b 0000 1000 0000 0000 */;
+								}
+								else
+									this->print("Failed to open the output HMA v93 blacklist configuration JSON file. ", LogLevel::Error);
+							}
+							catch (...)
+							{
+								this->print("Failed to generate the output HMA v93 blacklist configuration JSON file. ", LogLevel::Error);
+							}
+						else
+							this->print("Failed to handle the parent directory for the output HMA v93 blacklist configuration JSON file. ", LogLevel::Error);
+					}
 				}
 			}
-			return this->flag & 8/* 0b00001000 */ && this->flag & 4/* 0b00000100 */ && this->flag & 2/* 0b00000010 */ && this->flag & 1/* 0b00000001 */;
+			return this->flag & 2048/* 0b 0000 1000 0000 0000 */ && this->flag & 1024/* 0b 0000 0100 0000 0000 */ && this->flag & 512/* 0b 0000 0010 0000 0000 */ && this->flag & 256/* 0b 0000 0001 0000 0000 */ && this->checkInputFlags();
 		}
 		else
 		{
-			this->print("Error: Please parse the input database JSON file before generating the HMA configuration JSON files. ", LogLevel::Error);
+			this->print("Error: Please parse the input database JSON file and conduct the local scanning before generating the HMA configuration JSON files. ", LogLevel::Error);
 			return false;
 		}
 	}
-	bool generateHMAOSSConfigurations() // 0b??00??11 | 0b00110000 -> 0b??11??11
+	bool generateHMAOSSConfigurations() // 0b ??00 ???? 1111 1111 | 0b 0011 0000 0000 0000 -> 0b ??11 ???? 1111 1111
 	{
-		if (this->flag & 2/* 0b00000010 */ && this->flag & 1/* 0b00000001 */)
+		if (this->checkInputFlags())
 		{
-			this->flag &= 207/* 0b11001111 */;
 			if (this->outputHmaossV93WhitelistFilePath.empty() && this->outputHmaossV93BlacklistFilePath.empty())
-				this->flag |= 48/* 0b00110000 */;
+				this->flag |= 12288/* 0b 0011 0000 0000 0000 */;
 			else
 			{
-				/* commonHMAOSSv93 */
-				nlohmann::ordered_json commonHMAOSSv93{};
-				commonHMAOSSv93["configVersion"] = 93;
-				commonHMAOSSv93["detailLog"] = true;
-				commonHMAOSSv93["errorOnlyLog"] = false;
-				commonHMAOSSv93["maxLogSize"] = 1024;
-				commonHMAOSSv93["forceMountData"] = true;
-				commonHMAOSSv93["disableActivityLaunchProtection"] = false;
-				commonHMAOSSv93["altAppDataIsolation"] = true;
-				commonHMAOSSv93["altVoldAppDataIsolation"] = false;
-				commonHMAOSSv93["skipSystemAppDataIsolation"] = true;
-				commonHMAOSSv93["packageQueryWorkaround"] = false;
-				commonHMAOSSv93["enableInternet"] = 2;
-				commonHMAOSSv93["templates"] = nlohmann::ordered_json::object();
-				for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
+				this->flag &= 53247/* 0b 1100 1111 1111 1111 */;
+				
+				/* hmaossConfiguration */
+				nlohmann::ordered_json hmaossConfiguration{};
+				hmaossConfiguration["configVersion"] = 93;
+				hmaossConfiguration["detailLog"] = true;
+				hmaossConfiguration["errorOnlyLog"] = false;
+				hmaossConfiguration["maxLogSize"] = 1024;
+				hmaossConfiguration["forceMountData"] = true;
+				hmaossConfiguration["disableActivityLaunchProtection"] = false;
+				hmaossConfiguration["altAppDataIsolation"] = true;
+				hmaossConfiguration["altVoldAppDataIsolation"] = false;
+				hmaossConfiguration["skipSystemAppDataIsolation"] = true;
+				hmaossConfiguration["packageQueryWorkaround"] = false;
+				hmaossConfiguration["enableInternet"] = 2;
+				hmaossConfiguration["templates"] = nlohmann::ordered_json::object();
+				hmaossConfiguration["templates"]["WhitelistC"] = nlohmann::ordered_json::object();
+				hmaossConfiguration["templates"]["WhitelistC"]["isWhitelist"] = true;
+				hmaossConfiguration["templates"]["WhitelistC"]["appList"] = nlohmann::ordered_json::array();
+				for (const nlohmann::json& value : this->j["C"][""])
+					hmaossConfiguration["templates"]["WhitelistC"]["appList"].push_back(value.get<std::string>());
+				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 				{
 					const std::string whitelistName = "WhitelistC" + entryIt.key();
-					commonHMAOSSv93["templates"][whitelistName] = nlohmann::ordered_json::object();
-					commonHMAOSSv93["templates"][whitelistName]["isWhitelist"] = true;
-					commonHMAOSSv93["templates"][whitelistName]["appList"] = nlohmann::ordered_json::array();
+					hmaossConfiguration["templates"][whitelistName] = nlohmann::ordered_json::object();
+					hmaossConfiguration["templates"][whitelistName]["isWhitelist"] = true;
+					hmaossConfiguration["templates"][whitelistName]["appList"] = nlohmann::ordered_json::array();
 					for (const nlohmann::json& value : entryIt.value())
-						commonHMAOSSv93["templates"][whitelistName]["appList"].push_back(value.get<std::string>());
+						hmaossConfiguration["templates"][whitelistName]["appList"].push_back(value.get<std::string>());
 				}
-				for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
+				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 				{
 					const std::string blacklistName = "BlacklistC" + entryIt.key();
-					commonHMAOSSv93["templates"][blacklistName] = nlohmann::ordered_json::object();
-					commonHMAOSSv93["templates"][blacklistName]["isWhitelist"] = false;
-					commonHMAOSSv93["templates"][blacklistName]["appList"] = nlohmann::ordered_json::array();
+					hmaossConfiguration["templates"][blacklistName] = nlohmann::ordered_json::object();
+					hmaossConfiguration["templates"][blacklistName]["isWhitelist"] = false;
+					hmaossConfiguration["templates"][blacklistName]["appList"] = nlohmann::ordered_json::array();
 					for (const nlohmann::json& value : entryIt.value())
-						commonHMAOSSv93["templates"][blacklistName]["appList"].push_back(value.get<std::string>());
+						hmaossConfiguration["templates"][blacklistName]["appList"].push_back(value.get<std::string>());
 				}
-				commonHMAOSSv93["templates"]["BlacklistD"] = nlohmann::ordered_json::object();
-				commonHMAOSSv93["templates"]["BlacklistD"]["isWhitelist"] = false;
-				commonHMAOSSv93["templates"]["BlacklistD"]["appList"] = nlohmann::ordered_json::array();
+				hmaossConfiguration["templates"]["BlacklistD"] = nlohmann::ordered_json::object();
+				hmaossConfiguration["templates"]["BlacklistD"]["isWhitelist"] = false;
+				hmaossConfiguration["templates"]["BlacklistD"]["appList"] = nlohmann::ordered_json::array();
 				for (const nlohmann::json& value : this->j["D"])
-					commonHMAOSSv93["templates"]["BlacklistD"]["appList"].push_back(value.get<std::string>());
-				commonHMAOSSv93["templates"]["BlacklistM"] = nlohmann::ordered_json::object();
-				commonHMAOSSv93["templates"]["BlacklistM"]["isWhitelist"] = false;
-				commonHMAOSSv93["templates"]["BlacklistM"]["appList"] = nlohmann::ordered_json::array();
+					hmaossConfiguration["templates"]["BlacklistD"]["appList"].push_back(value.get<std::string>());
+				hmaossConfiguration["templates"]["BlacklistM"] = nlohmann::ordered_json::object();
+				hmaossConfiguration["templates"]["BlacklistM"]["isWhitelist"] = false;
+				hmaossConfiguration["templates"]["BlacklistM"]["appList"] = nlohmann::ordered_json::array();
 				for (const nlohmann::json& value : this->j["M"])
-					commonHMAOSSv93["templates"]["BlacklistM"]["appList"].push_back(value.get<std::string>());
+					hmaossConfiguration["templates"]["BlacklistM"]["appList"].push_back(value.get<std::string>());
 				
-				/* whitelistHMAOSSv93 */
+				/* hmaossV93WhitelistConfiguration */
 				if (this->outputHmaossV93WhitelistFilePath.empty())
-					this->flag |= 16/* 0b00010000 */;
+					this->flag |= 4096/* 0b 0001 0000 0000 0000 */;
 				else
 				{
-					nlohmann::ordered_json whitelistHMAOSSv93(commonHMAOSSv93);
-					whitelistHMAOSSv93["scope"] = nlohmann::json::object();
-					for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
+					nlohmann::ordered_json hmaossV93WhitelistConfiguration(hmaossConfiguration);
+					hmaossV93WhitelistConfiguration["scope"] = nlohmann::json::object();
+					for (nlohmann::json::const_iterator entryIt = this->j["C"].cbegin(); entryIt != this->j["C"].cend(); ++entryIt)
 						for (const nlohmann::json& value : entryIt.value())
 						{
 							const std::string packageName = value.get<std::string>();
-							whitelistHMAOSSv93["scope"][packageName] = nlohmann::ordered_json::object();
-							whitelistHMAOSSv93["scope"][packageName]["useWhitelist"] = true;
-							whitelistHMAOSSv93["scope"][packageName]["excludeSystemApps"] = true;
-							whitelistHMAOSSv93["scope"][packageName]["hideInstallationSource"] = false;
-							whitelistHMAOSSv93["scope"][packageName]["hideSystemInstallationSource"] = false;
-							whitelistHMAOSSv93["scope"][packageName]["excludeTargetInstallationSource"] = false;
-							whitelistHMAOSSv93["scope"][packageName]["invertActivityLaunchProtection"] = false;
-							whitelistHMAOSSv93["scope"][packageName]["excludeVoldIsolation"] = false;
-							whitelistHMAOSSv93["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
-							whitelistHMAOSSv93["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-							whitelistHMAOSSv93["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
-							whitelistHMAOSSv93["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
-							whitelistHMAOSSv93["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
-							whitelistHMAOSSv93["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
-							whitelistHMAOSSv93["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
-							whitelistHMAOSSv93["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
+							hmaossV93WhitelistConfiguration["scope"][packageName] = nlohmann::ordered_json::object();
+							hmaossV93WhitelistConfiguration["scope"][packageName]["useWhitelist"] = true;
+							hmaossV93WhitelistConfiguration["scope"][packageName]["excludeSystemApps"] = true;
+							hmaossV93WhitelistConfiguration["scope"][packageName]["hideInstallationSource"] = false;
+							hmaossV93WhitelistConfiguration["scope"][packageName]["hideSystemInstallationSource"] = false;
+							hmaossV93WhitelistConfiguration["scope"][packageName]["excludeTargetInstallationSource"] = false;
+							hmaossV93WhitelistConfiguration["scope"][packageName]["invertActivityLaunchProtection"] = false;
+							hmaossV93WhitelistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
+							hmaossV93WhitelistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
+							hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+							hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
+							hmaossV93WhitelistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
+							hmaossV93WhitelistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
+							hmaossV93WhitelistConfiguration["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
+							hmaossV93WhitelistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
+							hmaossV93WhitelistConfiguration["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
 						}
 					for (const nlohmann::json& value : this->j["D"])
 					{
 						const std::string packageName = value.get<std::string>();
-						whitelistHMAOSSv93["scope"][packageName] = nlohmann::ordered_json::object();
-						whitelistHMAOSSv93["scope"][packageName]["useWhitelist"] = true;
-						whitelistHMAOSSv93["scope"][packageName]["excludeSystemApps"] = true;
-						whitelistHMAOSSv93["scope"][packageName]["hideInstallationSource"] = false;
-						whitelistHMAOSSv93["scope"][packageName]["hideSystemInstallationSource"] = false;
-						whitelistHMAOSSv93["scope"][packageName]["excludeTargetInstallationSource"] = false;
-						whitelistHMAOSSv93["scope"][packageName]["invertActivityLaunchProtection"] = false;
-						whitelistHMAOSSv93["scope"][packageName]["excludeVoldIsolation"] = false;
-						whitelistHMAOSSv93["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
-						whitelistHMAOSSv93["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-						for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
-							whitelistHMAOSSv93["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
-						whitelistHMAOSSv93["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
-						whitelistHMAOSSv93["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
-						whitelistHMAOSSv93["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
-						whitelistHMAOSSv93["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
-						whitelistHMAOSSv93["scope"][packageName]["extraAppList"].push_back(packageName);
-						whitelistHMAOSSv93["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName] = nlohmann::ordered_json::object();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["useWhitelist"] = true;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["excludeSystemApps"] = true;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["hideInstallationSource"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["hideSystemInstallationSource"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["excludeTargetInstallationSource"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["invertActivityLaunchProtection"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+						for (nlohmann::json::const_iterator entryIt = this->j["C"].cbegin(); entryIt != this->j["C"].cend(); ++entryIt)
+							hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["extraAppList"].push_back(packageName);
+						hmaossV93WhitelistConfiguration["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
 					}
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].begin(); outerEntryIt != this->j["N"].end(); ++outerEntryIt)
-						if (whitelistHMAOSSv93["scope"].contains(outerEntryIt.key()))
-							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().begin(); innerEntryIt != outerEntryIt.value().end(); ++innerEntryIt)
+					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
+						if (hmaossV93WhitelistConfiguration["scope"].contains(outerEntryIt.key()))
+							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
 							{
 								if (innerEntryIt.value().get<bool>())
 								{
-									whitelistHMAOSSv93["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
-									std::sort(whitelistHMAOSSv93["scope"][outerEntryIt.key()]["extraAppList"].begin(), whitelistHMAOSSv93["scope"][outerEntryIt.key()]["extraAppList"].end());
+									hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
+									std::sort(hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
 								}
 								else
 								{
-									whitelistHMAOSSv93["scope"][outerEntryIt.key()]["extraOppositeAppList"].push_back(innerEntryIt.key());
-									std::sort(whitelistHMAOSSv93["scope"][outerEntryIt.key()]["extraOppositeAppList"].begin(), whitelistHMAOSSv93["scope"][outerEntryIt.key()]["extraOppositeAppList"].end());
+									hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].push_back(innerEntryIt.key());
+									std::sort(hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].begin(), hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].end());
 								}
 							}
 					if ("." == this->outputHmaossV93WhitelistFilePath)
 					{
-						std::cout << whitelistHMAOSSv93.dump() << std::endl;
-						this->flag |= 16/* 0b00010000 */;
+						std::cout << hmaossV93WhitelistConfiguration.dump() << std::endl;
+						this->flag |= 4096/* 0b 0001 0000 0000 0000 */;
 					}
 					else if (this->handleDirectory(this->outputHmaossV93WhitelistFilePath))
 						try
@@ -1347,9 +1572,9 @@ public:
 							std::ofstream outputHmaossV93WhitelistFile(this->outputHmaossV93WhitelistFilePath);
 							if (outputHmaossV93WhitelistFile.is_open())
 							{
-								outputHmaossV93WhitelistFile << whitelistHMAOSSv93.dump();
+								outputHmaossV93WhitelistFile << hmaossV93WhitelistConfiguration.dump();
 								outputHmaossV93WhitelistFile.close();
-								this->flag |= 16/* 0b00010000 */;
+								this->flag |= 4096/* 0b 0001 0000 0000 0000 */;
 							}
 							else
 								this->print("Failed to open the output whitelist v93 configuration JSON file. ", LogLevel::Error);
@@ -1362,78 +1587,78 @@ public:
 						this->print("Failed to handle the parent directory for the output whitelist v93 configuration JSON file. ", LogLevel::Error);
 				}
 				
-				/* blacklistHMAOSSv93 */
+				/* hmaossV93BlacklistConfiguration */
 				if (this->outputHmaossV93BlacklistFilePath.empty())
-					this->flag |= 32/* 0b00100000 */;
+					this->flag |= 8192/* 0b 0010 0000 0000 0000 */;
 				else
 				{
-					nlohmann::ordered_json blacklistHMAOSSv93(commonHMAOSSv93);
-					blacklistHMAOSSv93["scope"] = nlohmann::json::object();
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["C"].begin(); outerEntryIt != this->j["C"].end(); ++outerEntryIt)
+					nlohmann::ordered_json hmaossV93BlacklistConfiguration(hmaossConfiguration);
+					hmaossV93BlacklistConfiguration["scope"] = nlohmann::json::object();
+					for (nlohmann::json::const_iterator outerEntryIt = this->j["C"].cbegin(); outerEntryIt != this->j["C"].cend(); ++outerEntryIt)
 						for (const nlohmann::json& value : outerEntryIt.value())
 						{
 							const std::string packageName = value.get<std::string>();
-							blacklistHMAOSSv93["scope"][packageName] = nlohmann::ordered_json::object();
-							blacklistHMAOSSv93["scope"][packageName]["useWhitelist"] = false;
-							blacklistHMAOSSv93["scope"][packageName]["excludeSystemApps"] = false;
-							blacklistHMAOSSv93["scope"][packageName]["hideInstallationSource"] = false;
-							blacklistHMAOSSv93["scope"][packageName]["hideSystemInstallationSource"] = false;
-							blacklistHMAOSSv93["scope"][packageName]["excludeTargetInstallationSource"] = false;
-							blacklistHMAOSSv93["scope"][packageName]["invertActivityLaunchProtection"] = false;
-							blacklistHMAOSSv93["scope"][packageName]["excludeVoldIsolation"] = false;
-							blacklistHMAOSSv93["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
-							blacklistHMAOSSv93["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-							for (nlohmann::json::const_iterator innerEntryIt = this->j["C"].begin(); innerEntryIt != this->j["C"].end(); ++innerEntryIt)
+							hmaossV93BlacklistConfiguration["scope"][packageName] = nlohmann::ordered_json::object();
+							hmaossV93BlacklistConfiguration["scope"][packageName]["useWhitelist"] = false;
+							hmaossV93BlacklistConfiguration["scope"][packageName]["excludeSystemApps"] = false;
+							hmaossV93BlacklistConfiguration["scope"][packageName]["hideInstallationSource"] = false;
+							hmaossV93BlacklistConfiguration["scope"][packageName]["hideSystemInstallationSource"] = false;
+							hmaossV93BlacklistConfiguration["scope"][packageName]["excludeTargetInstallationSource"] = false;
+							hmaossV93BlacklistConfiguration["scope"][packageName]["invertActivityLaunchProtection"] = false;
+							hmaossV93BlacklistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
+							hmaossV93BlacklistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
+							hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+							for (nlohmann::json::const_iterator innerEntryIt = this->j["C"].cbegin(); innerEntryIt != this->j["C"].cend(); ++innerEntryIt)
 								if (innerEntryIt != outerEntryIt)
-									blacklistHMAOSSv93["scope"][packageName]["applyTemplates"].push_back("BlacklistC" + innerEntryIt.key());
-							blacklistHMAOSSv93["scope"][packageName]["applyTemplates"].push_back("BlacklistD");
-							blacklistHMAOSSv93["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
-							blacklistHMAOSSv93["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
-							blacklistHMAOSSv93["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
-							blacklistHMAOSSv93["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
-							blacklistHMAOSSv93["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
+									hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistC" + innerEntryIt.key());
+							hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistD");
+							hmaossV93BlacklistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
+							hmaossV93BlacklistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
+							hmaossV93BlacklistConfiguration["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
+							hmaossV93BlacklistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
+							hmaossV93BlacklistConfiguration["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
 						}
 					for (const nlohmann::json& value : this->j["D"])
 					{
 						const std::string packageName = value.get<std::string>();
-						blacklistHMAOSSv93["scope"][packageName] = nlohmann::ordered_json::object();
-						blacklistHMAOSSv93["scope"][packageName]["useWhitelist"] = false;
-						blacklistHMAOSSv93["scope"][packageName]["excludeSystemApps"] = false;
-						blacklistHMAOSSv93["scope"][packageName]["hideInstallationSource"] = false;
-						blacklistHMAOSSv93["scope"][packageName]["hideSystemInstallationSource"] = false;
-						blacklistHMAOSSv93["scope"][packageName]["excludeTargetInstallationSource"] = false;
-						blacklistHMAOSSv93["scope"][packageName]["invertActivityLaunchProtection"] = false;
-						blacklistHMAOSSv93["scope"][packageName]["excludeVoldIsolation"] = false;
-						blacklistHMAOSSv93["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
-						blacklistHMAOSSv93["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-						blacklistHMAOSSv93["scope"][packageName]["applyTemplates"].push_back("BlacklistD");
-						blacklistHMAOSSv93["scope"][packageName]["applyTemplates"].push_back("BlacklistM");
-						blacklistHMAOSSv93["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
-						blacklistHMAOSSv93["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
-						blacklistHMAOSSv93["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
-						blacklistHMAOSSv93["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
-						blacklistHMAOSSv93["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
-						blacklistHMAOSSv93["scope"][packageName]["extraOppositeAppList"].push_back(packageName);
+						hmaossV93BlacklistConfiguration["scope"][packageName] = nlohmann::ordered_json::object();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["useWhitelist"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["excludeSystemApps"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["hideInstallationSource"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["hideSystemInstallationSource"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["excludeTargetInstallationSource"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["invertActivityLaunchProtection"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistD");
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistM");
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["extraOppositeAppList"].push_back(packageName);
 					}
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].begin(); outerEntryIt != this->j["N"].end(); ++outerEntryIt)
-						if (blacklistHMAOSSv93["scope"].contains(outerEntryIt.key()))
-							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().begin(); innerEntryIt != outerEntryIt.value().end(); ++innerEntryIt)
+					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
+						if (hmaossV93BlacklistConfiguration["scope"].contains(outerEntryIt.key()))
+							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
 							{
 								if (innerEntryIt.value().get<bool>())
 								{
-									blacklistHMAOSSv93["scope"][outerEntryIt.key()]["extraOppositeAppList"].push_back(innerEntryIt.key());
-									std::sort(blacklistHMAOSSv93["scope"][outerEntryIt.key()]["extraOppositeAppList"].begin(), blacklistHMAOSSv93["scope"][outerEntryIt.key()]["extraOppositeAppList"].end()); 
+									hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].push_back(innerEntryIt.key());
+									std::sort(hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].begin(), hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].end()); 
 								}
 								else
 								{
-									blacklistHMAOSSv93["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
-									std::sort(blacklistHMAOSSv93["scope"][outerEntryIt.key()]["extraAppList"].begin(), blacklistHMAOSSv93["scope"][outerEntryIt.key()]["extraAppList"].end());
+									hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
+									std::sort(hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
 								}
 							}
 					if ("." == this->outputHmaossV93BlacklistFilePath)
 					{
-						std::cout << blacklistHMAOSSv93.dump() << std::endl;
-						this->flag |= 32/* 0b00100000 */;
+						std::cout << hmaossV93BlacklistConfiguration.dump() << std::endl;
+						this->flag |= 8192/* 0b 0010 0000 0000 0000 */;
 					}
 					else if (this->handleDirectory(this->outputHmaossV93BlacklistFilePath))
 						try
@@ -1441,9 +1666,9 @@ public:
 							std::ofstream outputHmaossV93BlacklistFile(this->outputHmaossV93BlacklistFilePath);
 							if (outputHmaossV93BlacklistFile.is_open())
 							{
-								outputHmaossV93BlacklistFile << blacklistHMAOSSv93.dump();
+								outputHmaossV93BlacklistFile << hmaossV93BlacklistConfiguration.dump();
 								outputHmaossV93BlacklistFile.close();
-								this->flag |= 32/* 0b00100000 */;
+								this->flag |= 8192/* 0b 0010 0000 0000 0000 */;
 							}
 							else
 								this->print("Failed to open the output blacklist configuration JSON file. ", LogLevel::Error);
@@ -1456,86 +1681,86 @@ public:
 						this->print("Failed to handle the parent directory for the output blacklist configuration JSON file. ", LogLevel::Error);
 				}
 			}
-			return this->flag & 32/* 0b00100000 */ && this->flag & 16/* 0b00010000 */ && this->flag & 2/* 0b00000010 */ && this->flag & 1/* 0b00000001 */;
+			return this->flag & 8192/* 0b 0010 0000 0000 0000 */ && this->flag & 4096 /* 0b 0001 0000 0000 0000 */ && this->checkInputFlags();
 		}
 		else
 		{
-			this->print("Error: Please parse the input database JSON file before generating the HMA-OSS configuration JSON files. ", LogLevel::Error);
+			this->print("Error: Please parse the input database JSON file and conduct the local scanning before generating the HMA-OSS configuration JSON files. ", LogLevel::Error);
 			return false;
 		}
 	}
-	bool generatePathTester() // 0b?0????11 | 0b01000000 -> 0b?1????11
+	bool generatePathTester() // 0b ?0?? ???? 1111 1111 | 0b 0100 0000 0000 0000 -> 0b ?1?? ???? 1111 1111
 	{
-		if (this->flag & 2/* 0b00000010 */ && this->flag & 1/* 0b00000001 */)
+		if (this->checkInputFlags())
 		{
-			this->flag &= 191/* 0b10111111 */;
 			if (this->outputPathTesterFilePath.empty())
-				this->flag |= 64/* 0b01000000 */;
+				this->flag |= 16384 /* 0b 0100 0000 0000 0000 */;
 			else
 			{
-				std::string shellScript = "#!/system/bin/sh\n";
-				shellScript += "readonly EXIT_SUCCESS=0\n";
-				shellScript += "readonly EXIT_FAILURE=1\n\n";
-				shellScript += "readonly EOF=-1\n\n";
-				shellScript += "errorLevel=${EXIT_SUCCESS}\n";
-				shellScript += "if echo \"${EXTERNAL_STORAGE}\" | grep -qE \"^(/[A-Za-z0-9_-]+)+$\";\n";
-				shellScript += "then\n";
-				shellScript += "\treadonly directories=\"/data/data /data/user/0 /data/user_de/0 ${EXTERNAL_STORAGE}/Android/data ${EXTERNAL_STORAGE}/Android/obb ${EXTERNAL_STORAGE}/Android/\u200Bdata ${EXTERNAL_STORAGE}/Android/\u200Bobb\"\n";
-				shellScript += "\treadonly wxDownloadDirectoryPath=\"${EXTERNAL_STORAGE}/Download/WechatXposed\"\n";
-				shellScript += "else\n";
-				shellScript += "\treadonly directories=\"/data/data /data/user/0 /data/user_de/0 /sdcard/Android/data /sdcard/Android/obb /sdcard/Android/\u200Bdata /sdcard/Android/\u200Bobb\"\n";
-				shellScript += "\treadonly wxDownloadDirectoryPath=\"/sdcard/Download/WechatXposed\"\n";
-				shellScript += "fi\n\n";
-				shellScript += "if [[ $(id -u) -eq 0 ]];\n";
-				shellScript += "then\n";
-				shellScript += "\terrorLevel=${EOF}\n";
-				shellScript += "\techo \"You are running this script as root. Please run it as a regular user.\"\n";
-				shellScript += "\texit ${errorLevel}\n";
-				shellScript += "else\n";
-				shellScript += "\techo -e \"The execution of the path tester has begun. \"\n";
-				shellScript += "fi\n\n";
+				this->flag &= 49151/* 0b 1011 1111 1111 1111 */;
+				std::string shellScript = "#!/system/bin/sh\n"
+				"readonly EXIT_SUCCESS=0\n"
+				"readonly EXIT_FAILURE=1\n\n"
+				"readonly EOF=-1\n\n"
+				"errorLevel=${EXIT_SUCCESS}\n"
+				"if echo \"${EXTERNAL_STORAGE}\" | grep -qE \"^(/[A-Za-z0-9_-]+)+$\";\n"
+				"then\n"
+				"\treadonly directories=\"/data/data /data/user/0 /data/user_de/0 ${EXTERNAL_STORAGE}/Android/data ${EXTERNAL_STORAGE}/Android/obb ${EXTERNAL_STORAGE}/Android/\u200Bdata ${EXTERNAL_STORAGE}/Android/\u200Bobb\"\n"
+				"\treadonly wxDownloadDirectoryPath=\"${EXTERNAL_STORAGE}/Download/WechatXposed\"\n"
+				"else\n"
+				"\treadonly directories=\"/data/data /data/user/0 /data/user_de/0 /sdcard/Android/data /sdcard/Android/obb /sdcard/Android/\u200Bdata /sdcard/Android/\u200Bobb\"\n"
+				"\treadonly wxDownloadDirectoryPath=\"/sdcard/Download/WechatXposed\"\n"
+				"fi\n\n"
+				"if [[ $(id -u) -eq 0 ]];\n"
+				"then\n"
+				"\terrorLevel=${EOF}\n"
+				"\techo \"You are running this script as root. Please run it as a regular user.\"\n"
+				"\texit ${errorLevel}\n"
+				"else\n"
+				"\techo -e \"The execution of the path tester has begun. \"\n"
+				"fi\n\n";
 				shellScript += "readonly D=" + this->array2string(this->j["D"], "\"", " ", "\"") + "\n";
-				shellScript += "for d in ${D};\n";
-				shellScript += "do\n";
-				shellScript += "\tfor directory in ${directories};\n";
-				shellScript += "\tdo\n";
-				shellScript += "\t\tsensitivePath=\"${directory}/${d}\"\n";
-				shellScript += "\t\tif [[ -e \"${sensitivePath}\" ]];\n";
-				shellScript += "\t\tthen\n";
-				shellScript += "\t\t\terrorLevel=${EXIT_FAILURE}\n";
-				shellScript += "\t\t\techo \"- Found \\\"${sensitivePath}\\\" (\\$D\\$). \"\n";
-				shellScript += "\t\tfi\n";
-				shellScript += "\tdone\n";
-				shellScript += "done\n\n";
+				shellScript += "for d in ${D};\n"
+				"do\n"
+				"\tfor directory in ${directories};\n"
+				"\tdo\n"
+				"\t\tsensitivePath=\"${directory}/${d}\"\n"
+				"\t\tif [[ -e \"${sensitivePath}\" ]];\n"
+				"\t\tthen\n"
+				"\t\t\terrorLevel=${EXIT_FAILURE}\n"
+				"\t\t\techo \"- Found \\\"${sensitivePath}\\\" (\\$D\\$). \"\n"
+				"\t\tfi\n"
+				"\tdone\n"
+				"done\n\n";
 				shellScript += "readonly M=" + this->array2string(this->j["M"], "\"", " ", "\"") + "\n";
-				shellScript += "for m in ${M};\n";
-				shellScript += "do\n";
-				shellScript += "\tfor directory in ${directories};\n";
-				shellScript += "\tdo\n";
-				shellScript += "\t\tsensitivePath=\"${directory}/${m}\"\n";
-				shellScript += "\t\tif [[ -e \"${sensitivePath}\" ]];\n";
-				shellScript += "\t\tthen\n";
-				shellScript += "\t\t\terrorLevel=${EXIT_FAILURE}\n";
-				shellScript += "\t\t\techo \"- Found \\\"${sensitivePath}\\\" (\\$M\\$). \"\n";
-				shellScript += "\t\tfi\n";
-				shellScript += "\tdone\n";
-				shellScript += "done\n\n";
-				shellScript += "if [[ -e \"${wxDownloadDirectoryPath}\" ]];\n";
-				shellScript += "then\n";
-				shellScript += "\terrorLevel=${EXIT_FAILURE}\n";
-				shellScript += "\techo \"- Found \\\"${wxDownloadDirectoryPath}\\\" (\\$M_P\\$). \"\n";
-				shellScript += "fi\n\n";
-				shellScript += "if [[ ${EXIT_SUCCESS} -eq ${errorLevel} ]];\n";
-				shellScript += "then\n";
-				shellScript += "\techo \"Finished scanning as a regular user. You should have bypassed the path detection.\"\n";
-				shellScript += "else\n";
-				shellScript += "\techo \"Finished scanning as a regular user. Your LRFP environments may have been exposed if there is one or more applications other than the one used to execute this script in the above detection results. \"\n";
-				shellScript += "fi\n\n";
-				shellScript += "exit ${errorLevel}\n";
+				shellScript += "for m in ${M};\n"
+				"do\n"
+				"\tfor directory in ${directories};\n"
+				"\tdo\n"
+				"\t\tsensitivePath=\"${directory}/${m}\"\n"
+				"\t\tif [[ -e \"${sensitivePath}\" ]];\n"
+				"\t\tthen\n"
+				"\t\t\terrorLevel=${EXIT_FAILURE}\n"
+				"\t\t\techo \"- Found \\\"${sensitivePath}\\\" (\\$M\\$). \"\n"
+				"\t\tfi\n"
+				"\tdone\n"
+				"done\n\n"
+				"if [[ -e \"${wxDownloadDirectoryPath}\" ]];\n"
+				"then\n"
+				"\terrorLevel=${EXIT_FAILURE}\n"
+				"\techo \"- Found \\\"${wxDownloadDirectoryPath}\\\" (\\$M_P\\$). \"\n"
+				"fi\n\n"
+				"if [[ ${EXIT_SUCCESS} -eq ${errorLevel} ]];\n"
+				"then\n"
+				"\techo \"Finished scanning as a regular user. You should have bypassed the path detection.\"\n"
+				"else\n"
+				"\techo \"Finished scanning as a regular user. Your LRFP environments may have been exposed if there is one or more applications other than the one used to execute this script in the above detection results. \"\n"
+				"fi\n\n"
+				"exit ${errorLevel}\n";
 				if ("." == this->outputPathTesterFilePath)
 				{
 					std::cout << shellScript << std::endl;
-					this->flag |= 64/* 0b01000000 */;
+					this->flag |= 16384 /* 0b 0100 0000 0000 0000 */;
 				}
 				else if (this->handleDirectory(this->outputPathTesterFilePath))
 					try
@@ -1545,7 +1770,7 @@ public:
 						{
 							outputPathTesterFile << shellScript;
 							outputPathTesterFile.close();
-							this->flag |= 64/* 0b01000000 */;
+							this->flag |= 16384 /* 0b 0100 0000 0000 0000 */;
 						}
 						else
 							this->print("Failed to open the output path tester script file. ", LogLevel::Error);
@@ -1557,7 +1782,7 @@ public:
 				else
 					this->print("Failed to handle the parent directory for the output path tester script file. ", LogLevel::Error);
 			}
-			return this->flag & 64/* 0b01000000 */ && this->flag & 2/* 0b00000010 */ && this->flag & 1/* 0b00000001 */;
+			return this->flag & 16384 /* 0b 0100 0000 0000 0000 */ && this->checkInputFlags();
 		}
 		else
 		{
@@ -1565,46 +1790,55 @@ public:
 			return false;
 		}
 	}
-	bool generateTrickyStoreTarget()
+	bool generateTrickyStoreTarget() // 0b 0??? ???? 1111 1111 | 0b 1000 0000 0000 0000 -> 0b 1??? ???? 1111 1111
 	{
-		if (this->flag & 2/* 0b00000010 */ && this->flag & 1/* 0b00000001 */)
+		if (this->checkInputFlags())
 		{
-			this->flag &= 127/* 0b01111111 */;
 			if (this->outputTrickyStoreTargetFilePath.empty())
-				this->flag |= 128/* 0b10000000 */;
+				this->flag |= 32768/* 0b 1000 0000 0000 0000 */;
 			else
 			{
-				std::set<std::string> targetPackageNames{};
-				for (nlohmann::json::const_iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); ++entryIt)
+				this->flag &= 32767/* 0b 0111 1111 1111 1111 */;
+				std::vector<std::string> targetPackageNames{};
+				for (const nlohmann::json& value : this->j["C"][""])
+					targetPackageNames.push_back(value.get<std::string>());
+				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 					for (const nlohmann::json& value : entryIt.value())
-						targetPackageNames.insert(value.get<std::string>());
+						targetPackageNames.push_back(value.get<std::string>());
 				for (const nlohmann::json& value : this->j["D"])
-					targetPackageNames.insert(value.get<std::string>());
+					targetPackageNames.push_back(value.get<std::string>());
 				for (const nlohmann::json& value : this->j["M"])
-					targetPackageNames.insert(value.get<std::string>());
+					targetPackageNames.push_back(value.get<std::string>());
 				for (const nlohmann::json& value : this->j["S"])
-					targetPackageNames.insert(value.get<std::string>());
-				for (nlohmann::json::iterator outerEntryIt = this->j["T"].begin(); outerEntryIt != this->j["T"].end(); ++outerEntryIt)
-					if (outerEntryIt.value().get<bool>())
-						targetPackageNames.insert(outerEntryIt.key());
-					else if (targetPackageNames.count(outerEntryIt.key()))
-						targetPackageNames.erase(outerEntryIt.key());
+					targetPackageNames.push_back(value.get<std::string>());
+				for (nlohmann::json::const_iterator entryIt = this->j["T"].cbegin(); entryIt != this->j["T"].cend(); ++entryIt)
+					if (entryIt.value().get<bool>())
+						targetPackageNames.push_back(entryIt.key());
+				std::sort(targetPackageNames.begin(), targetPackageNames.end());
+				targetPackageNames.erase(std::unique(targetPackageNames.begin(), targetPackageNames.end()), targetPackageNames.end());
+				for (nlohmann::json::const_iterator entryIt = this->j["T"].cbegin(); entryIt != this->j["T"].cend(); ++entryIt)
+					if (!entryIt.value().get<bool>())
+					{
+						const std::vector<std::string>::iterator position = std::find(targetPackageNames.begin(), targetPackageNames.end(), entryIt.key());
+						if (targetPackageNames.end() != position)
+							targetPackageNames.erase(position);
+					}
 				if ("." == this->outputTrickyStoreTargetFilePath)
 				{
 					for (const std::string& packageName : targetPackageNames)
 						std::cout << packageName << std::endl;
-					this->flag |= 128/* 0b10000000 */;
+					this->flag |= 32768/* 0b 1000 0000 0000 0000 */;
 				}
 				else if (this->handleDirectory(this->outputTrickyStoreTargetFilePath))
 					try
 					{
-						std::ofstream outputTargetFile(this->outputTrickyStoreTargetFilePath);
-						if (outputTargetFile.is_open())
+						std::ofstream outputTrickyStoreTargetFile(this->outputTrickyStoreTargetFilePath);
+						if (outputTrickyStoreTargetFile.is_open())
 						{
 							for (const std::string& packageName : targetPackageNames)
-								outputTargetFile << packageName << std::endl;
-							outputTargetFile.close();
-							this->flag |= 128/* 0b10000000 */;
+								outputTrickyStoreTargetFile << packageName << std::endl;
+							outputTrickyStoreTargetFile.close();
+							this->flag |= 32768/* 0b 1000 0000 0000 0000 */;
 						}
 						else
 							this->print("Failed to open the output Tricky Store target text file. ", LogLevel::Error);
@@ -1616,7 +1850,7 @@ public:
 				else
 					this->print("Failed to handle the parent directory for the output Tricky Store target text file. ", LogLevel::Error);
 			}
-			return this->flag & 128/* 0b10000000 */ && this->flag & 2/* 0b00000010 */ && this->flag & 1/* 0b00000001 */;
+			return this->flag & 32768/* 0b 1000 0000 0000 0000 */ && this->checkInputFlags();
 		}
 		else
 		{

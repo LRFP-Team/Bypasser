@@ -199,7 +199,7 @@ class DatabaseManager:
 	def check(self:object) -> tuple:
 		if isinstance(self.__database, dict):
 			orderedDict, d = OrderedDict(), OrderedDict()
-			if "C" in self.__database and isinstance(self.__database["C"], dict)):
+			if "C" in self.__database and isinstance(self.__database["C"], dict):
 				if "" in self.__database["C"] and isinstance(self.__database["C"][""], (tuple, list, set)):
 					orderedDict["C"] = set(self.__database["C"][""])
 				if "_" in self.__database["C"] and isinstance(self.__database["C"]["_"], dict):

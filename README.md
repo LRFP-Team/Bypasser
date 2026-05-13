@@ -7,12 +7,11 @@ This module will only take effect when users install it or click the ``action`` 
 - Welcome (0b00000X): Perform built-in configurations for this module. 
 - Zygisk Traces (0b0000X0): Deploy correct configurations for different Zygisk solutions according to the Zygisk implementation, Shamiko, NoHello, and Zygisk Assistant modules used. 
 - HMA Configurations (0b000X00): Generate relevant configurations for HMA and its variants based on the cloud database (along with the web UI updating) and local packages (if enabled). Users are required to manually import the configurations via HMA or one of its variants. Networks to GitHub are optional. 
-- Tricky Store (0b00X000): Generate Tricky Store configurations directly based on the cloud database. The configurations will be written to the Tricky Store configuration folder directly. Networks to GitHub are optional. 
+- Tricky Store (0b00X000): Generate Tricky Store configurations directly based on the cloud database. The configurations will be written directly to the Tricky Store configuration folder. Networks to GitHub are optional. 
 - Shell (0b0X0000): Perform some shell commands. Please check ``actionA.sh`` for details. 
   - Disable sensitive applications automatically installed by Google. 
-  - Remove sensitive policies. 
-  - Handle properties. 
-  - Enforce SELinux. 
+  - Handle sensitive policies and properties. 
+  - Enforce SELinux (Use ``setenforce 0`` to reset if necessary). 
   - Check whether the kernel version involves banned strings. 
   - Patch ``/etc/compatconfig/services-platform-compat-config.xml``. 
   - Enable the feature of hiding desktop icons on devices running Android 10 or above. 
@@ -20,10 +19,14 @@ This module will only take effect when users install it or click the ``action`` 
 
 Please kindly be aware that this module will only optimize the rooting and injection environments based on the current environments. 
 This module will not include, install, enable, disable, or uninstall any other modules or plugins. 
-The implementation and bypassing of these environments should be challenging and complex procedures. Users should learn related knowledge before taking these actions. 
+It is highly recommended to handle the environments according to [https://github.com/LRFP-Team/LRFP/tree/main/Bypassers](https://github.com/LRFP-Team/LRFP/tree/main/Bypassers) before using this module. 
+
+The implementation and bypassing of these environments should be challenging and complex procedures. 
+Users should learn related knowledge before taking these actions. 
 Relying on one-key solutions or paying others for remote or onsite LRFP environment implementation, detection, or bypassing without knowing the principles is incorrect. 
 
-The updates of this module can be divided into the module update and the regular update. Unless otherwise specified, regular updates by pressing the ``action`` button in the rooting manager are adequate to keep up with the latest bypassing solutions. 
+The updates for this module can be divided into module updates and regular updates. All module updates are written in [./Release](./Release) instead of GitHub releases. 
+Unless otherwise specified, regular updates by pressing the ``action`` button in the root manager are adequate to keep up with the latest bypassing solutions. 
 Whether an update commit is a module update or a regular update, the time in the commit message is always based on HKT (UTC+8). 
 
 ## Compilation
@@ -32,21 +35,22 @@ If you want to build the module for testing purposes on your own, please use ``g
 Execute ``./build.sh`` in the root folder of the local repository after you check carefully and grant suitable execution permissions. 
 Submit modifications via a pull request (PR) if you wish to. 
 
-Regarding the C++ compilation, you can use ``g++`` and [Android C++ compilers](https://github.com/android/ndk/wiki) to compile. 
-Please ensure you are using C++17 (e.g., ``-std=c++17``) or later during the compilation, as the code depends on the ``filesystem`` library. 
+Regarding the C++ compilation, [Android C++ compilers](https://github.com/android/ndk/wiki) (that are adapted to your Android device) should be used to compile. 
+For additional compilation warnings and information, please consider ``g++`` with ``-Wall -Wextra -Wpedantic`` or Visual Studio with ``/W4``. However, the binaries produced may not run on Android devices. 
+Anyway, no matter what the compiler is, please ensure using C++17 (e.g., ``-std=c++17``) or later during the compilation, as the code depends on the ``filesystem`` library and the ``inline`` feature. 
 
 ## Acknowledgement
 
-Here, we express our faithful gratitude to all the LRFP-related developers, especially the developers of different rooting solutions and the detailed guidelines for rooting-layer system module development. 
+Here, we express our faithful gratitude to all LRFP-related developers, especially the developers of different rooting solutions and the detailed [guidelines](https://github.com/LRFP-Team/LRFP/blob/main/Others/Links.md) for rooting-layer system module development. 
 
 We also sincerely thank [@pumPCin](https://github.com/pumPCin) for providing old configuration folders of HMA and its variants in [https://github.com/pumPCin/HMAL/issues/50](https://github.com/pumPCin/HMAL/issues/50). 
 
 ## Licensing
 
 This repository is under the ``GPL-3.0`` license. 
-
-You can regard this repository as an alternative rooting-layer system module template or a template GitHub repository for rooting-layer system module development. The A/B architecture is implemented for the dynamic updating of ``action``. 
+You can regard this repository as an alternative rooting-layer system module template or a template GitHub repository for rooting-layer system module development. 
+The A/B architecture is implemented for the dynamic updating of ``action``. 
 
 ## Warning
 
-Since the project is still developing, please do not install the modules here until this warning is removed. 
+Since the project is still developing, please do not install this module for daily use until this warning is removed. 
