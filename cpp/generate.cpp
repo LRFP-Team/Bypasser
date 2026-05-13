@@ -286,6 +286,7 @@ private:
 							if ("assets/xposed_init" == fileName)
 							{
 								isPlugin = cdfh.uncompressedSize > 0;
+								this->print(std::string("Located ") + (isPlugin ? "true" : "false") + " \"assets/xposed_init\" in " + this->formatMessage(apkFilePath) + ". ", LogLevel::Trace);
 								return true;
 							}
 							apkFile.seekg(cdfh.extraFieldLength + cdfh.fileCommentLength, std::ios::cur);
@@ -315,7 +316,7 @@ private:
 		}
 		else
 		{
-			bool notInDatabase = std::find(this->j["C"][""].cbegin(), this->j["C"][""].cend(), packageName) == this->j["C"][""].cend() && std::find(this->j["D"].cbegin(), this->j["D"].cend(), packageName) == this->j["D"].cend() && std::find(this->j["S"].cbegin(), this->j["S"].cend(), packageName) == this->j["S"].cend();
+			bool notInDatabase = std::find(this->j["C"][""].cbegin(), this->j["C"][""].cend(), packageName) == this->j["C"][""].cend() && std::find(this->j["D"].cbegin(), this->j["D"].cend(), packageName) == this->j["D"].cend() && std::find(this->j["M"].cbegin(), this->j["M"].cend(), packageName) == this->j["M"].cend() && std::find(this->j["S"].cbegin(), this->j["S"].cend(), packageName) == this->j["S"].cend();
 			if (notInDatabase)
 				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 					if (entryIt.value().is_array() && std::find(entryIt.value().cbegin(), entryIt.value().cend(), packageName) != entryIt.value().cend())
@@ -343,13 +344,14 @@ private:
 			{
 				/**
 				 * formCount = directoryFormCount + fileFormCount + invalidFormCount
-				 * directoryFormCount = validDirectoryFormCount + invalidDirectoryFormCount + failureInstallationCount
-				 * validDirectoryFormCount = validDirectoryFormSuccessCount + validDirectoryFormFailureCount
+				 * directoryFormCount = dataDirectoryFormCount + nonDataDirectoryFormCount + invalidDirectoryFormCount + failureInstallationCount
+				 * dataDirectoryFormCount = dataDirectoryFormSuccessCount + dataDirectoryFormFailureCount
+				 * nonDataDirectoryFormCount = nonDataDirectoryFormSuccessCount + nonDataDirectoryFormFailureCount
 				 * failureInstallationCount = failureInstallationRemovedCount + failureInstallationUnremovedCount
 				 * fileFormCount = validFileFormCount + invalidFileFormCount
 				 * validFileFormCount = validFileFormSuccessCount + validFileFormFailureCount
 				 */
-				size_t formCount = 0, directoryFormCount = 0, validDirectoryFormCount = 0, validDirectoryFormSuccessCount = 0, validDirectoryFormFailureCount = 0, invalidDirectoryFormCount = 0, failureInstallationCount = 0, failureInstallationRemovedCount = 0, failureInstallationUnremovedCount = 0, fileFormCount = 0, validFileFormCount = 0, validFileFormSuccessCount = 0, validFileFormFailureCount = 0, invalidFileFormCount = 0, invalidFormCount = 0;
+				size_t formCount = 0, directoryFormCount = 0, dataDirectoryFormCount = 0, dataDirectoryFormSuccessCount = 0, dataDirectoryFormFailureCount = 0, nonDataDirectoryFormCount = 0, nonDataDirectoryFormSuccessCount = 0, nonDataDirectoryFormFailureCount = 0, invalidDirectoryFormCount = 0, failureInstallationCount = 0, failureInstallationRemovedCount = 0, failureInstallationUnremovedCount = 0, fileFormCount = 0, validFileFormCount = 0, validFileFormSuccessCount = 0, validFileFormFailureCount = 0, invalidFileFormCount = 0, invalidFormCount = 0;
 				for (const std::filesystem::directory_entry& firstLayerEntry : std::filesystem::directory_iterator(directoryPath))
 				{
 					++formCount;
@@ -372,16 +374,17 @@ private:
 							else
 								++failureInstallationRemovedCount;
 						}
-						else
+						else if (26 == directoryNameLength && '~' == directoryName[0] && '~' == directoryName[1] && '=' == directoryName[24] && '=' == directoryName[25])
 						{
-							bool isValid = 26 == directoryNameLength && '~' == directoryName[0] && '~' == directoryName[1] && '=' == directoryName[24] && '=' == directoryName[25];
+							/* Analyze the application installed under ``/data`` */
+							bool isValid = true;
 							for (size_t i = 2; i < 24 && isValid; ++i)
-								if (!(('A' <= directoryName[i] && directoryName[i] <= 'Z') || ('a' <= directoryName[i] && directoryName[i] <= 'z') || ('0' <= directoryName[i] && directoryName[i] <= '9') || '_' == directoryName[i] || '-' == directoryName[i]))
+								if (!(('A' <= directoryName[i] && directoryName[i] <= 'Z') || ('a' <= directoryName[i] && directoryName[i] <= 'z') || ('0' <= directoryName[i] && directoryName[i] <= '9') || '_' == directoryName[i] || '-' == directoryName[i])) // no '.' here
 									isValid = false;
 							if (isValid)
 							{
 								/* Enter the second-layer directory */
-								this->print("Entered the second-layer directory for " + this->formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
+								this->print("Trying to enter the second-layer directory for " + this->formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
 								std::filesystem::directory_entry secondLayerEntry{};
 								for (std::filesystem::directory_iterator directoryIt = std::filesystem::directory_iterator(firstLayerEntry.path()); directoryIt != std::filesystem::directory_iterator(); ++directoryIt)
 									if (!directoryIt->is_symlink() && directoryIt->is_directory())
@@ -389,25 +392,24 @@ private:
 											secondLayerEntry = *directoryIt;
 										else
 										{
-											++invalidDirectoryFormCount;
 											isValid = false;
+											break;
 										}
 									else
 									{
-										++invalidDirectoryFormCount;
 										isValid = false;
+										break;
 									}
 								if (isValid)
 								{
+									this->print("Entered the second-layer directory " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 									std::string packageName = secondLayerEntry.path().filename().string();
-									const size_t packageNameLength = packageName.length();
-									size_t position = packageName.find('-');
-									if (std::string::npos == position || position > packageNameLength - 3)
-										++invalidDirectoryFormCount;
-									else if ('=' == packageName[packageNameLength - 1] && '=' == packageName[packageNameLength - 2])
+									const size_t position = packageName.find('-');
+									size_t packageNameLength = packageName.length();
+									if (std::string::npos != position && position + 3 <= packageNameLength && '=' == packageName[--packageNameLength] && '=' == packageName[--packageNameLength])
 									{
-										for (size_t i = packageNameLength - 2; i < packageNameLength; ++i)
-											if (!(('A' <= packageName[i] && packageName[i] <= 'Z') || ('a' <= packageName[i] && packageName[i] <= 'z') || ('0' <= packageName[i] && packageName[i] <= '9') || '_' == packageName[i] || '-' == packageName[i]))
+										for (size_t i = 0; i < packageNameLength; ++i)
+											if (!(('A' <= packageName[i] && packageName[i] <= 'Z') || ('a' <= packageName[i] && packageName[i] <= 'z') || ('0' <= packageName[i] && packageName[i] <= '9') || '_' == packageName[i] || '.' == packageName[i] || '-' == packageName[i]))
 											{
 												isValid = false;
 												break;
@@ -415,10 +417,11 @@ private:
 										if (isValid)
 										{
 											packageName = packageName.substr(0, position);
+											this->print("Located the package name " + this->formatMessage(packageName) + " in the second-layer directory " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 											if (std::regex_match(packageName, Generator::Pattern))
 											{
 												/* Enter the third-layer directory */
-												this->print("Entered the third-layer directory for " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
+												this->print("Trying to enter the third-layer directory for " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 												std::filesystem::directory_entry thirdLayerEntry{};
 												for (std::filesystem::directory_iterator directoryIt = std::filesystem::directory_iterator(secondLayerEntry.path()); directoryIt != std::filesystem::directory_iterator(); ++directoryIt)
 												{
@@ -448,15 +451,16 @@ private:
 												}
 												if (isValid && !thirdLayerEntry.path().empty())
 												{
-													++validDirectoryFormCount;
+													this->print("Entered the third-layer directory " + this->formatMessage(thirdLayerEntry.path().string()) + ". ", LogLevel::Trace);
+													++dataDirectoryFormCount;
 													bool isPlugin = false;
 													if (this->checkoutApplication(thirdLayerEntry.path().string(), isPlugin))
 													{
-														++validDirectoryFormSuccessCount;
+														++dataDirectoryFormSuccessCount;
 														this->addToDatabase(packageName, isPlugin, unrecordedPluginCount, unrecordedNonPluginCount);
 													}
 													else
-														++validDirectoryFormFailureCount;
+														++dataDirectoryFormFailureCount;
 												}
 												else
 													++invalidDirectoryFormCount;
@@ -469,6 +473,37 @@ private:
 									}
 									else
 										++invalidDirectoryFormCount;
+								}
+								else
+									++invalidDirectoryFormCount;
+							}
+							else
+								++invalidDirectoryFormCount;
+						}
+						else
+						{
+							/* Analyze the application installed under the partitions other than ``/data`` */
+							bool isValid = true;
+							for (size_t i = 0; i < directoryNameLength && isValid; ++i)
+								if (!(('A' <= directoryName[i] && directoryName[i] <= 'Z') || ('a' <= directoryName[i] && directoryName[i] <= 'z') || ('0' <= directoryName[i] && directoryName[i] <= '9') || '_' == directoryName[i] || '.' == directoryName[i] || '-' == directoryName[i]))
+									isValid = false;
+							if (isValid)
+							{
+								this->print("Trying to enter the second-layer directory for " + this->formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
+								std::filesystem::path apkFilePathObject = firstLayerEntry.path();
+								apkFilePathObject /= directoryName + ".apk";
+								if (!std::filesystem::is_symlink(apkFilePathObject) && std::filesystem::is_regular_file(apkFilePathObject))
+								{
+									this->print("Entered the second-layer directory " + this->formatMessage(apkFilePathObject.string()) + ". ", LogLevel::Trace);
+									++nonDataDirectoryFormCount;
+									bool isPlugin = false;
+									if (this->checkoutApplication(apkFilePathObject.string(), isPlugin))
+									{
+										++nonDataDirectoryFormSuccessCount;
+										//this->addToDatabase(packageName, isPlugin, unrecordedPluginCount, unrecordedNonPluginCount);
+									}
+									else
+										++nonDataDirectoryFormFailureCount;
 								}
 								else
 									++invalidDirectoryFormCount;
@@ -503,7 +538,7 @@ private:
 					else
 						++invalidFormCount;
 				}
-				this->print("Finished traversing " + this->formatMessage(directoryPath.string()) + " with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(validDirectoryFormCount) + "(" + std::to_string(validDirectoryFormSuccessCount) + " + " + std::to_string(validDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Debug);
+				this->print("Finished traversing " + this->formatMessage(directoryPath.string()) + " with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(dataDirectoryFormCount) + "(" + std::to_string(dataDirectoryFormSuccessCount) + " + " + std::to_string(dataDirectoryFormFailureCount) + ") + " + std::to_string(nonDataDirectoryFormCount) + "(" + std::to_string(nonDataDirectoryFormSuccessCount) + " + " + std::to_string(nonDataDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Debug);
 				return true;
 			}
 			catch (...)
@@ -1040,7 +1075,7 @@ public:
 					this->flag |= 1 << (i + 2)/* 0b 0000 0000 (?)??? ??00 */;
 			}
 			if (unrecordedPluginCount || unrecordedNonPluginCount)
-				this->print("Found " + std::to_string(unrecordedPluginCount) + " unrecorded plugin(s) ($M$) and " + std::to_string(unrecordedNonPluginCount) + " unrecorded plain application(s) ($C$ or $M$). You are invited to report your configurations to " + Generator::ReportLink, LogLevel::Info);
+				this->print("Found " + std::to_string(unrecordedPluginCount) + " unrecorded plugin(s) ($M$) and " + std::to_string(unrecordedNonPluginCount) + " unrecorded plain application(s) ($C$, $D$, or $M$). You are invited to report the generated configurations to " + Generator::ReportLink, LogLevel::Info);
 			const size_t effectiveHighestBit = applicationPartitionCount + 2, highestBit = 8;
 			bool localFlag = applicationPartitionCount >= 1;
 			size_t index = 2;

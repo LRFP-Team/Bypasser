@@ -1,6 +1,7 @@
 {
 	"C": {
 		"": [
+			"com.android.chrome",
 			"com.android.vending",
 			"com.google.android.gms"
 		],
@@ -240,6 +241,7 @@
 		"me.garfieldhan.holmes",
 		"ml.w568w.checkxposed",
 		"org.akanework.checker",
+		"org.lsposed.dirtysepolicy",
 		"rikka.safetynetchecker",
 		"wu.Rookie.Detector"
 	],
@@ -963,6 +965,7 @@
 		"nnnn.aaaaa.nevercrash",
 		"one.yufz.hmspush",
 		"org.adaway",
+		"org.frknkrc44.hma_oss",
 		"org.hello.coolapk",
 		"org.klab.alwaysonfps",
 		"org.klab.batteryinfo",
@@ -1073,11 +1076,34 @@
 			"com.follow.clash": true
 		}
 	},
-	"S": [],
+	"S": [
+		"android.autoinstalls.config.oneplus",
+		"com.google.android.apps.wellbeing",
+		"com.google.android.as",
+		"com.google.android.captiveportallogin",
+		"com.google.android.contacts",
+		"com.google.android.dialer",
+		"com.google.android.documentsui",
+		"com.google.android.ims",
+		"com.google.android.marvin.talkback",
+		"com.google.android.modulemetadata",
+		"com.google.android.networkstack",
+		"com.google.android.partnersetup",
+		"com.google.android.projection.gearhead",
+		"com.google.android.trichromelibrary_777812033",
+		"com.google.android.tts",
+		"com.google.android.webview",
+		"com.google.ar.core",
+		"com.google.mainline.telemetry",
+		"com.oneplus.brickmode",
+		"com.oneplus.gallery",
+		"com.quicinc.voice.activation",
+		"net.oneplus.launcher"
+	],
 	"T": {
 		"com.bochk.app.aos": false,
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.5+HKT20260513235934354005887"
+	"V": "3.8.5.5+HKT20260514025700471342085"
 }
