@@ -197,6 +197,49 @@ private:
 		else
 			return false;
 	}
+	std::string formatMessage(const std::string& message) const
+	{
+		std::string formattedMessage = "\"";
+		for (unsigned char character : message)
+			switch (character)
+			{
+			case '\a': // \x07
+				formattedMessage += "\\a";
+				break;
+			case '\b': // 0x08
+				formattedMessage += "\\b";
+				break;
+			case '\t': // \x09
+				formattedMessage += "\\t";
+				break;
+			case '\n': // \x0A
+				formattedMessage += "\\n";
+				break;
+			case '\v': // \x0B
+				formattedMessage += "\\v";
+				break;
+			case '\f': // \x0C
+				formattedMessage += "\\f";
+				break;
+			case '\r': // \x0D
+				formattedMessage += "\\r";
+				break;
+			case '\"':
+			case '\'':
+			case '\\':
+				formattedMessage += "\\";
+				formattedMessage += character;
+				break;
+			default:
+				if (character <= 31 || 127 == character)
+					formattedMessage += "\\x" + std::string(1, Generator::HexadecimalCharacterSet[character >> 4]) + std::string(1, Generator::HexadecimalCharacterSet[character & 15/* 0b 0000 1111 */]);
+				else
+					formattedMessage += character;
+				break;
+			}
+		formattedMessage += "\"";
+		return formattedMessage;
+	}
 	bool checkoutApplication(const std::string& apkFilePath, bool& isPlugin)
 	{
 		std::ifstream apkFile(apkFilePath, std::ios::binary | std::ios::ate);
@@ -257,49 +300,6 @@ private:
 		}
 		else
 			return false;
-	}
-	std::string formatMessage(const std::string& message) const
-	{
-		std::string formattedMessage = "\"";
-		for (unsigned char character : message)
-			switch (character)
-			{
-			case '\a': // \x07
-				formattedMessage += "\\a";
-				break;
-			case '\b': // 0x08
-				formattedMessage += "\\b";
-				break;
-			case '\t': // \x09
-				formattedMessage += "\\t";
-				break;
-			case '\n': // \x0A
-				formattedMessage += "\\n";
-				break;
-			case '\v': // \x0B
-				formattedMessage += "\\v";
-				break;
-			case '\f': // \x0C
-				formattedMessage += "\\f";
-				break;
-			case '\r': // \x0D
-				formattedMessage += "\\r";
-				break;
-			case '\"':
-			case '\'':
-			case '\\':
-				formattedMessage += "\\";
-				formattedMessage += character;
-				break;
-			default:
-				if (character <= 31 || 127 == character)
-					formattedMessage += "\\x" + std::string(1, Generator::HexadecimalCharacterSet[character >> 4]) + std::string(1, Generator::HexadecimalCharacterSet[character & 15/* 0b 0000 1111 */]);
-				else
-					formattedMessage += character;
-				break;
-			}
-		formattedMessage += "\"";
-		return formattedMessage;
 	}
 	bool addToDatabase(const std::string& packageName, const bool isPlugin, size_t& unrecordedPluginCount, size_t& unrecordedNonPluginCount)
 	{
@@ -381,6 +381,7 @@ private:
 							if (isValid)
 							{
 								/* Enter the second-layer directory */
+								this->print("Entered the second-layer directory for " + this->formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
 								std::filesystem::directory_entry secondLayerEntry{};
 								for (std::filesystem::directory_iterator directoryIt = std::filesystem::directory_iterator(firstLayerEntry.path()); directoryIt != std::filesystem::directory_iterator(); ++directoryIt)
 									if (!directoryIt->is_symlink() && directoryIt->is_directory())
@@ -417,6 +418,7 @@ private:
 											if (std::regex_match(packageName, Generator::Pattern))
 											{
 												/* Enter the third-layer directory */
+												this->print("Entered the third-layer directory for " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 												std::filesystem::directory_entry thirdLayerEntry{};
 												for (std::filesystem::directory_iterator directoryIt = std::filesystem::directory_iterator(secondLayerEntry.path()); directoryIt != std::filesystem::directory_iterator(); ++directoryIt)
 												{
@@ -454,10 +456,7 @@ private:
 														this->addToDatabase(packageName, isPlugin, unrecordedPluginCount, unrecordedNonPluginCount);
 													}
 													else
-													{
-														this->print("Failed to checkout " + this->formatMessage(thirdLayerEntry.path().string()) + ". ", LogLevel::Warning);
 														++validDirectoryFormFailureCount;
-													}
 												}
 												else
 													++invalidDirectoryFormCount;
@@ -496,10 +495,7 @@ private:
 								this->addToDatabase(packageName, isPlugin, unrecordedPluginCount, unrecordedNonPluginCount);
 							}
 							else
-							{
-								this->print("Failed to checkout " + this->formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Warning);
 								++validFileFormFailureCount;
-							}
 						}
 						else
 							++invalidFileFormCount;
@@ -507,11 +503,12 @@ private:
 					else
 						++invalidFormCount;
 				}
-				this->print("Finished local scanning with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(validDirectoryFormCount) + "(" + std::to_string(validDirectoryFormSuccessCount) + " + " + std::to_string(validDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Info);
+				this->print("Finished traversing " + this->formatMessage(directoryPath.string()) + " with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(validDirectoryFormCount) + "(" + std::to_string(validDirectoryFormSuccessCount) + " + " + std::to_string(validDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Debug);
 				return true;
 			}
 			catch (...)
 			{
+				this->print("Failed to traverse " + this->formatMessage(directoryPath.string()) + ". ", LogLevel::Warning);
 				return false;
 			}
 		else
@@ -780,7 +777,7 @@ public:
 							else
 								this->print("This program expects the regex pattern \"" + std::string(REGEX_PATTERN) + "\" while the input database is not. ", LogLevel::Warning);
 						else
-							this->print("This program expects the version " + std::string(CPP_VERSION) + " while the input database is not, which may result in warnings. ", LogLevel::Warning);
+							this->print("This program expects the version " + cppVersion + " while the input database is not, which may result in warnings. ", LogLevel::Warning);
 						
 						/* Second-level */
 						removedKeyCount = 0;
@@ -1018,7 +1015,7 @@ public:
 		}
 		else
 		{
-			this->print("Please parse command-line arguments before paring the input database JSON file. ", LogLevel::Error);
+			this->print("Please parse the command-line arguments before parsing the input database JSON file. ", LogLevel::Error);
 			return false;
 		}
 	}
@@ -1154,7 +1151,8 @@ public:
 						hmaV92WhitelistConfiguration["scope"][packageName]["useWhitelist"] = true;
 						hmaV92WhitelistConfiguration["scope"][packageName]["excludeSystemApps"] = true;
 						hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-						for (nlohmann::json::const_iterator entryIt = this->j["C"].cbegin(); entryIt != this->j["C"].cend(); ++entryIt)
+						hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC");
+						for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 							hmaV92WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
 						hmaV92WhitelistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
 						hmaV92WhitelistConfiguration["scope"][packageName]["extraAppList"].push_back(packageName);
@@ -1503,7 +1501,29 @@ public:
 				{
 					nlohmann::ordered_json hmaossV93WhitelistConfiguration(hmaossConfiguration);
 					hmaossV93WhitelistConfiguration["scope"] = nlohmann::json::object();
-					for (nlohmann::json::const_iterator entryIt = this->j["C"].cbegin(); entryIt != this->j["C"].cend(); ++entryIt)
+					for (const nlohmann::json& value : this->j["C"][""])
+					{
+						const std::string packageName = value.get<std::string>();
+						hmaossV93WhitelistConfiguration["scope"][packageName] = nlohmann::ordered_json::object();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["useWhitelist"] = true;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["excludeSystemApps"] = true;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["hideInstallationSource"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["hideSystemInstallationSource"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["excludeTargetInstallationSource"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["invertActivityLaunchProtection"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
+						hmaossV93WhitelistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC");
+						for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
+							hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
+						hmaossV93WhitelistConfiguration["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
+					}
+					for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 						for (const nlohmann::json& value : entryIt.value())
 						{
 							const std::string packageName = value.get<std::string>();
@@ -1517,6 +1537,7 @@ public:
 							hmaossV93WhitelistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
 							hmaossV93WhitelistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
 							hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+							hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC");
 							hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
 							hmaossV93WhitelistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
 							hmaossV93WhitelistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
@@ -1537,7 +1558,8 @@ public:
 						hmaossV93WhitelistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
 						hmaossV93WhitelistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
 						hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-						for (nlohmann::json::const_iterator entryIt = this->j["C"].cbegin(); entryIt != this->j["C"].cend(); ++entryIt)
+						hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC");
+						for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
 							hmaossV93WhitelistConfiguration["scope"][packageName]["applyTemplates"].push_back("WhitelistC" + entryIt.key());
 						hmaossV93WhitelistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
 						hmaossV93WhitelistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
@@ -1594,7 +1616,28 @@ public:
 				{
 					nlohmann::ordered_json hmaossV93BlacklistConfiguration(hmaossConfiguration);
 					hmaossV93BlacklistConfiguration["scope"] = nlohmann::json::object();
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["C"].cbegin(); outerEntryIt != this->j["C"].cend(); ++outerEntryIt)
+					for (const nlohmann::json& value : this->j["C"][""])
+					{
+						const std::string packageName = value.get<std::string>();
+						hmaossV93BlacklistConfiguration["scope"][packageName] = nlohmann::ordered_json::object();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["useWhitelist"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["excludeSystemApps"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["hideInstallationSource"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["hideSystemInstallationSource"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["excludeTargetInstallationSource"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["invertActivityLaunchProtection"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
+						hmaossV93BlacklistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistD");
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistM");
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
+						hmaossV93BlacklistConfiguration["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
+					}
+					for (nlohmann::json::const_iterator outerEntryIt = this->j["C"]["_"].cbegin(); outerEntryIt != this->j["C"]["_"].cend(); ++outerEntryIt)
 						for (const nlohmann::json& value : outerEntryIt.value())
 						{
 							const std::string packageName = value.get<std::string>();
@@ -1608,10 +1651,11 @@ public:
 							hmaossV93BlacklistConfiguration["scope"][packageName]["excludeVoldIsolation"] = false;
 							hmaossV93BlacklistConfiguration["scope"][packageName]["restrictedZygotePermissions"] = nlohmann::ordered_json::array();
 							hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"] = nlohmann::ordered_json::array();
-							for (nlohmann::json::const_iterator innerEntryIt = this->j["C"].cbegin(); innerEntryIt != this->j["C"].cend(); ++innerEntryIt)
+							for (nlohmann::json::const_iterator innerEntryIt = this->j["C"]["_"].cbegin(); innerEntryIt != this->j["C"]["_"].cend(); ++innerEntryIt)
 								if (innerEntryIt != outerEntryIt)
 									hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistC" + innerEntryIt.key());
 							hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistD");
+							hmaossV93BlacklistConfiguration["scope"][packageName]["applyTemplates"].push_back("BlacklistM");
 							hmaossV93BlacklistConfiguration["scope"][packageName]["applyPresets"] = nlohmann::ordered_json::array();
 							hmaossV93BlacklistConfiguration["scope"][packageName]["applySettingTemplates"] = nlohmann::ordered_json::array();
 							hmaossV93BlacklistConfiguration["scope"][packageName]["applySettingsPresets"] = nlohmann::ordered_json::array();
@@ -1786,7 +1830,7 @@ public:
 		}
 		else
 		{
-			this->print("Please parse the input database JSON file before generating the path tester script file. ", LogLevel::Error);
+			this->print("Please parse the input database JSON file and conduct the local scanning before generating the path tester script file. ", LogLevel::Error);
 			return false;
 		}
 	}
@@ -1854,7 +1898,7 @@ public:
 		}
 		else
 		{
-			this->print("Please parse the input database JSON file before generating the Tricky Store target text file. ", LogLevel::Error);
+			this->print("Please parse the input database JSON file and conduct the local scanning before generating the Tricky Store target text file. ", LogLevel::Error);
 			return false;
 		}
 	}

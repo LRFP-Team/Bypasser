@@ -21,14 +21,14 @@ EOF = (-1)
 
 class DatabaseManager:
 	__DefaultDatabaseFilePath = "database.json"
-	__DefaultTimeout = 10
+	__DefaultConnectionTimeout = 10
 	__DefaultEncoding = "utf-8"
 	__Pattern = compile("^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$")
 	__Caches = {}
 	__MajorVersion = 3
-	def __init__(self:object, databaseFilePath:str = __DefaultDatabaseFilePath, timeout:int = __DefaultTimeout, encoding:str = __DefaultEncoding) -> object:
+	def __init__(self:object, databaseFilePath:str = __DefaultDatabaseFilePath, connectionTimeout:int|float = __DefaultConnectionTimeout, encoding:str = __DefaultEncoding) -> object:
 		self.__databaseFilePath = databaseFilePath if isinstance(databaseFilePath, str) else DatabaseManager.__DefaultDatabaseFilePath
-		self.__timeout = timeout if isinstance(timeout, int) and timeout >= 1 else DatabaseManager.__DefaultTimeout
+		self.__connectionTimeout = connectionTimeout if isinstance(connectionTimeout, (int, float)) and 0 < connectionTimeout <= 2147483 else DatabaseManager.__DefaultConnectionTimeout
 		try:
 			lookup(encoding)
 			self.__encoding = encoding
@@ -226,7 +226,7 @@ class DatabaseManager:
 		packageNames = set()
 		if isinstance(URL, str) and isinstance(d, dict):
 			if URL not in DatabaseManager.__Caches:
-				r = __import__("requests").get(URL, timeout = self.__timeout)
+				r = __import__("requests").get(URL, timeout = self.__connectionTimeout)
 				if 200 == r.status_code:
 					DatabaseManager.__Caches[URL] = r.content
 				else:
@@ -283,12 +283,18 @@ class DatabaseManager:
 				return (False, e)
 		else:
 			return (False, TypeError("The database is not a ``dict``. Please check whether the method function ``load`` has been called. "))
+	@staticmethod
+	def getDefaultConnectionTimeout() -> int|float:
+		return DatabaseManager.__DefaultConnectionTimeout
 
 
 class RegularUpdater:
-	__DefaultTimeout = 10
+	__DefaultExecutionTimeout = 15
 	__PositiveAnswers = ("Y", "YES", "1", "T", "TRUE")
-	def __init__(self:object, srcFolderPath:str, webrootName:str, databaseFileName:str, actionAFileName:str, actionBFileName:str) -> object: # -> 0b00000001
+	def __init__(
+		self:object, srcFolderPath:str, webrootName:str, databaseFileName:str, actionAFileName:str, actionBFileName:str, 
+		connectionTimeout:int|float = DatabaseManager.getDefaultConnectionTimeout(), executionTimeout:int|float = __DefaultExecutionTimeout
+	) -> object: # 0b00000000 -> 0b00000001
 		try:
 			# Parameters #
 			self.__srcFolderPath = srcFolderPath
@@ -296,6 +302,11 @@ class RegularUpdater:
 			self.__databaseFileName = databaseFileName
 			self.__actionAFileName = actionAFileName
 			self.__actionBFileName = actionBFileName
+			self.__connectionTimeout = connectionTimeout if isinstance(connectionTimeout, (int, float)) and 0 < connectionTimeout <= 2147483 else DatabaseManager.getDefaultConnectionTimeout()
+			if isinstance(executionTimeout, (int, float)) and 0 < executionTimeout <= 10866849595521999306752:
+				self.__executionTimeout = executionTimeout
+			else:
+				self.__executionTimeout = RegularUpdater.__DefaultExecutionTimeout
 			
 			# Initialization #
 			self.__webrootFolderPath = os.path.join(self.__srcFolderPath, self.__webrootName)
@@ -305,7 +316,7 @@ class RegularUpdater:
 			self.__actionBFilePath = os.path.join(self.__srcFolderPath, self.__actionBFileName)
 			
 			# Main #
-			self.__databaseManager = DatabaseManager(databaseFilePath = self.__databaseFilePath)
+			self.__databaseManager = DatabaseManager(databaseFilePath = self.__databaseFilePath, connectionTimeout = self.__connectionTimeout)
 			self.__flag = 0b00000001
 			print("Successfully initialized the updater with the parameters passed. ")
 		except BaseException as e:
@@ -316,7 +327,7 @@ class RegularUpdater:
 			self.__flag = self.__flag & 0b00000000 | 0b00000001
 			print("Pulling from the remote repository. ")
 			try:
-				result = run(("git", "pull"), timeout = RegularUpdater.__DefaultTimeout)
+				result = run(("git", "pull"), timeout = self.__executionTimeout)
 				if EXIT_SUCCESS == result.returncode:
 					self.__flag += 0b00000001
 					print("Successfully pulled from the remote repository. ")
@@ -504,7 +515,7 @@ class RegularUpdater:
 						result = run((
 							"{0}-clang++".format(keyABI), "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceFolderPath, 
 							cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
-						), capture_output = True, text = True, timeout = RegularUpdater.__DefaultTimeout)
+						), capture_output = True, text = True, timeout = self.__executionTimeout)
 						if result.returncode != EXIT_SUCCESS:
 							localFlag = False
 							print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
@@ -570,7 +581,7 @@ class RegularUpdater:
 				length, successCount = len(str(totalCount)), 0
 				for i, filePath in enumerate(filePaths, start = 1):
 					try:
-						result = run(("bash", "-n", filePath), capture_output = True, text = True, timeout = RegularUpdater.__DefaultTimeout)
+						result = run(("bash", "-n", filePath), capture_output = True, text = True, timeout = self.__executionTimeout)
 						if EXIT_SUCCESS == result.returncode:
 							successCount += 1
 							print("[{{0:0>{0}}}] {{1}} -> Passed (bash)".format(length).format(i, repr(filePath)))

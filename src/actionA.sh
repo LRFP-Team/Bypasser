@@ -446,24 +446,24 @@ readonly cppBinaryFileName="generate"
 readonly cppBinaryFilePath="${webrootDirectoryPath}/${cppBinaryFileName}_$(getprop ro.product.cpu.abi)"
 if [[ -n "${EXTERNAL_STORAGE}" ]];
 then
-	readonly downloadDirectoryPath="${EXTERNAL_STORAGE}/Download/.${moduleName}"
+	readonly generationOutputDirectoryPath="${EXTERNAL_STORAGE}/Download/.${moduleName}"
 else
-	readonly downloadDirectoryPath="/sdcard/Download/.${moduleName}"
+	readonly generationOutputDirectoryPath="/sdcard/Download/.${moduleName}"
 fi
 readonly hmaV92WhitelistConfigurationFileName=".hmaV92WhitelistConfiguration.json"
-readonly hmaV92WhitelistConfigurationFilePath="${downloadDirectoryPath}/${hmaV92WhitelistConfigurationFileName}"
+readonly hmaV92WhitelistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaV92WhitelistConfigurationFileName}"
 readonly hmaV92BlacklistConfigurationFileName=".hmaV92BlacklistConfiguration.json"
-readonly hmaV92BlacklistConfigurationFilePath="${downloadDirectoryPath}/${hmaV92BlacklistConfigurationFileName}"
+readonly hmaV92BlacklistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaV92BlacklistConfigurationFileName}"
 readonly hmaV93WhitelistConfigurationFileName=".hmaV93WhitelistConfiguration.json"
-readonly hmaV93WhitelistConfigurationFilePath="${downloadDirectoryPath}/${hmaV93WhitelistConfigurationFileName}"
+readonly hmaV93WhitelistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaV93WhitelistConfigurationFileName}"
 readonly hmaV93BlacklistConfigurationFileName=".hmaV93BlacklistConfiguration.json"
-readonly hmaV93BlacklistConfigurationFilePath="${downloadDirectoryPath}/${hmaV93BlacklistConfigurationFileName}"
+readonly hmaV93BlacklistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaV93BlacklistConfigurationFileName}"
 readonly hmaossV93WhitelistConfigurationFileName=".hmaossV93WhitelistConfiguration.json"
-readonly hmaossV93WhitelistConfigurationFilePath="${downloadDirectoryPath}/${hmaossV93WhitelistConfigurationFileName}"
+readonly hmaossV93WhitelistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaossV93WhitelistConfigurationFileName}"
 readonly hmaossV93BlacklistConfigurationFileName=".hmaossV93BlacklistConfiguration.json"
-readonly hmaossV93BlacklistConfigurationFilePath="${downloadDirectoryPath}/${hmaossV93BlacklistConfigurationFileName}"
+readonly hmaossV93BlacklistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaossV93BlacklistConfigurationFileName}"
 readonly pathTesterFileName=".pathTester.sh"
-readonly pathTesterFilePath="${downloadDirectoryPath}/${pathTesterFileName}"
+readonly pathTesterFilePath="${generationOutputDirectoryPath}/${pathTesterFileName}"
 readonly largerOldScanningScope="/data"
 readonly smallerOldScanningScope="/data/misc"
 gapTime=0
@@ -583,10 +583,10 @@ if [[ $((exitCode & 32)) -ne ${EXIT_SUCCESS} ]];
 then
 	echo "The updating of the \`\`${databaseFileName}\`\` might fail. This will use the cache to generate the configurations for HMA and its variants. "
 fi
-mkdir -p "${downloadDirectoryPath}"
-if [[ $? -eq ${EXIT_SUCCESS} && -d "${downloadDirectoryPath}" ]];
+mkdir -p "${generationOutputDirectoryPath}"
+if [[ $? -eq ${EXIT_SUCCESS} && -d "${generationOutputDirectoryPath}" ]];
 then
-	echo "Successfully prepared the directory \"${downloadDirectoryPath}\". "
+	echo "Successfully prepared the directory \"${generationOutputDirectoryPath}\". "
 	chmod u+x "${cppBinaryFilePath}"
 	"${cppBinaryFilePath}" -i "${databaseFilePath}" -l "Info" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
@@ -647,7 +647,7 @@ then
 	chmod -x "${cppBinaryFilePath}"
 else
 	exitCode=$((exitCode | 4))
-	echo "Failed to prepare the directory \"${downloadDirectoryPath}\". "
+	echo "Failed to prepare the directory \"${generationOutputDirectoryPath}\". "
 fi
 if [[ $# -ge 1 ]];
 then

@@ -139,7 +139,7 @@ then
 				;;
 		esac
 	else
-		choiceFlag=${EXIT_FAILURE}
+		choiceFlag=${EXIT_SUCCESS}
 	fi
 else
 	choiceFlag=${EXIT_SUCCESS}
