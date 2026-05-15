@@ -80,7 +80,7 @@ then
 	if [[ "${KSU}" == "true" ]];
 	then
 		echo "KSU (${KSU_VER_CODE}): Please "
-		echo "- deploy the latest SukiSU-Ultra from the \`\`Actions\`\` tab of its GitHub repository with only applications requiring root privileges configured and granted in the SukiSU-Ultra Manager, "
+		echo "- deploy the latest ReSukiSU from the \`\`Actions\`\` tab of its GitHub repository with only applications requiring root privileges configured and granted in the ReSukiSU Manager, "
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
 		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
@@ -588,7 +588,7 @@ if [[ $? -eq ${EXIT_SUCCESS} && -d "${generationOutputDirectoryPath}" ]];
 then
 	echo "Successfully prepared the directory \"${generationOutputDirectoryPath}\". "
 	chmod u+x "${cppBinaryFilePath}"
-	"${cppBinaryFilePath}" -i "${databaseFilePath}" -l "Info" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}"
+	trickyStoreTargetContent="$("${cppBinaryFilePath}" -i "${databaseFilePath}" -l "Info" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}" -ot .)"
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
 		if [[ -f "${hmaV92WhitelistConfigurationFilePath}" ]];
@@ -746,8 +746,7 @@ then
 	fi
 	if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 	then
-		chmod u+x "${cppBinaryFilePath}"
-		"${cppBinaryFilePath}" -i "${databaseFilePath}" -ot "${trickyStoreTargetFilePath}"
+		echo -n "${trickyStoreTargetContent}" > "${trickyStoreTargetFilePath}"
 		if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}" ]];
 		then
 			echo "Successfully generated \"${trickyStoreTargetFilePath}\". "
@@ -1033,7 +1032,10 @@ echo ""
 # Exit #
 readonly endTime=$(date +%s%N)
 readonly timeDelta=$((endTime - startTime - gapTime))
+readonly variableFileName="variables.log"
+readonly variableFilePath="${generationOutputDirectoryPath}/${variableFileName}"
 
+set > "${variableFilePath}"
 if [[ ${EXIT_SUCCESS} -eq $((exitCode & EXIT_FAILURE)) ]];
 then
 	setPermissions && chmod 755 "${actionDirectoryPath}"

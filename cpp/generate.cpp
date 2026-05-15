@@ -16,7 +16,8 @@
 
 
 #pragma pack(push, 1)
-struct LocalFileHeader {
+struct LocalFileHeader
+{
     uint32_t signature; // 0x04034b50
     uint16_t versionNeeded;
     uint16_t generalPurposeBitFlag;
@@ -30,7 +31,8 @@ struct LocalFileHeader {
     uint16_t extraFieldLength;
 };
 
-struct CentralDirectoryFileHeader {
+struct CentralDirectoryFileHeader
+{
     uint32_t signature; // 0x02014b50
     uint16_t versionMadeBy;
     uint16_t versionNeeded;
@@ -50,7 +52,8 @@ struct CentralDirectoryFileHeader {
     uint32_t localHeaderOffset;
 };
 
-struct EndOfCentralDirectoryRecord {
+struct EndOfCentralDirectoryRecord
+{
     uint32_t signature; // 0x06054b50
     uint16_t numberOfThisDisk;
     uint16_t diskWhereCentralDirectoryStarts;
@@ -302,35 +305,56 @@ private:
 		else
 			return false;
 	}
+	bool binarySearch(const nlohmann::json& array, const std::string& x, size_t& insertionIndex) const
+	{
+		if (array.is_array())
+		{
+			size_t low = 0, high = array.size(); // [low, high)
+			while (low < high)
+			{
+				size_t mid = low + ((high - low) >> 1);
+				const std::string& midValue = array[mid].get<std::string>();
+				if (x == midValue)
+				{
+					insertionIndex = mid;
+					return true;
+				}
+				else if (midValue < x)
+					low = mid + 1;
+				else
+					high = mid;
+			}
+			insertionIndex = low;
+			return false;
+		}
+		else
+			return false;
+	}
 	bool addToDatabase(const std::string& packageName, const bool isPlugin, size_t& unrecordedPluginCount, size_t& unrecordedNonPluginCount)
 	{
+		size_t insertionIndex = static_cast<size_t>(EOF);
 		if (isPlugin)
 		{
-			if (std::find(this->j["M"].cbegin(), this->j["M"].cend(), packageName) == this->j["M"].cend())
+			if (!this->binarySearch(this->j["M"], packageName, insertionIndex) && insertionIndex != static_cast<size_t>(EOF))
 			{
-				this->j["M"].push_back(packageName);
-				std::sort(this->j["M"].begin(), this->j["M"].end());
+				this->j["M"].insert(this->j["M"].begin() + insertionIndex, packageName);
 				++unrecordedPluginCount;
 				return true;
 			}
 		}
 		else
 		{
-			bool notInDatabase = std::find(this->j["C"][""].cbegin(), this->j["C"][""].cend(), packageName) == this->j["C"][""].cend() && std::find(this->j["D"].cbegin(), this->j["D"].cend(), packageName) == this->j["D"].cend() && std::find(this->j["M"].cbegin(), this->j["M"].cend(), packageName) == this->j["M"].cend() && std::find(this->j["S"].cbegin(), this->j["S"].cend(), packageName) == this->j["S"].cend();
+			bool notInDatabase = !this->binarySearch(this->j["C"][""], packageName, insertionIndex) && !this->binarySearch(this->j["D"], packageName, insertionIndex) && !this->binarySearch(this->j["M"], packageName, insertionIndex) && !this->binarySearch(this->j["S"], packageName, insertionIndex);
 			if (notInDatabase)
 				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
-					if (entryIt.value().is_array() && std::find(entryIt.value().cbegin(), entryIt.value().cend(), packageName) != entryIt.value().cend())
+					if ("L" != entryIt.key() && entryIt.value().is_array() && this->binarySearch(entryIt.value(), packageName, insertionIndex))
 					{
 						notInDatabase = false;
 						break;
 					}
-			if (notInDatabase)
+			if (notInDatabase && !this->binarySearch(this->j["C"]["_"]["L"], packageName, insertionIndex) && insertionIndex != static_cast<size_t>(EOF))
 			{
-				if (!this->j["C"]["_"].contains("L"))
-					this->j["C"]["_"]["L"] = nlohmann::json::array();
-				if (this->j["C"]["_"]["L"].is_array())
-					this->j["C"]["_"]["L"].push_back(packageName);
-				std::sort(this->j["C"]["_"]["L"].begin(), this->j["C"]["_"]["L"].end());
+				this->j["C"]["_"]["L"].insert(this->j["C"]["_"]["L"].begin() + insertionIndex, packageName);
 				++unrecordedNonPluginCount;
 				return true;
 			}
@@ -854,6 +878,16 @@ public:
 							for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); )
 								if ("" == entryIt.key() || "_" == entryIt.key())
 									++entryIt;
+								else if ("*" == entryIt.key())
+								{
+									/* Compatible with $C^*$ */
+									for (const nlohmann::json& value : entryIt.value())
+										if (value.is_string() && std::regex_match(value.get<std::string>(), Generator::Pattern))
+											this->j["C"][""][entryIt.key()].push_back(value.get<std::string>());
+										else
+											++removedValueCount;
+									entryIt = this->j["C"].erase(entryIt);
+								}
 								else if (entryIt.key().length() == 1 && 'A' <= entryIt.key()[0] && entryIt.key()[0] <= 'Z' && entryIt.value().is_array())
 								{
 									/* Compatible with Version 3.6.x ($C_X$) */
@@ -1060,6 +1094,8 @@ public:
 		{
 			this->flag &= 3/* 0b 0000 0000 0000 0011 */;
 			const size_t applicationPartitionCount = std::min(Generator::ApplicationPartitions.size(), static_cast<size_t>(6));
+			if (!(this->j["C"]["_"].contains("L") && this->j["C"]["_"]["L"].is_array()))
+				this->j["C"]["_"]["L"] = nlohmann::json::array();
 			size_t unrecordedPluginCount = 0, unrecordedNonPluginCount = 0;
 			for (size_t i = 0; i < applicationPartitionCount; ++i)
 			{
@@ -1076,6 +1112,8 @@ public:
 			}
 			if (unrecordedPluginCount || unrecordedNonPluginCount)
 				this->print("Found " + std::to_string(unrecordedPluginCount) + " unrecorded plugin(s) ($M$) and " + std::to_string(unrecordedNonPluginCount) + " unrecorded plain application(s) ($C$, $D$, or $M$). You are invited to report the generated configurations to " + Generator::ReportLink, LogLevel::Info);
+			if (this->j["C"]["_"]["L"].empty())
+				this->j["C"]["_"].erase("L");
 			const size_t effectiveHighestBit = applicationPartitionCount + 2, highestBit = 8;
 			bool localFlag = applicationPartitionCount >= 1;
 			size_t index = 2;
