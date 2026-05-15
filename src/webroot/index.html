@@ -5,14 +5,38 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Bypasser</title>
 		<style>
-			.root_layout {
-				padding-top: var(--window-inset-top);
-				padding-bottom: var(--window-inset-bottom);
-			}
+			/* Body */
 			body {
 				font-size: 16px;
 				background-color: rgba(15, 15, 15, 1);
 				color: #FFFFFF;
+				font-family: sans-serif;
+				padding-top: var(--window-inset-top);
+				padding-bottom: var(--window-inset-bottom);
+			}
+			.caption {
+				font-size: 18px;
+				margin-top: 20px;
+				margin-bottom: 20px;
+			}
+			.container {
+				color: #EEEEEE;
+				background-color: rgba(63, 63, 63, 0.6);
+				padding: 10px;
+				border-radius: 10px;
+				margin-bottom: 15px;
+			}
+			.content {
+				margin-left: 20px;
+			}
+			.loadingColor {
+				color: #FFFF00;
+			}
+			.loadedColor {
+				color: #00FF00;
+			}
+			.failureColor {
+				color: #FF0000;
 			}
 			a:link {
 				color: #00BB00;
@@ -30,47 +54,128 @@
 				color: #00FF00;
 				text-decoration: underline;
 			}
+			
+			/* Tree */
+			summary {
+				cursor: pointer;
+				padding: 5px;
+				color: #00FF00;
+				font-weight: bold;
+				outline: none;
+			}
+			summary:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+			details {
+				margin-left: 20px;
+			}
+			.leafNode {
+				margin-left: 20px;
+				padding: 5px;
+				color: #DDDDDD;
+				word-break: break-all;
+			}
 		</style>
 	</head>
 	<body>
 		<script type="text/javascript" src="main.js" color="255,255,255" opacity=0.6></script>
-		<br /><br />
-		<div id="welcome" style="font-size:18px;"><b>Welcome to the web UI of the Bypasser rooting-layer system module! </b></div>
-		<br />
-		<div id="actionSlots" style="background-color:rgba(31, 31, 31, 0.6)">
-			<b>Slot</b>
-			<div id="actionSlot" style="color:#FF0000;">&emsp;<b>Error</b>: Cannot fetch the current action slot. </div>
+		
+		<div id="welcome" class="caption"><b>Welcome to the web UI of the Bypasser rooting-layer system module! </b></div>
+		<div id="actionSlotContainer" class="container">
+			<b>Action</b>
+			<div id="actionSlot" class="content loadingColor">Please wait while loading the current action slot. </div>
 		</div>
-		<br />
-		<div id="classifications" style="background-color:rgba(31, 31, 31, 0.6)">
+		<div id="databaseContainer" class="container">
 			<b>Database</b>
-			<div id="database" style="color:#FF0000;">&emsp;<b>Error</b>: Cannot fetch the current database. </div>
+			<div id="database" class="content loadingColor">Please wait while loading the database. </div>
 		</div>
-		<br /><br />
+		<div id="aboutContainer" class="container">
+			<b>About</b>
+			<div id="about" class="content loadedColor"><a href="https://github.com/LRFP-Team/Bypasser">https://github.com/LRFP-Team/Bypasser</a></div>
+		</div>
+		
 		<script type="text/javascript">
+			function renderTree(key, value) {
+				if (typeof value === 'object' && value !== null) {
+					const details = document.createElement('details');
+					const summary = document.createElement('summary');
+					summary.innerHTML = "" === key ? "*" : key;
+					details.appendChild(summary);
+					if (Array.isArray(value)) {
+						value.forEach(item => {
+							const itemDiv = document.createElement('div');
+							itemDiv.className = 'leafNode';
+							itemDiv.textContent = item;
+							details.appendChild(itemDiv);
+						});
+					} else {
+						Object.keys(value).forEach(subKey => {
+							details.appendChild(renderTree(subKey, value[subKey]));
+						});
+					}
+					return details;
+				} else {
+					const leaf = document.createElement("div");
+					leaf.className = "leafNode";
+					displayKey = key;
+					if (typeof key === 'string' && key.length === 1) {
+						displayKey = `<span style="color:#00FF00;"><b>${key}</b></span>`;
+					} else {
+						displayKey = `<span style="color:#D69D85;">"${key}"</span>`;
+					}
+					displayValue = value;
+					if (typeof value === 'string') {
+						displayValue = `<span style="color:#D69D85;">"${value}"</span>`;
+					} else if (typeof value === 'boolean') {
+						displayValue = value ? `<span style="color:#568782;">true</span>` : `<span style="color:#568782;">false</span>`;
+					} else if (value === null) {
+						displayValue = `<span style="color:#568782;">null</span>`;
+					}
+					leaf.innerHTML = `${displayKey}: ${displayValue}`;
+					return leaf;
+				}
+			}
+			
 			if (window.apatch !== undefined && window.apatch.ksu === undefined) {
 				window.ksu = window.apatch;
 			}
-			fetch("action.prop")
+			
+			fetch("./action.prop")
 				.then(response => response.text())
 				.then(data => {
-					const trimmedData = data.trim();
-					if (trimmedData === "A" || trimmedData === "B") {
-						document.getElementById("actionSlot").innerHTML = "&emsp;The current action slot is <b>" + trimmedData + "</b>. ";
-						document.getElementById("actionSlot").style.color = "#00FF00";
+					const actionSlotElement = document.getElementById("actionSlot");
+					const dataTrimmed = data.trim();
+					if ("A" === dataTrimmed || "B" === dataTrimmed) {
+						actionSlotElement.innerHTML = "The current action slot is <b>" + dataTrimmed + "</b>. ";
+						actionSlotElement.className = "content loadedColor";
 					} else {
-						document.getElementById("actionSlot").innerHTML = "&emsp;<b>Error</b>: An invalid action slot value is detected. ";
-						document.getElementById("actionSlot").style.color = "#FF0000";
+						actionSlotElement.innerHTML = "<b>Error</b>: An invalid action slot value is detected. ";
+						actionSlotElement.className = "content failureColor";
 					}
 				})
-				.catch(error => console.error("Error: ", error));
-			fetch("database.json")
-				.then(response => response.text())
-				.then(data => {
-					document.getElementById("database").innerHTML = data;
-					document.getElementById("database").style.color = "#00FF00";
+				.catch(error => {
+					const actionSlotElement = document.getElementById("actionSlot");
+					actionSlotElement.innerHTML = "<b>Fatal</b>: Cannot fetch or parse the action slot. ";
+					actionSlotElement.className = "content failureColor";
+					console.error("Failed to fetch the action slot due to the following error. \n", error);
+				});
+			
+			fetch("./database.json")
+				.then(response => response.json())
+				.then(jsonData => {
+					const databaseElement = document.getElementById("database");
+					databaseElement.innerHTML = "";
+					Object.keys(jsonData).forEach(rootKey => {
+						databaseElement.appendChild(renderTree(rootKey, jsonData[rootKey]));
+					});
+					databaseElement.className = "loadedColor";
 				})
-				.catch(error => console.error("Error: ", error));
+				.catch(error => {
+					const databaseElement = document.getElementById("database");
+					databaseElement.innerHTML = "<b>Fatal</b>: Cannot fetch or parse the database. ";
+					databaseElement.className = "content failureColor";
+					console.error("Failed to load the database due to the following error. \n", error);
+				});
 		</script>
 	</body>
 </html>

@@ -433,7 +433,7 @@ readonly webrootName="webroot"
 readonly curlTimeout=10
 readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip.sha512"
 readonly webrootDirectoryPath="${webrootName}"
-readonly downloadTimeout=30
+readonly downloadTimeout=60
 readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip"
 readonly webrootFilePath="${webrootName}.zip"
 readonly currentAB="A"
@@ -534,7 +534,7 @@ then
 		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 		then
 			echo "Trying to download the latest web UI within ${downloadTimeout} seconds. "
-			curl -sSfL --connect-timeout ${curlTimeout} -m ${downloadTimeout} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootDirectoryPath}" && rm -f "${webrootFilePath}"
+			curl -fL --progress-bar --connect-timeout ${curlTimeout} -m ${downloadTimeout} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootDirectoryPath}" && rm -f "${webrootFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}" && "$(find "${webrootDirectoryPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
 			then
 				echo "Successfully updated and verified the web UI. "
@@ -768,6 +768,7 @@ then
 else
 	echo "The Tricky Store configuration directory did not exist. "
 fi
+unset trickyStoreTargetContent
 echo ""
 
 # Shell (0b0X0000) #
@@ -786,7 +787,7 @@ readonly targetXmlFilePath="${replacementEntry}${sourceXmlFilePath}"
 echo "The sensitive applications are being handled. "
 sensitiveApplicationCount=0
 disabledSensitiveApplicationCount=0
-packageList="$(pm list packages)"
+packageList="$(pm list packages | sed 's/^package://')"
 for sensitiveApplication in ${sensitiveApplications}
 do
 	if echo "${packageList}" | grep -qF "${sensitiveApplication}";
@@ -802,6 +803,7 @@ do
 		fi
 	fi
 done
+unset packageList
 if [[ ${sensitiveApplicationCount} -ge 1 ]];
 then
 	echo "Successfully disabled ${disabledSensitiveApplicationCount} / ${sensitiveApplicationCount} sensitive application(s). "

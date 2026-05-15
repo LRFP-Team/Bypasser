@@ -145,7 +145,7 @@ else
 	exitCode=${EOF}
 fi
 clearCaches &> /dev/null
-if [[ "${APATCH}" == "true" || "${KSU}" == "true" ]];
+if [[ ("true" == "${KSU}" && "true" != "${KSU_SUKISU}") || "true" == "${APATCH}" ]];
 then
 	if [[ $# -lt 1 ]];
 	then
