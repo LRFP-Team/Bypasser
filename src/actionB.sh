@@ -540,7 +540,7 @@ then
 				echo "Successfully updated and verified the web UI. "
 				if [[ -d "${webrootDirectoryPath}.bak" ]];
 				then
-					rm -f "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}"
+					chmod u+w "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}" && chmod -w "${actionPropFilePath}"
 					if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootDirectoryPath}.bak" ]];
 					then
 						echo "Successfully restored the action slot \"${currentAB}\". "
@@ -1024,6 +1024,7 @@ then
 			exitCode=$((exitCode | 32))
 			echo "Failed to fetch the latest \`\`${targetAction}\`\` from GitHub. "
 		fi
+		unset shellContent
 	fi
 else
 	exitCode=$((exitCode | 32))

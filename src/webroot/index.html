@@ -5,12 +5,11 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Bypasser</title>
 		<style>
-			/* Body */
 			body {
-				font-size: 16px;
-				background-color: rgba(15, 15, 15, 1);
-				color: #FFFFFF;
 				font-family: sans-serif;
+				font-size: 16px;
+				color: #FFFFFF;
+				background-color: black;
 				padding-top: var(--window-inset-top);
 				padding-bottom: var(--window-inset-bottom);
 			}
@@ -21,33 +20,43 @@
 			}
 			.container {
 				color: #EEEEEE;
-				background-color: rgba(63, 63, 63, 0.6);
+				background-color: rgba(85, 85, 85, 0.5);
+				margin-bottom: 15px;
 				padding: 10px;
 				border-radius: 10px;
-				margin-bottom: 15px;
 			}
 			.content {
+				margin-top: 1px;
 				margin-left: 20px;
+				margin-bottom: 1px;
+			}
+			
+			.fatalColor {
+				color: red;
+			}
+			.errorColor {
+				color: yellow;
+			}
+			.warningColor {
+				color: orange;
 			}
 			.loadingColor {
-				color: #FFFF00;
+				color: #3377FF; /* blue; */
 			}
-			.loadedColor {
-				color: #00FF00;
+			.informationColor {
+				color: #00FF00; /* green; */
 			}
-			.failureColor {
-				color: #FF0000;
-			}
+			
 			a:link {
-				color: #00BB00;
+				color: #00DD00;
 				text-decoration: none;
 			}
 			a:visited {
-				color: #009900;
+				color: #00CC00;
 				text-decoration: none;
 			}
 			a:hover {
-				color: #00DD00;
+				color: #00EE00;
 				text-decoration: underline;
 			}
 			a:active {
@@ -55,56 +64,243 @@
 				text-decoration: underline;
 			}
 			
-			/* Tree */
-			summary {
+			.buttonGroup {
+				display: flex;
+				gap: 20px;
+			}
+			button {
+				font-family: inherit;
+				font-size: 14px;
+				font-weight: bold;
+				color: #00FF00;
+				background-color: #222222;
+				border: 1px solid #00FF00;
+				padding: 5px 15px;
+				border-radius: 5px;
 				cursor: pointer;
-				padding: 5px;
+				transition: all 0.2s;
+			}
+			button:hover {
+				color: #222222;
+				background-color: #00FF00;
+			}
+			button:active {
+				transform: scale(0.9);
+			}
+			
+			.status {
+				border-radius: 5px;
+				transition: 
+					opacity 0.3s ease, 
+					transform 0.4s cubic-bezier(0.3, 1.5, 0.7, 1);
+			}
+			.statusHidden {
+				max-height: 0px;
+				opacity: 0;
+				transform: scale(0.9) translate3d(0, -10px, 0); 
+				pointer-events: none;
+				visibility: hidden;
+				transition: 
+					opacity 0.3s ease, 
+					transform 0.3s ease, 
+					max-height 0.4s ease, 
+					visibility 0.3s;
+			}
+			.statusShown {
+				opacity: 1;
+				transform: scale(1) translate3d(0, 0, 0);
+				pointer-events: auto;
+				visibility: visible;
+			}
+			
+			summary {
 				color: #00FF00;
 				font-weight: bold;
+				margin-top: 1px;
+				margin-bottom: 1px;
+				border-radius: 5px;
+				cursor: pointer;
+				-webkit-tap-highlight-color: transparent;
 				outline: none;
+				transition: background-color 0.2s ease;
 			}
 			summary:hover {
-				background-color: rgba(255, 255, 255, 0.1);
+				background-color: rgba(0, 255, 0, 0.1);
+			}
+			summary:active {
+				background-color: rgba(0, 255, 0, 0.3);
+				transition: background-color 0.1s ease;
 			}
 			details {
 				margin-left: 20px;
 			}
+			
 			.leafNode {
-				margin-left: 20px;
-				padding: 5px;
 				color: #DDDDDD;
+				margin-top: 1px;
+				margin-left: 20px;
+				margin-bottom: 1px;
+				border-radius: 3px;
 				word-break: break-all;
+				line-height: 1.2;
+			}
+			.leafNode:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+			.leafNode:active {
+				background-color: rgba(255, 255, 255, 0.3);
+				transition: background-color 0.1s ease;
+			}
+			.treeViewer {
+				color: #EEEEEE;
+				background-color: rgba(102, 102, 102, 0.6);
+				border-radius: 20px;
+				margin-bottom: 10px;
+				padding: 5px;
+			}
+			
+			.stringColor {
+				color: chocolate;
+			}
+			.charColor {
+				color: yellow;
+			}
+			.intColor, 
+			.longColor, 
+			.floatColor, 
+			.doubleColor {
+				color: orange;
+			}
+			.booleanColor, 
+			.nullColor, 
+			.undefinedColor {
+				color: #3377FF;
 			}
 		</style>
 	</head>
 	<body>
-		<script type="text/javascript" src="main.js" color="255,255,255" opacity=0.6></script>
+		<script type="text/javascript" src="main.js" color="255,255,255" opacity=0.8></script>
 		
 		<div id="welcome" class="caption"><b>Welcome to the web UI of the Bypasser rooting-layer system module! </b></div>
-		<div id="actionSlotContainer" class="container">
+		<div id="actionContainer" class="container">
 			<b>Action</b>
-			<div id="actionSlot" class="content loadingColor">Please wait while loading the current action slot. </div>
+			<div id="actionSlot" class="content loadingColor">Please wait while loading the action slot. </div>
+			<div id="actionButtons" class="content buttonGroup informationColor">
+				<button id="actionButton" onclick="displayActionSlot();">Refresh</button>
+				<button id="actionButtonA" onclick="swapActionSlotTo('A');">Swap to A</button>
+				<button id="actionButtonB" onclick="swapActionSlotTo('B');">Swap to B</button>
+			</div>
+			<div id="actionStatus" class="content status statusHidden informationColor"></div>
 		</div>
 		<div id="databaseContainer" class="container">
 			<b>Database</b>
-			<div id="database" class="content loadingColor">Please wait while loading the database. </div>
+			<div id="databaseTree" class="content loadingColor">Please wait while loading the database. </div>
+			<div id="databaseButtons" class="content buttonGroup informationColor">
+				<button id="databaseButton" onclick="displayDatabaseTree();">Refresh</button>
+			</div>
 		</div>
 		<div id="aboutContainer" class="container">
 			<b>About</b>
-			<div id="about" class="content loadedColor"><a href="https://github.com/LRFP-Team/Bypasser">https://github.com/LRFP-Team/Bypasser</a></div>
+			<div id="aboutLRFP" class="content informationColor"><a href="https://github.com/LRFP-Team/LRFP" target="blank">https://github.com/LRFP-Team/LRFP</a></div>
+			<div id="aboutBypasser" class="content informationColor"><a href="https://github.com/LRFP-Team/Bypasser" target="blank">https://github.com/LRFP-Team/Bypasser</a></div>
 		</div>
 		
 		<script type="text/javascript">
+			function displayActionSlot() {
+				if (isDisplayingActionSlot) {
+					console.debug("isDisplayingActionSlot = true");
+					return;
+				}
+				isDisplayingActionSlot = true;
+				const actionSlotElement = document.getElementById("actionSlot");
+				actionSlotElement.innerHTML = "Please wait while loading the action slot. ";
+				actionSlotElement.className = "content loadingColor";
+				fetch("./action.prop")
+					.then(response => response.text())
+					.then(data => {
+						const dataTrimmed = data.trim();
+						if ("A" === dataTrimmed || "B" === dataTrimmed) {
+							actionSlotElement.innerHTML = "The current action slot is <b>" + dataTrimmed + "</b>. ";
+							actionSlotElement.className = "content informationColor";
+						} else {
+							actionSlotElement.innerHTML = "<b>Error</b>: An invalid action slot value is detected. ";
+							actionSlotElement.className = "content errorColor";
+						}
+					})
+					.catch(error => {
+						const actionSlotElement = document.getElementById("actionSlot");
+						actionSlotElement.innerHTML = "<b>Fatal</b>: Cannot fetch or parse the action slot. ";
+						actionSlotElement.className = "content fatalColor";
+						console.error("Fatal: Failed to fetch the action slot due to the following error. \n", error);
+					})
+					 .finally(() => {
+						isDisplayingActionSlot = false;
+					});
+			}
+			function swapActionSlotTo(targetValue) {
+				if (isSwappingActionSlot) {
+					console.debug("isSwappingActionSlot = true");
+					return;
+				}
+				isSwappingActionSlot = true;
+				const actionStatusElement = document.getElementById("actionStatus");
+				const defaultDisplayTime = 5000;
+				if (window.ksu !== undefined && window.ksu.exec !== undefined) {
+					if ("A" === targetValue || "B" === targetValue) {
+						window.ksu.exec(`echo -n "${targetValue}" > ./action.prop`)
+							.then(result => {
+								actionStatusElement.innerHTML = `Successfully swapped the action slot to ${targetValue}. `
+								actionStatusElement.className = "content status statusShown informationColor";
+								displayActionSlot();
+								setTimeout(() => {
+									actionStatusElement.className = "content status statusHidden informationColor";
+									actionStatusElement.innerHTML = "";
+									isSwappingActionSlot = false;
+									displayActionSlot();
+								}, defaultDisplayTime);
+							})
+							.catch(error => {
+								actionStatusElement.innerHTML = `<b>Error</b>: Failed to swap the action slot to ${targetValue}. `
+								actionStatusElement.className = "content status statusShown errorColor";
+								console.error(`Failed to update the action slot to ${targetValue} due to the following error. `, error);
+								setTimeout(() => {
+									actionStatusElement.className = "content status statusHidden informationColor";
+									actionStatusElement.innerHTML = "";
+									isSwappingActionSlot = false;
+								}, defaultDisplayTime);
+							});
+					} else {
+						actionStatusElement.innerHTML = "<b>Warning</b>: Skipped swapping the action slot due to the invalid parameter passed. "
+						actionStatusElement.className = "content statusShown warningColor";
+						console.error("Failed to update the action slot due to the invalid parameter passed. ");
+						setTimeout(() => {
+							actionStatusElement.className = "content status statusHidden informationColor";
+							actionStatusElement.innerHTML = "";
+							isSwappingActionSlot = false;
+						}, defaultDisplayTime);
+					}
+				} else {
+					actionStatusElement.innerHTML = `<b>Fatal</b>: Failed to swap the action slot to ${targetValue} due to the undefined \`\`window.ksu.exec\`\`. `
+					actionStatusElement.className = "content status statusShown fatalColor";
+					console.error(`Failed to swap the action slot to ${targetValue} due to the undefined \`\`window.ksu.exec\`\`. `);
+					setTimeout(() => {
+						actionStatusElement.className = "content status statusHidden informationColor";
+						actionStatusElement.innerHTML = "";
+						isSwappingActionSlot = false;
+					}, defaultDisplayTime);
+				}
+			}
+			
 			function renderTree(key, value) {
-				if (typeof value === 'object' && value !== null) {
-					const details = document.createElement('details');
-					const summary = document.createElement('summary');
+				if (typeof value === "object" && value !== null) {
+					const details = document.createElement("details");
+					const summary = document.createElement("summary");
 					summary.innerHTML = "" === key ? "*" : key;
 					details.appendChild(summary);
 					if (Array.isArray(value)) {
 						value.forEach(item => {
-							const itemDiv = document.createElement('div');
-							itemDiv.className = 'leafNode';
+							const itemDiv = document.createElement("div");
+							itemDiv.className = "leafNode";
 							itemDiv.textContent = item;
 							details.appendChild(itemDiv);
 						});
@@ -121,61 +317,56 @@
 					if (typeof key === 'string' && key.length === 1) {
 						displayKey = `<span style="color:#00FF00;"><b>${key}</b></span>`;
 					} else {
-						displayKey = `<span style="color:#D69D85;">"${key}"</span>`;
+						displayKey = `<span class="stringColor">"${key}"</span>`;
 					}
 					displayValue = value;
 					if (typeof value === 'string') {
-						displayValue = `<span style="color:#D69D85;">"${value}"</span>`;
+						displayValue = `<span class="stringColor">"${value}"</span>`;
 					} else if (typeof value === 'boolean') {
-						displayValue = value ? `<span style="color:#568782;">true</span>` : `<span style="color:#568782;">false</span>`;
+						displayValue = value ? `<span class="booleanColor">true</span>` : `<span class="booleanColor">false</span>`;
 					} else if (value === null) {
-						displayValue = `<span style="color:#568782;">null</span>`;
+						displayValue = `<span class="nullColor">null</span>`;
 					}
 					leaf.innerHTML = `${displayKey}: ${displayValue}`;
 					return leaf;
 				}
 			}
+			function displayDatabaseTree() {
+				if (isDisplayingDatabaseTree) {
+					console.debug("isDisplayingDatabaseTree = true");
+					return;
+				}
+				isDisplayingDatabaseTree = true;
+				fetch("./database.json")
+					.then(response => response.json())
+					.then(jsonData => {
+						const databaseElement = document.getElementById("databaseTree");
+						databaseElement.innerHTML = "";
+						databaseElement.className = "treeViewer informationColor";
+						Object.keys(jsonData).forEach(rootKey => {
+							databaseElement.appendChild(renderTree(rootKey, jsonData[rootKey]));
+						});
+					})
+					.catch(error => {
+						const databaseElement = document.getElementById("databaseTree");
+						databaseElement.innerHTML = "<b>Fatal</b>: Cannot fetch or parse the database. ";
+						databaseElement.className = "content fatalColor";
+						console.error("Failed to load the database due to the following error. \n", error);
+					})
+					 .finally(() => {
+						isDisplayingDatabaseTree = false;
+					});
+			}
+			
+			isDisplayingActionSlot = false;
+			isSwappingActionSlot = false;
+			isDisplayingDatabaseTree = false;
 			
 			if (window.apatch !== undefined && window.apatch.ksu === undefined) {
 				window.ksu = window.apatch;
 			}
-			
-			fetch("./action.prop")
-				.then(response => response.text())
-				.then(data => {
-					const actionSlotElement = document.getElementById("actionSlot");
-					const dataTrimmed = data.trim();
-					if ("A" === dataTrimmed || "B" === dataTrimmed) {
-						actionSlotElement.innerHTML = "The current action slot is <b>" + dataTrimmed + "</b>. ";
-						actionSlotElement.className = "content loadedColor";
-					} else {
-						actionSlotElement.innerHTML = "<b>Error</b>: An invalid action slot value is detected. ";
-						actionSlotElement.className = "content failureColor";
-					}
-				})
-				.catch(error => {
-					const actionSlotElement = document.getElementById("actionSlot");
-					actionSlotElement.innerHTML = "<b>Fatal</b>: Cannot fetch or parse the action slot. ";
-					actionSlotElement.className = "content failureColor";
-					console.error("Failed to fetch the action slot due to the following error. \n", error);
-				});
-			
-			fetch("./database.json")
-				.then(response => response.json())
-				.then(jsonData => {
-					const databaseElement = document.getElementById("database");
-					databaseElement.innerHTML = "";
-					Object.keys(jsonData).forEach(rootKey => {
-						databaseElement.appendChild(renderTree(rootKey, jsonData[rootKey]));
-					});
-					databaseElement.className = "loadedColor";
-				})
-				.catch(error => {
-					const databaseElement = document.getElementById("database");
-					databaseElement.innerHTML = "<b>Fatal</b>: Cannot fetch or parse the database. ";
-					databaseElement.className = "content failureColor";
-					console.error("Failed to load the database due to the following error. \n", error);
-				});
+			displayActionSlot();
+			displayDatabaseTree();
 		</script>
 	</body>
 </html>
