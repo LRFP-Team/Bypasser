@@ -540,8 +540,8 @@ then
 				echo "Successfully updated and verified the web UI. "
 				if [[ -d "${webrootDirectoryPath}.bak" ]];
 				then
-					chmod u+w "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}" && chmod -w "${actionPropFilePath}"
-					if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootDirectoryPath}.bak" ]];
+					rm -f "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
+					if [[ $? -eq ${EXIT_SUCCESS} ]];
 					then
 						echo "Successfully restored the action slot \"${currentAB}\". "
 						rm -rf "${webrootDirectoryPath}.bak"
@@ -974,7 +974,7 @@ then
 			echo "The action slot remained ${currentAB}. "
 		else
 			echo "The action slot seemed inconsistent with the actual one. "
-			rm -f "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}"
+			rm -f "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -f "${actionPropFilePath}" ]];
 			then
 				echo "Successfully synchronized the actual action slot to \"${actionPropFilePath}\". "
@@ -995,12 +995,11 @@ then
 				if echo "${shellContent}" | sh -n;
 				then
 					echo "The latest \`\`${targetAction}\`\` successfully passed the local shell syntax check (sh). "
-					rm -f "${targetAction}"
-					echo "${shellContent}" > "${targetAction}"
+					rm -f "${targetAction}" && echo "${shellContent}" > "${targetAction}" && chmod 744 "${targetAction}"
 					if [[ $? -eq ${EXIT_SUCCESS} && -f "${targetAction}" ]];
 					then
 						echo "Successfully updated \`\`${targetAction}\`\`. "
-						rm -f "${actionPropFilePath}" && echo -n "${targetAB}" > "${actionPropFilePath}"
+						rm -f "${actionPropFilePath}" && echo -n "${targetAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
 						if [[ $? -eq ${EXIT_SUCCESS} && -f "${actionPropFilePath}" ]];
 						then
 							echo "Successfully switched the action slot to ${targetAB} in \"${actionPropFilePath}\". "
