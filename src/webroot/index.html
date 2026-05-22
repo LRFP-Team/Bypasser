@@ -451,38 +451,57 @@
 				console.debug("Debug: ``fetchScript: isOperatingActionSlot = true;``");
 				
 				/* Get the selected script from the dropdown */
-				const selectedScript = document.getElementById("actionSelection").value;
+				const selectedScriptRaw = document.getElementById("actionSelection").value;
+				const selectedScriptName = "string" === typeof selectedScriptRaw ? selectedScriptRaw.replace(/[^a-zA-Z0-9._-]/g, "") : "action";
 				const actionStatusElement = document.getElementById("actionStatus");
 				if (
-					"action" === selectedScript || "actionA" === selectedScript || "actionB" === selectedScript
-					|| "post-fs-data" === selectedScript || "service" === selectedScript || "uninstall" === selectedScript)
+					"action" === selectedScriptName || "actionA" === selectedScriptName || "actionB" === selectedScriptName
+					|| "post-fs-data" === selectedScriptName || "service" === selectedScriptName || "uninstall" === selectedScriptName)
 				{
-					actionStatusElement.innerHTML = `Please wait while fetching the \`\`${selectedScript}.sh\`\`. `;
+					actionStatusElement.innerHTML = `Please wait while fetching the \`\`${selectedScriptName}.sh\`\`. `;
 					actionStatusElement.className = "content status statusShown loadingColor";
-					console.log(`Info: Please wait while fetching the \`\`${selectedScript}.sh\`\`. `);
+					console.log(`Info: Please wait while fetching the \`\`${selectedScriptName}.sh\`\`. `);
 				}
 				else
 				{
-					actionStatusElement.innerHTML = "<b>Warning</b>: Fetching an script located outside the dropdown. ";
+					actionStatusElement.innerHTML = "<b>Warning</b>: Fetching the \`\`${selectedScriptName}.sh\`\` located outside the dropdown. ";
 					actionStatusElement.className = "content status statusShown warningColor";
 					console.warn(`Warning: Fetching an script located outside the dropdown. `);
 				}
-				const remoteScriptDigestURL = `${remoteModuleURL}/${selectedScript}.sh.sha512`;
-				const remoteScripContentURL = `${remoteModuleURL}/${selectedScript}.sh`;
-				const localScriptFilePath = `${moduleDirectoryPath}/${selectedScript}.sh`;
+				const remoteScriptDigestURL = `${remoteModuleURL}/${selectedScriptName}.sh.sha512`;
+				const remoteScriptContentURL = `${remoteModuleURL}/${selectedScriptName}.sh`;
+				const localScriptFilePath = `${moduleDirectoryPath}/${selectedScriptName}.sh`;
 				
 				try
 				{
 					/* Fetch the script digest */
-					const scriptDigestResponse = await fetch(remoteScriptDigestURL);
-					if (!scriptDigestResponse.ok)
-						throw new Error(`Error: Failed to fetch the script due to the HTTP ${scriptDigestResponse.status} signal when fetching the SHA-512 hash value. `);
+					let scriptDigestResponse = null;
+					try
+					{
+						scriptDigestResponse = await fetch(remoteScriptDigestURL);
+					}
+					catch (e) {}
+					if (null === scriptDigestResponse)
+						throw new Error(`Error: Failed to fetch the \`\`${selectedScriptName}.sh\`\` due to unreachable networks to GitHub when fetching the script digest. `);
+					else if (!scriptDigestResponse.ok)
+						throw new Error(
+							`Error: Failed to fetch the \`\`${selectedScriptName}.sh\`\` due to the HTTP ${scriptDigestResponse.status} signal when fetching the script digest. `
+						);
 					const expectedScriptDigest = (await scriptDigestResponse.text()).trim().toLowerCase();
 					
 					/* Fetch the script content */
-					const scriptContentResponse = await fetch(remoteScripContentURL);
-					if (!scriptContentResponse.ok)
-						throw new Error(`Error: Failed to fetch the script due to the HTTP ${scriptContentResponse.status} signal when fetching the script content. `);
+					let scriptContentResponse = null;
+					try
+					{
+						scriptContentResponse = await fetch(remoteScriptContentURL);
+					}
+					catch (e) {}
+					if (null === scriptContentResponse)
+						throw new Error(`Error: Failed to fetch the \`\`${selectedScriptName}.sh\`\` due to unreachable networks to GitHub when fetching the script content. `);
+					else if (!scriptContentResponse.ok)
+						throw new Error(
+							`Error: Failed to fetch the \`\`${selectedScriptName}.sh\`\` due to the HTTP ${scriptContentResponse.status} signal when fetching the script content. `
+						);
 					const scriptContent = await scriptContentResponse.text();
 					
 					/* Compute the SHA-512 hash value for the script content */
@@ -492,20 +511,20 @@
 					const hashArray = Array.from(new Uint8Array(hashBuffer));
 					const actualDigest = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
 					if (actualDigest !== expectedScriptDigest)
-						throw new Error("Error: Failed to fetch the script due to the mismatched digest. ");
+						throw new Error("Error: Failed to fetch the \`\`${selectedScriptName}.sh\`\` due to the mismatched digest. ");
 					
 					/* Write to local script via the shell execution */
 					if ("function" !== typeof execute)
-						throw new Error("Fatal: Failed to fetch the script due to the undefined shell execution function. ");
+						throw new Error("Fatal: Failed to fetch the \`\`${selectedScriptName}.sh\`\` due to the undefined shell execution function. ");
 					const base64 = btoa(unescape(encodeURIComponent(scriptContent)));
 					const stdout = await execute(`echo "${base64}" | base64 -d > "${localScriptFilePath}" && chmod 544 "${localScriptFilePath}"`);
 					if ("" !== stdout)
-						throw new Error("Error: Failed to fetch the script due to failures in writing. ");
+						throw new Error("Error: Failed to fetch the \`\`${selectedScriptName}.sh\`\` due to failures in writing. ");
 					
 					/* Release the success signal */
-					actionStatusElement.innerHTML = `Successfully fetched ${selectedScript}.sh from GitHub. `;
+					actionStatusElement.innerHTML = `Successfully fetched the \`\`${selectedScriptName}.sh\`\` from GitHub. `;
 					actionStatusElement.className = "content status statusShown informationColor";
-					console.log(`Info: Successfully fetched ${selectedScript}.sh from GitHub. `);
+					console.log(`Info: Successfully fetched the \`\`${selectedScriptName}.sh\`\` from GitHub. `);
 					setTimeout(() => {
 						actionStatusElement.className = "content status statusHidden informationColor";
 						actionStatusElement.innerHTML = "";
@@ -513,28 +532,28 @@
 						isOperatingActionSlot = false;
 						console.debug("Debug: ``fetchScript: isOperatingActionSlot = false;``");
 					}, defaultDisplayTime);
-			}
-			catch (exception)
-			{
-				let formattedMessage = "<b>Fatal</b>: Failed to fetch the script due to unknown exceptions. ";
-				if ("string" === typeof exception.message && exception.message.includes(":"))
-				{
-						const colonIndex = exception.message.indexOf(":");
-						const beforeColon = exception.message.substring(0, colonIndex);
-						const afterColon = exception.message.substring(colonIndex);
-						formattedMessage = `<b>${beforeColon}</b>${afterColon}`;
 				}
-				actionStatusElement.innerHTML = formattedMessage;
-				actionStatusElement.className = "content status statusShown fatalColor";
-				console.error(exception.message);
-				setTimeout(() => {
-						actionStatusElement.className = "content status statusHidden informationColor";
-						actionStatusElement.innerHTML = "";
-						console.debug("Debug: Successfully hid the action status. ");
-						isOperatingActionSlot = false;
-						console.debug("Debug: ``fetchScript: isOperatingActionSlot = false;``");
-				}, defaultDisplayTime);
-		}
+				catch (exception)
+				{
+					let formattedMessage = "<b>Fatal</b>: Failed to fetch the \`\`${selectedScriptName}.sh\`\` due to unknown exceptions. ";
+					if ("string" === typeof exception.message && exception.message.includes(":"))
+					{
+							const colonIndex = exception.message.indexOf(":");
+							const beforeColon = exception.message.substring(0, colonIndex);
+							const afterColon = exception.message.substring(colonIndex);
+							formattedMessage = `<b>${beforeColon}</b>${afterColon}`;
+					}
+					actionStatusElement.innerHTML = formattedMessage;
+					actionStatusElement.className = "content status statusShown fatalColor";
+					console.error(exception.message);
+					setTimeout(() => {
+							actionStatusElement.className = "content status statusHidden informationColor";
+							actionStatusElement.innerHTML = "";
+							console.debug("Debug: Successfully hid the action status. ");
+							isOperatingActionSlot = false;
+							console.debug("Debug: ``fetchScript: isOperatingActionSlot = false;``");
+					}, defaultDisplayTime);
+				}
 			}
 			
 			function createKeySpan(key)
@@ -716,14 +735,28 @@
 				try
 				{
 					/* Fetch the database digest */
-					const databaseDigestResponse = await fetch(`${remoteWebrootURL}/${databaseFileName}.sha512`);
-					if (!databaseDigestResponse.ok)
-						throw new Error(`Error: Failed to fetch the database due to the HTTP ${databaseDigestResponse.status} signal when fetching the SHA-512 hash value. `);
+					let databaseDigestResponse = null;
+					try
+					{
+						databaseDigestResponse = await fetch(`${remoteWebrootURL}/${databaseFileName}.sha512`);
+					}
+					catch (e) {}
+					if (null === databaseDigestResponse)
+						throw new Error("Error: Failed to fetch the database due to unreachable networks to GitHub when fetching the database digest. ");
+					else if (!databaseDigestResponse.ok)
+						throw new Error(`Error: Failed to fetch the database due to the HTTP ${databaseDigestResponse.status} signal when fetching the database digest. `);
 					const expectedDatabaseDigest = (await databaseDigestResponse.text()).trim().toLowerCase();
 					
 					/* Fetch the database content */
-					const databaseContentResponse = await fetch(`${remoteWebrootURL}/${databaseFileName}`);
-					if (!databaseContentResponse.ok)
+					let databaseContentResponse = null;
+					try
+					{
+						databaseContentResponse = await fetch(`${remoteWebrootURL}/${databaseFileName}`);
+					}
+					catch (e) {}
+					if (null === databaseContentResponse)
+						throw new Error("Error: Failed to fetch the database due to unreachable networks to GitHub when fetching the database content. ");
+					else if (!databaseContentResponse.ok)
 						throw new Error(`Error: Failed to fetch the database due to the HTTP ${databaseContentResponse.status} signal when fetching the database content. `);
 					const databaseContent = await databaseContentResponse.text();
 					

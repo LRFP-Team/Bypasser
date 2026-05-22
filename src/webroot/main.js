@@ -13,14 +13,14 @@
 	}
 	function getWindowWH()
 	{
-		W = canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth, 
-		H = canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight
+		W = canvas.width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+		H = canvas.height = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
 	}
 	function draw()
 	{
 		context.clearRect(0, 0, W, H);
-		var w = [mouse].concat(squares);
-		var x, v, A, B, z, y;
+		const w = [mouse].concat(squares);
+		let x = 0, A = 0;
 		squares.forEach(function (i) {
 			i.x += i.xa;
 			i.y += i.ya;
@@ -32,9 +32,8 @@
 				x = w[n];
 				if (i !== x && null !== x.x && null !== x.y)
 				{
-					x_diff = i.x - x.x;
-					y_diff = i.y - x.y;
-					distance = x_diff * x_diff + y_diff * y_diff;
+					let x_diff = i.x - x.x, y_diff = i.y - x.y;
+					let distance = x_diff * x_diff + y_diff * y_diff;
 					if (distance < x.max)
 					{
 						if (x === mouse && distance > x.max / 2)
@@ -57,16 +56,17 @@
 		animation(draw);
 	}
 	
-	var canvas = document.createElement("canvas"), context = canvas.getContext("2d"), attr = getAttr();
+	const canvas = document.createElement("canvas"), context = canvas.getContext("2d"), attr = getAttr();
 	canvas.id = "c_n" + attr.length;
 	canvas.style.cssText = "position:fixed;top:0;left:0;z-index:" + attr.z + ";opacity:" + attr.opacity;
 	document.getElementsByTagName("body")[0].appendChild(canvas);
+	let W = 0, H = 0;
 	getWindowWH(); 
 	window.onresize = getWindowWH;
-	var random = Math.random, squares = [];
+	let random = Math.random, squares = [];
 	for (let p = 0; p < attr.count; ++p)
 	{	
-		var square_x = random() * W, square_y = random() * H, square_xa = 2 * random() - 1, square_ya = 2 * random() - 1;
+		const square_x = random() * W, square_y = random() * H, square_xa = 2 * random() - 1, square_ya = 2 * random() - 1;
 		squares.push({
 			x:square_x, 
 			y:square_y, 
@@ -75,7 +75,7 @@
 			max:6000
 		})
 	}
-	var mouse = {
+	const mouse = {
 		x:null, 
 		y:null, 
 		max:20000
@@ -89,9 +89,12 @@
 		mouse.x = null;
 		mouse.y = null;
 	}
-	var animation = window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame || window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (i) {
-		window.setTimeout(i, 1000 / 45)
-	};
+	const animation = (
+		window.requestAnimationFrame || window.webkitRequestAnimationFrame || window.mozRequestAnimationFrame
+		|| window.oRequestAnimationFrame || window.msRequestAnimationFrame || function (i) {
+			window.setTimeout(i, 1000 / 45)
+		}
+	);
 	setTimeout(
 		function() {
 			draw();
