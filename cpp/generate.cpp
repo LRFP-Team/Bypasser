@@ -4,15 +4,9 @@
 #include <vector>
 #include <regex>
 #include "nlohmann/json.hpp" // https://github.com/nlohmann/json
-#ifndef MODULE_NAME
-#define MODULE_NAME "Bypasser"
-#endif
-#ifndef CPP_VERSION
-#define CPP_VERSION "3.8.5.5+HKT20260509000000000000000"
-#endif
-#ifndef REGEX_PATTERN
-#define REGEX_PATTERN "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$"
-#endif
+inline constexpr const char* MODULE_NAME = "Bypasser";
+inline constexpr const char* CPP_VERSION = "3.8.5.5+HKT20260522000000000000000";
+inline constexpr const char* REGEX_PATTERN = "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$";
 
 
 #pragma pack(push, 1)
@@ -85,6 +79,7 @@ private:
 	inline static const std::string DefaultDatabaseFilePath = "database.json";
 	inline static const LogLevel DefaultLevel = LogLevel::Info;
 	inline static const std::vector<std::string> helpArguments{ "?", "/?", "-?", "h", "/h", "-h", "help", "/help", "--help" };
+	inline static const std::vector<std::string> versionArguments{ "V", "/V", "-V", "version", "/version", "--version" };
 	inline static const std::vector<std::string> inputDatabaseArguments{ "i", "/i", "-i", "inputDatabase", "/inputDatabase", "--inputDatabase" };
 	inline static const std::vector<std::string> logLevelArguments{ "l", "/l", "-l", "logLevel", "/logLevel", "--logLevel" };
 	inline static const std::vector<std::string> outputHmaV92WhitelistArguments{ "oa92w", "/oa92w", "-oa92w", "outputHmaV92Whitelist", "/outputHmaV92Whitelist", "--outputHmaV92Whitelist" };
@@ -114,7 +109,7 @@ private:
 	std::string outputTrickyStoreTargetFilePath{};
 	nlohmann::json j{};
 	
-	std::string vector2string(const std::vector<std::string>& arguments, const std::string& prefix, const std::string& separator, const std::string& suffix) const
+	static std::string vector2string(const std::vector<std::string>& arguments, const std::string& prefix, const std::string& separator, const std::string& suffix)
 	{
 		std::string s = prefix;
 		if (!arguments.empty())
@@ -127,8 +122,8 @@ private:
 		s += suffix;
 		return s;
 	}
-	std::string vector2string(const std::vector<std::string>& arguments) const { return this->vector2string(arguments, "[", "|", "]"); }
-	std::string logLevel2string(const LogLevel level) const
+	static std::string vector2string(const std::vector<std::string>& arguments) { return vector2string(arguments, "[", "|", "]"); }
+	static std::string logLevel2string(const LogLevel level)
 	{
 		switch (level)
 		{
@@ -150,25 +145,31 @@ private:
 			return "Off (" + std::to_string(static_cast<unsigned int>(LogLevel::Off)) + ")";
 		}
 	}
-	void printHelp() const
+	static void printHelp()
 	{
 		std::cout << "This is a generator for the " << MODULE_NAME << " rooting-layer system module. " << std::endl << std::endl;
 		std::cout << "Options: " << std::endl;
-		std::cout << "\t" << this->vector2string(helpArguments) << "\t\tPrint the help information. " << std::endl;
-		std::cout << "\t" << this->vector2string(inputDatabaseArguments) << "<path>\t\tSpecify the input database JSON file path. The default value is \"" << DefaultDatabaseFilePath << "\". " << std::endl;
-		std::cout << "\t" << this->vector2string(logLevelArguments) << "<level>\t\tSpecify the log level (std::cerr) from " << this->logLevel2string(LogLevel::All) << " to " << this->logLevel2string(LogLevel::Off) << ". The default value is " << this->logLevel2string(DefaultLevel) << ". " << std::endl;
-		std::cout << "\t" << this->vector2string(outputHmaV92WhitelistArguments) << "<path>\t\tSpecify the output HMA v92 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(outputHmaV92BlacklistArguments) << "<path>\t\tSpecify the output HMA v92 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(outputHmaV93WhitelistArguments) << "<path>\t\tSpecify the output HMA v93 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(outputHmaV93BlacklistArguments) << "<path>\t\tSpecify the output HMA v93 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(outputHmaossV93WhitelistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(outputHmaossV93BlacklistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(outputPathTesterArguments) << "<path>\t\tSpecify the output path tester shell script file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(outputTrickyStoreTargetArguments) << "<path>\t\tSpecify the output Tricky Store target text file path. " << std::endl << std::endl;
+		std::cout << "\t" << vector2string(helpArguments) << "\t\tPrint the help information. " << std::endl;
+		std::cout << "\t" << vector2string(versionArguments) << "\t\tPrint the version information. " << std::endl;
+		std::cout << "\t" << vector2string(inputDatabaseArguments) << "<path>\t\tSpecify the input database JSON file path. The default value is \"" << DefaultDatabaseFilePath << "\". " << std::endl;
+		std::cout << "\t" << vector2string(logLevelArguments) << "<level>\t\tSpecify the log level (std::cerr) from " << logLevel2string(LogLevel::All) << " to " << logLevel2string(LogLevel::Off) << ". The default value is " << logLevel2string(DefaultLevel) << ". " << std::endl;
+		std::cout << "\t" << vector2string(outputHmaV92WhitelistArguments) << "<path>\t\tSpecify the output HMA v92 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(outputHmaV92BlacklistArguments) << "<path>\t\tSpecify the output HMA v92 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(outputHmaV93WhitelistArguments) << "<path>\t\tSpecify the output HMA v93 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(outputHmaV93BlacklistArguments) << "<path>\t\tSpecify the output HMA v93 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(outputHmaossV93WhitelistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(outputHmaossV93BlacklistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(outputPathTesterArguments) << "<path>\t\tSpecify the output path tester shell script file path. " << std::endl;
+		std::cout << "\t" << vector2string(outputTrickyStoreTargetArguments) << "<path>\t\tSpecify the output Tricky Store target text file path. " << std::endl << std::endl;
 		std::cout << "Notes:" << std::endl;
 		std::cout << "\t1) All the arguments are optional and processed sequentially. If the same argument is provided multiple times, the last valid one will overwrite the previous ones. Unrecognized arguments, invalid argument values, or missing argument values will be skipped with a warning. " << std::endl;
 		std::cout << "\t2) If an input path is not specified, the program will use the corresponding default value. The program will return EOF (" << EOF << ") if the input database JSON file cannot be parsed. Parsing failures for other inputs will be skipped, and a warning will be issued. " << std::endl;
 		std::cout << "\t3) The program will create the parent directory for each output path if it does not exist. If ``.`` is passed for an output path, the program will print the generation result to the console. If an output path is not specified, the corresponding generation will be skipped. Only when all the requested outputs succeed will the program return EXIT_SUCCESS (" << EXIT_SUCCESS << "). Otherwise, the program will return EXIT_FAILURE (" << EXIT_FAILURE << "). " << std::endl << std::endl;
+		return;
+	}
+	static void printVersion()
+	{
+		std::cout << CPP_VERSION << std::endl;
 		return;
 	}
 	bool print(const std::string& content, const LogLevel level) const
@@ -200,7 +201,7 @@ private:
 		else
 			return false;
 	}
-	std::string formatMessage(const std::string& message) const
+	static std::string formatMessage(const std::string& message)
 	{
 		std::string formattedMessage = "\"";
 		for (unsigned char character : message)
@@ -289,7 +290,7 @@ private:
 							if ("assets/xposed_init" == fileName)
 							{
 								isPlugin = cdfh.uncompressedSize > 0;
-								this->print(std::string("Located ") + (isPlugin ? "true" : "false") + " \"assets/xposed_init\" in " + this->formatMessage(apkFilePath) + ". ", LogLevel::Trace);
+								this->print(std::string("Located ") + (isPlugin ? "true" : "false") + " \"assets/xposed_init\" in " + formatMessage(apkFilePath) + ". ", LogLevel::Trace);
 								return true;
 							}
 							apkFile.seekg(cdfh.extraFieldLength + cdfh.fileCommentLength, std::ios::cur);
@@ -305,7 +306,7 @@ private:
 		else
 			return false;
 	}
-	bool binarySearch(const nlohmann::json& array, const std::string& x, size_t& insertionIndex) const
+	static bool binarySearch(const nlohmann::json& array, const std::string& x, size_t& insertionIndex)
 	{
 		if (array.is_array())
 		{
@@ -335,7 +336,7 @@ private:
 		size_t insertionIndex = static_cast<size_t>(EOF);
 		if (isPlugin)
 		{
-			if (!this->binarySearch(this->j["M"], packageName, insertionIndex) && insertionIndex != static_cast<size_t>(EOF))
+			if (!binarySearch(this->j["M"], packageName, insertionIndex) && insertionIndex != static_cast<size_t>(EOF))
 			{
 				this->j["M"].insert(this->j["M"].begin() + insertionIndex, packageName);
 				++unrecordedPluginCount;
@@ -344,15 +345,15 @@ private:
 		}
 		else
 		{
-			bool notInDatabase = !this->binarySearch(this->j["C"][""], packageName, insertionIndex) && !this->binarySearch(this->j["D"], packageName, insertionIndex) && !this->binarySearch(this->j["M"], packageName, insertionIndex) && !this->binarySearch(this->j["S"], packageName, insertionIndex);
+			bool notInDatabase = !binarySearch(this->j["C"][""], packageName, insertionIndex) && !binarySearch(this->j["D"], packageName, insertionIndex) && !binarySearch(this->j["M"], packageName, insertionIndex) && !binarySearch(this->j["S"], packageName, insertionIndex);
 			if (notInDatabase)
 				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
-					if ("L" != entryIt.key() && entryIt.value().is_array() && this->binarySearch(entryIt.value(), packageName, insertionIndex))
+					if ("L" != entryIt.key() && entryIt.value().is_array() && binarySearch(entryIt.value(), packageName, insertionIndex))
 					{
 						notInDatabase = false;
 						break;
 					}
-			if (notInDatabase && !this->binarySearch(this->j["C"]["_"]["L"], packageName, insertionIndex) && insertionIndex != static_cast<size_t>(EOF))
+			if (notInDatabase && !binarySearch(this->j["C"]["_"]["L"], packageName, insertionIndex) && insertionIndex != static_cast<size_t>(EOF))
 			{
 				this->j["C"]["_"]["L"].insert(this->j["C"]["_"]["L"].begin() + insertionIndex, packageName);
 				++unrecordedNonPluginCount;
@@ -408,7 +409,7 @@ private:
 							if (isValid)
 							{
 								/* Enter the second-layer directory */
-								this->print("Trying to enter the second-layer directory for " + this->formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
+								this->print("Trying to enter the second-layer directory for " + formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
 								std::filesystem::directory_entry secondLayerEntry{};
 								for (std::filesystem::directory_iterator directoryIt = std::filesystem::directory_iterator(firstLayerEntry.path()); directoryIt != std::filesystem::directory_iterator(); ++directoryIt)
 									if (!directoryIt->is_symlink() && directoryIt->is_directory())
@@ -426,7 +427,7 @@ private:
 									}
 								if (isValid)
 								{
-									this->print("Entered the second-layer directory " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
+									this->print("Entered the second-layer directory " + formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 									std::string packageName = secondLayerEntry.path().filename().string();
 									const size_t position = packageName.find('-');
 									size_t packageNameLength = packageName.length();
@@ -441,11 +442,11 @@ private:
 										if (isValid)
 										{
 											packageName = packageName.substr(0, position);
-											this->print("Located the package name " + this->formatMessage(packageName) + " in the second-layer directory " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
+											this->print("Located the package name " + formatMessage(packageName) + " in the second-layer directory " + formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 											if (std::regex_match(packageName, Pattern))
 											{
 												/* Enter the third-layer directory */
-												this->print("Trying to enter the third-layer directory for " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
+												this->print("Trying to enter the third-layer directory for " + formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 												std::filesystem::directory_entry thirdLayerEntry{};
 												for (std::filesystem::directory_iterator directoryIt = std::filesystem::directory_iterator(secondLayerEntry.path()); directoryIt != std::filesystem::directory_iterator(); ++directoryIt)
 												{
@@ -475,7 +476,7 @@ private:
 												}
 												if (isValid && !thirdLayerEntry.path().empty())
 												{
-													this->print("Entered the third-layer directory " + this->formatMessage(thirdLayerEntry.path().string()) + ". ", LogLevel::Trace);
+													this->print("Entered the third-layer directory " + formatMessage(thirdLayerEntry.path().string()) + ". ", LogLevel::Trace);
 													++dataDirectoryFormCount;
 													bool isPlugin = false;
 													if (this->checkoutApplication(thirdLayerEntry.path().string(), isPlugin))
@@ -513,12 +514,12 @@ private:
 									isValid = false;
 							if (isValid)
 							{
-								this->print("Trying to enter the second-layer directory for " + this->formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
+								this->print("Trying to enter the second-layer directory for " + formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
 								std::filesystem::path apkFilePathObject = firstLayerEntry.path();
 								apkFilePathObject /= directoryName + ".apk";
 								if (!std::filesystem::is_symlink(apkFilePathObject) && std::filesystem::is_regular_file(apkFilePathObject))
 								{
-									this->print("Entered the second-layer directory " + this->formatMessage(apkFilePathObject.string()) + ". ", LogLevel::Trace);
+									this->print("Entered the second-layer directory " + formatMessage(apkFilePathObject.string()) + ". ", LogLevel::Trace);
 									++nonDataDirectoryFormCount;
 									bool isPlugin = false;
 									if (this->checkoutApplication(apkFilePathObject.string(), isPlugin))
@@ -562,12 +563,12 @@ private:
 					else
 						++invalidFormCount;
 				}
-				this->print("Finished traversing " + this->formatMessage(directoryPath.string()) + " with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(dataDirectoryFormCount) + "(" + std::to_string(dataDirectoryFormSuccessCount) + " + " + std::to_string(dataDirectoryFormFailureCount) + ") + " + std::to_string(nonDataDirectoryFormCount) + "(" + std::to_string(nonDataDirectoryFormSuccessCount) + " + " + std::to_string(nonDataDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Debug);
+				this->print("Finished traversing " + formatMessage(directoryPath.string()) + " with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(dataDirectoryFormCount) + "(" + std::to_string(dataDirectoryFormSuccessCount) + " + " + std::to_string(dataDirectoryFormFailureCount) + ") + " + std::to_string(nonDataDirectoryFormCount) + "(" + std::to_string(nonDataDirectoryFormSuccessCount) + " + " + std::to_string(nonDataDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Debug);
 				return true;
 			}
 			catch (...)
 			{
-				this->print("Failed to traverse " + this->formatMessage(directoryPath.string()) + ". ", LogLevel::Warning);
+				this->print("Failed to traverse " + formatMessage(directoryPath.string()) + ". ", LogLevel::Warning);
 				return false;
 			}
 		else
@@ -577,7 +578,7 @@ private:
 	{
 		return this->flag & 128/* 0b 0000 0000 1000 0000 */ && this->flag & 64/* 0b 0000 0000 0100 0000 */ && this->flag & 32/* 0b 0000 0000 0010 0000 */ && this->flag & 16/* 0b 0000 0000 0001 0000 */ && this->flag & 8/* 0b 0000 0000 0000 1000 */ && this->flag & 4/* 0b 0000 0000 0000 0100 */ && this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */;
 	}
-	bool handleDirectory(const std::string& filePath)
+	static bool handleDirectory(const std::string& filePath)
 	{
 		try
 		{
@@ -595,7 +596,7 @@ private:
 			return false;
 		}
 	}
-	std::string array2string(const nlohmann::json& elements, const std::string& prefix, const std::string& separator, const std::string& suffix) const
+	std::string array2string(const nlohmann::json& elements, const std::string& prefix, const std::string& separator, const std::string& suffix)
 	{
 		std::string s = prefix;
 		for (nlohmann::json::const_iterator arrayIt = elements.cbegin(); arrayIt != elements.cend(); ++arrayIt)
@@ -632,15 +633,17 @@ public:
 			this->outputPathTesterFilePath.clear();
 			this->outputTrickyStoreTargetFilePath.clear();
 		}
-		bool missingArgument = false;
+		bool versionFlag = false, missingArgument = false;
 		std::vector<size_t> invalidArgumentIndexes{};
 		for (int i = 1; i < argc; ++i)
 			if (std::find(helpArguments.cbegin(), helpArguments.cend(), argv[i]) != helpArguments.cend())
 			{
-				this->printHelp();
+				printHelp();
 				exitFlag = true;
 				return true;
 			}
+			else if (std::find(versionArguments.cbegin(), versionArguments.cend(), argv[i]) != versionArguments.cend())
+				versionFlag = true;
 			else if (std::find(inputDatabaseArguments.cbegin(), inputDatabaseArguments.cend(), argv[i]) != inputDatabaseArguments.cend())
 				if (++i < argc)
 					this->inputDatabaseFilePath = argv[i];
@@ -772,30 +775,39 @@ public:
 				}
 			else
 				invalidArgumentIndexes.push_back(i);
-		if (missingArgument)
-			this->print("The corresponding value for the last argument is missing. ", LogLevel::Warning);
-		const size_t invalidArgumentCount = invalidArgumentIndexes.size();
-		if (1 == invalidArgumentCount)
-			this->print("The argument whose index is [" + std::to_string(invalidArgumentIndexes[0]) + "] could not be recognized, which has been skipped. ", LogLevel::Warning);
-		else if (invalidArgumentCount >= 2)
+		if (versionFlag)
 		{
-			std::string message = std::to_string(invalidArgumentIndexes.size()) + " arguments, whose indexes are ";
-			if (2 == invalidArgumentCount)
-				message += "[" + std::to_string(invalidArgumentIndexes[0]) + "] and [" + std::to_string(invalidArgumentIndexes[1]) + "]";
-			else
-			{
-				for (size_t i = 0; i < invalidArgumentCount - 1; ++i)
-					message += "[" + std::to_string(invalidArgumentIndexes[i]) + "], ";
-				message += "and [" + std::to_string(invalidArgumentIndexes[invalidArgumentCount - 1]) + "]";
-			}
-			this->print(message + ", could not be recognized, which have been skipped. ", LogLevel::Warning);
+			printVersion();
+			exitFlag = true;
+			return true;
 		}
-		if (this->inputDatabaseFilePath.empty())
-			return false;
 		else
 		{
-			this->flag = 1/* 0b 0000 0000 0000 0001 */;
-			return true;
+			if (missingArgument)
+				this->print("The corresponding value for the last argument is missing. ", LogLevel::Warning);
+			const size_t invalidArgumentCount = invalidArgumentIndexes.size();
+			if (1 == invalidArgumentCount)
+				this->print("The argument whose index is [" + std::to_string(invalidArgumentIndexes[0]) + "] could not be recognized, which has been skipped. ", LogLevel::Warning);
+			else if (invalidArgumentCount >= 2)
+			{
+				std::string message = std::to_string(invalidArgumentIndexes.size()) + " arguments, whose indexes are ";
+				if (2 == invalidArgumentCount)
+					message += "[" + std::to_string(invalidArgumentIndexes[0]) + "] and [" + std::to_string(invalidArgumentIndexes[1]) + "]";
+				else
+				{
+					for (size_t i = 0; i < invalidArgumentCount - 1; ++i)
+						message += "[" + std::to_string(invalidArgumentIndexes[i]) + "], ";
+					message += "and [" + std::to_string(invalidArgumentIndexes[invalidArgumentCount - 1]) + "]";
+				}
+				this->print(message + ", could not be recognized, which have been skipped. ", LogLevel::Warning);
+			}
+			if (this->inputDatabaseFilePath.empty())
+				return false;
+			else
+			{
+				this->flag = 1/* 0b 0000 0000 0000 0001 */;
+				return true;
+			}
 		}
 	}
 	bool parseArguments(int argc, char* argv[], bool& exitFlag) { return this->parseArguments(argc, argv, exitFlag, true); } // 0b 0000 0000 0000 0000 | 0b 0000 0000 0000 0001 -> 0b 0000 0000 0000 0001
@@ -1278,7 +1290,7 @@ public:
 						std::cout << hmaV92WhitelistConfiguration.dump() << std::endl;
 						this->flag |= 256/* 0b 0000 0001 0000 0000 */;
 					}
-					else if (this->handleDirectory(this->outputHmaV92WhitelistFilePath))
+					else if (handleDirectory(this->outputHmaV92WhitelistFilePath))
 						try
 						{
 							std::ofstream outputHmaV92WhitelistFile(this->outputHmaV92WhitelistFilePath);
@@ -1319,7 +1331,7 @@ public:
 							std::cout << hmaV93WhitelistConfiguration.dump() << std::endl;
 							this->flag |= 1024/* 0b 0000 0100 0000 0000 */;
 						}
-						else if (this->handleDirectory(this->outputHmaV93WhitelistFilePath))
+						else if (handleDirectory(this->outputHmaV93WhitelistFilePath))
 							try
 							{
 								std::ofstream outputHmaV93WhitelistFile(this->outputHmaV93WhitelistFilePath);
@@ -1438,7 +1450,7 @@ public:
 						std::cout << hmaV92BlacklistConfiguration.dump() << std::endl;
 						this->flag |= 512/* 0b 0000 0010 0000 0000 */;
 					}
-					else if (this->handleDirectory(this->outputHmaV92BlacklistFilePath))
+					else if (handleDirectory(this->outputHmaV92BlacklistFilePath))
 						try
 						{
 							std::ofstream outputHmaV92BlacklistFile(this->outputHmaV92BlacklistFilePath);
@@ -1479,7 +1491,7 @@ public:
 							std::cout << hmaV93BlacklistConfiguration.dump() << std::endl;
 							this->flag |= 2048/* 0b 0000 1000 0000 0000 */;
 						}
-						else if (this->handleDirectory(this->outputHmaV93BlacklistFilePath))
+						else if (handleDirectory(this->outputHmaV93BlacklistFilePath))
 							try
 							{
 								std::ofstream outputHmaV93BlacklistFile(this->outputHmaV93BlacklistFilePath);
@@ -1661,7 +1673,7 @@ public:
 						std::cout << hmaossV93WhitelistConfiguration.dump() << std::endl;
 						this->flag |= 4096/* 0b 0001 0000 0000 0000 */;
 					}
-					else if (this->handleDirectory(this->outputHmaossV93WhitelistFilePath))
+					else if (handleDirectory(this->outputHmaossV93WhitelistFilePath))
 						try
 						{
 							std::ofstream outputHmaossV93WhitelistFile(this->outputHmaossV93WhitelistFilePath);
@@ -1777,7 +1789,7 @@ public:
 						std::cout << hmaossV93BlacklistConfiguration.dump() << std::endl;
 						this->flag |= 8192/* 0b 0010 0000 0000 0000 */;
 					}
-					else if (this->handleDirectory(this->outputHmaossV93BlacklistFilePath))
+					else if (handleDirectory(this->outputHmaossV93BlacklistFilePath))
 						try
 						{
 							std::ofstream outputHmaossV93BlacklistFile(this->outputHmaossV93BlacklistFilePath);
@@ -1879,7 +1891,7 @@ public:
 					std::cout << shellScript << std::endl;
 					this->flag |= 16384 /* 0b 0100 0000 0000 0000 */;
 				}
-				else if (this->handleDirectory(this->outputPathTesterFilePath))
+				else if (handleDirectory(this->outputPathTesterFilePath))
 					try
 					{
 						std::ofstream outputPathTesterFile(this->outputPathTesterFilePath);
@@ -1946,7 +1958,7 @@ public:
 						std::cout << packageName << std::endl;
 					this->flag |= 32768/* 0b 1000 0000 0000 0000 */;
 				}
-				else if (this->handleDirectory(this->outputTrickyStoreTargetFilePath))
+				else if (handleDirectory(this->outputTrickyStoreTargetFilePath))
 					try
 					{
 						std::ofstream outputTrickyStoreTargetFile(this->outputTrickyStoreTargetFilePath);
