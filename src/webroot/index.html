@@ -5,219 +5,341 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Bypasser</title>
 		<style>
-			body {
-				font-family: sans-serif;
-				font-size: 16px;
-				color: #FFFFFF;
-				background-color: black;
-				padding-top: var(--window-inset-top);
-				padding-bottom: var(--window-inset-bottom);
-			}
-			.caption {
-				color: #FFFFFF;
-				font-size: 18px;
-				margin-top: 20px;
-				margin-bottom: 20px;
-			}
-			.container {
-				color: #EEEEEE;
-				background-color: rgba(85, 85, 85, 0.5);
-				margin-bottom: 15px;
-				padding: 10px;
-				border-radius: 10px;
-			}
-			.content {
-				margin-top: 1px;
-				margin-left: 20px;
-				margin-bottom: 1px;
-			}
-			
-			.fatalColor {
-				color: red;
-			}
-			.errorColor {
-				color: yellow;
-			}
-			.warningColor {
-				color: orange;
-			}
-			.loadingColor {
-				color: #3377FF; /* blue; */
-			}
-			.informationColor {
-				color: #00FF00; /* green; */
-			}
-			
-			a:link {
-				color: #00DD00;
-				text-decoration: none;
-			}
-			a:visited {
-				color: #00CC00;
-				text-decoration: none;
-			}
-			a:hover {
-				color: #00EE00;
-				text-decoration: underline;
-			}
-			a:active {
-				color: #00FF00;
-				text-decoration: underline;
-			}
-			
-			.buttonGroup {
-				display: flex;
-				gap: 20px;
-			}
-			button {
-				font-family: inherit;
-				font-size: 14px;
-				font-weight: bold;
-				color: #00FF00;
-				background-color: #222222;
-				border: 1px solid #00FF00;
-				padding: 5px 15px;
-				border-radius: 5px;
-				cursor: pointer;
-				transition: all 0.2s;
-			}
-			button:hover {
-				color: #222222;
-				background-color: #00FF00;
-			}
-			button:active {
-				transform: scale(0.9);
-			}
-			
-			.status {
-				border-radius: 5px;
-				transition: 
-					opacity 0.3s ease, 
-					transform 0.4s cubic-bezier(0.3, 1.5, 0.7, 1);
-			}
-			.statusHidden {
-				max-height: 0px;
-				opacity: 0;
-				transform: scale(0.9) translate3d(0, -10px, 0); 
-				pointer-events: none;
-				visibility: hidden;
-				transition: 
-					opacity 0.3s ease, 
-					transform 0.3s ease, 
-					max-height 0.4s ease, 
-					visibility 0.3s;
-			}
-			.statusShown {
-				opacity: 1;
-				transform: scale(1) translate3d(0, 0, 0);
-				pointer-events: auto;
-				visibility: visible;
-			}
-			
-			summary {
-				color: #00FF00;
-				font-weight: bold;
-				margin-top: 1px;
-				margin-bottom: 1px;
-				border-radius: 5px;
-				cursor: pointer;
-				-webkit-tap-highlight-color: transparent;
-				outline: none;
-				transition: background-color 0.2s ease;
-			}
-			summary:hover {
-				background-color: rgba(0, 255, 0, 0.1);
-			}
-			summary:active {
-				background-color: rgba(0, 255, 0, 0.3);
-				transition: background-color 0.1s ease;
-			}
-			details {
-				margin-left: 20px;
-			}
-			
-			.leafNode {
-				color: #DDDDDD;
-				margin-top: 1px;
-				margin-left: 20px;
-				margin-bottom: 1px;
-				border-radius: 3px;
-				word-break: break-all;
-				line-height: 1.2;
-			}
-			.leafNode:hover {
-				background-color: rgba(255, 255, 255, 0.1);
-			}
-			.leafNode:active {
-				background-color: rgba(255, 255, 255, 0.3);
-				transition: background-color 0.1s ease;
-			}
-			.treeViewer {
-				/* background-color: rgba(102, 102, 102, 0.6); */
-				border-radius: 20px;
-				margin-bottom: 10px;
-				padding: 5px;
-			}
-			
-			.stringColor {
-				color: chocolate;
-			}
-			.charColor {
-				color: #00FF00;
-				font-weight: bold;
-			}
-			.intColor, 
-			.longColor, 
-			.floatColor, 
-			.doubleColor {
-				color: orange;
-			}
-			.booleanColor, 
-			.nullColor, 
-			.undefinedColor {
-				color: #3377FF; /* blue */
-			}
-		</style>
+		/** CSS order: 
+		 * font-family -> font-size -> font-weight -> text-decoration -> color -> background-color -> display -> flex-direction -> gap -> align-items
+		 * -> width -> height -> margin-top -> margin-left -> margin-right -> margin-bottom -> padding -> padding-top -> padding-left -> padding-right -> padding-bottom
+		 * -> border -> border-top -> border-left -> border-right -> border-bottom -> border-spacing -> border-radius -> text-align -> vertical-align
+		 * -> white-space -> overflow-x -> outline -> -webkit-tap-highlight-color -> opacity -> visibility -> cursor -> pointer-events -> transform -> transition
+		 */
+		
+		body {
+			font-family: sans-serif;
+			font-size: 18px;
+			font-weight: bold;
+			color: #FFFFFF;
+			background-color: black;
+			display: flex;
+			flex-direction: column;
+			gap: 15px;
+			padding-top: calc(var(--window-inset-top, 0px) + 20px);
+			padding-bottom: var(--window-inset-bottom, 0px);
+		}
+		.container {
+			font-size: 16px;
+			color: #EEEEEE;
+			background-color: rgba(85, 85, 85, 0.5);
+			display: flex;
+			flex-direction: column;
+			gap: 1px;
+			align-items: flex-start;
+			padding: 10px;
+			border-radius: 15px;
+		}
+		.content {
+			font-size: 16px;
+			font-weight: normal;
+			margin-left: 20px;
+		}
+		
+		.fatalColor {
+			color: red;
+		}
+		.errorColor {
+			color: yellow;
+		}
+		.warningColor {
+			color: orange;
+		}
+		.loadingColor {
+			color: #3377FF; /* blue; */
+		}
+		.informationColor {
+			color: #00FF00; /* green; */
+		}
+		
+		table {
+			border-spacing: 0;
+		}
+		table tr:first-child td {
+			padding-top: 0;
+		}
+		table tr:last-child td {
+			padding-bottom: 0;
+		}
+		table td {
+			text-align: center;
+			vertical-align: middle;
+			padding: 2px 7px;
+		}
+		table td:first-child {
+			padding-left: 0;
+		}
+		table td:last-child {
+			padding-right: 0;
+		}
+		
+		button {
+			font-family: inherit;
+			font-size: 14px;
+			color: #00FF00;
+			background-color: #222222;
+			padding: 5px 15px 4px 15px;
+			border: 1px solid #00FF00;
+			border-radius: 5px;
+			cursor: pointer;
+			transition: all 0.2s;
+		}
+		button:hover {
+			color: #222222;
+			background-color: #00FF00;
+		}
+		button:active {
+			transform: scale(0.9);
+		}
+		
+		select {
+			font-family: inherit;
+			font-size: 15px;
+			color: #00FF00;
+			background-color: transparent;
+			width: 100%;
+			padding: 5px 0 0 0;
+			border: none;
+			border-bottom: 1px solid #00FF00;
+			outline: none;
+			cursor: pointer;
+			transition: border-color 0.2s, transform 0.2s;
+		}
+		select:hover {
+			border-bottom-color: #00CC00;
+		}
+		select option {
+			font-family: inherit;
+			font-size: 15px;
+			color: #00FF00;
+			background-color: #222222;
+			outline: none;
+			-webkit-tap-highlight-color: transparent;
+		}
+		
+		.status {
+			border-radius: 5px;
+			transition: 
+				opacity 0.3s ease, 
+				transform 0.4s cubic-bezier(0.3, 1.5, 0.7, 1);
+		}
+		.statusHidden {
+			height: 0px;
+			opacity: 0;
+			visibility: hidden;
+			pointer-events: none;
+			transform: scale(0.9) translate3d(0, -10px, 0); 
+			transition: 
+				opacity 0.3s ease, 
+				transform 0.3s ease, 
+				max-height 0.4s ease, 
+				visibility 0.3s;
+		}
+		.statusShown {
+			opacity: 1;
+			visibility: visible;
+			pointer-events: auto;
+			transform: scale(1) translate3d(0, 0, 0);
+		}
+		
+		.databaseViewer {
+			/* background-color: rgba(102, 102, 102, 0.6); */
+			padding: 5px 0;
+			border-radius: 10px;
+		}
+		summary {
+			font-weight: bold;
+			color: #00FF00;
+			width: calc(100% - (var(--depth, 0) + 1) * 20px);
+			margin-left: calc(var(--depth, 0) * 20px);
+			margin-bottom: 2px;
+			border-radius: 5px;
+			white-space: nowrap;
+			overflow-x: auto;
+			outline: none;
+			-webkit-tap-highlight-color: transparent;
+			cursor: pointer;
+			transition: background-color 0.2s ease;
+		}
+		summary:hover {
+			background-color: rgba(0, 255, 0, 0.1);
+		}
+		summary:active {
+			background-color: rgba(0, 255, 0, 0.3);
+			transition: background-color 0.1s ease;
+		}
+		details {
+			width: 100%;
+		}
+		details[open] > summary {
+			margin-bottom: 1px;
+		}
+		
+		.leafNode {
+			color: #DDDDDD;
+			width: calc(100% - (var(--depth, 0) + 1) * 20px);
+			margin-left: calc(var(--depth, 0) * 20px);
+			white-space: nowrap;
+			overflow-x: auto;
+		}
+		.leafNode:hover {
+			background-color: rgba(255, 255, 255, 0.1);
+		}
+		.leafNode:active {
+			background-color: rgba(255, 255, 255, 0.3);
+			transition: background-color 0.1s ease;
+		}
+		
+		.stringColor {
+			color: chocolate;
+		}
+		.charColor, 
+		.characterColor, 
+		.byteColor {
+			font-weight: bold;
+			color: #00FF00;
+		}
+		.intColor, 
+		.longColor, 
+		.floatColor, 
+		.doubleColor, 
+		.numberColor, 
+		.bigintColor {
+			color: orange;
+		}
+		.booleanColor, 
+		.nullColor, 
+		.undefinedColor {
+			color: #3377FF; /* blue */
+		}
+		
+		a:link {
+			color: #00DD00;
+			text-decoration: none;
+		}
+		a:visited {
+			color: #00CC00;
+			text-decoration: none;
+		}
+		a:hover {
+			color: #00EE00;
+			text-decoration: underline;
+		}
+		a:active {
+			color: #00FF00;
+			text-decoration: underline;
+		}
+</style>
 	</head>
 	<body>
 		<script type="text/javascript" src="main.js" color="255,255,255" opacity=0.8></script>
 		
-		<div id="welcome" class="caption"><b>Welcome to the web UI of the Bypasser rooting-layer system module! </b></div>
+		Welcome to the web UI of the Bypasser rooting-layer system module! 
 		<div id="actionContainer" class="container">
-			<b>Action</b>
+			Action
 			<div id="actionSlot" class="content loadingColor">Please wait while loading the action slot. </div>
-			<div id="actionButtons" class="content buttonGroup informationColor">
-				<button id="actionButton" onclick="displayActionSlot();">Refresh</button>
-				<button id="actionButtonA" onclick="swapActionSlotTo('A');">Swap to A</button>
-				<button id="actionButtonB" onclick="swapActionSlotTo('B');">Swap to B</button>
-			</div>
+			<table id="actionButtons" class="content informationColor">
+				<tr>
+					<td>
+						<button id="actionButton" onclick="displayActionSlot();">Refresh</button>
+					</td>
+					<td>
+						<button id="actionButtonA" onclick="swapActionSlotTo('A');">Swap to <b>A</b></button>
+					</td>
+					<td>
+						<button id="actionButtonB" onclick="swapActionSlotTo('B');">Swap to <b>B</b></button>
+					</td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<select id="actionSelection">
+							<option value="action">action.sh</option>
+							<option value="actionA">actionA.sh</option>
+							<option value="actionB">actionB.sh</option>
+							<option value="post-fs-data">post-fs-data.sh</option>
+							<option value="service">service.sh</option>
+							<option value="uninstall">uninstall.sh</option>
+						</select>
+					</td>
+					<td>
+						<button id="actionFetcher" onclick="fetchScript();">Fetch</button>
+					</td>
+				</tr>
+			</table>
 			<div id="actionStatus" class="content status statusHidden informationColor"></div>
 		</div>
 		<div id="databaseContainer" class="container">
-			<b>Database</b>
+			Database
 			<div id="databaseTree" class="content loadingColor">Please wait while loading the database. </div>
-			<div id="databaseButtons" class="content buttonGroup informationColor">
-				<button id="databaseButton" onclick="displayDatabaseTree();">Refresh</button>
-			</div>
+			<table id="databaseButtons" class="content informationColor">
+				<tr>
+					<td>
+						<button id="databaseRefresher" onclick="displayDatabase();">Refresh</button>
+					</td>
+					<td>
+						<button id="databaseFetcher" onclick="fetchDatabase();">Fetch</button>
+					</td>
+				</tr>
+			</table>
+			<div id="databaseStatus" class="content status statusHidden informationColor"></div>
 		</div>
 		<div id="aboutContainer" class="container">
-			<b>About</b>
+			About
 			<div id="aboutLRFP" class="content informationColor"><a href="https://github.com/LRFP-Team/LRFP" target="blank">https://github.com/LRFP-Team/LRFP</a></div>
 			<div id="aboutBypasser" class="content informationColor"><a href="https://github.com/LRFP-Team/Bypasser" target="blank">https://github.com/LRFP-Team/Bypasser</a></div>
 		</div>
 		
 		<script type="text/javascript">
-			const EXIT_SUCCESS = 0;
-			const EXIT_FAILURE = 1;
-			const EOF = (-1);
+			function locateExecutionFunction()
+			{
+				if ("object" === typeof window)
+				{
+					if ("object" === typeof window.ksu && "function" === typeof window.ksu.exec)
+					{
+						console.debug("Debug: ``execute = window.ksu.exec;``");
+						return window.ksu.exec.bind(window.ksu);
+					}
+					if ("object" === typeof window.apatch)
+					{
+						if ("function" === typeof window.apatch.exec)
+						{
+							console.debug("Debug: ``execute = window.apatch.exec;``");
+							return window.apatch.exec.bind(window.apatch);
+						}
+						if ("object" === typeof window.apatch.ksu && "function" === typeof window.apatch.ksu.exec)
+						{
+							console.debug("Debug: ``execute = window.apatch.ksu.exec;``");
+							return window.apatch.ksu.exec.bind(window.apatch.ksu);
+						}
+					}
+				}
+				if ("object" === typeof ksu && "function" === typeof ksu.exec)
+				{
+					console.debug("Debug: ``execute = ksu.exec;``");	
+					return ksu.exec.bind(ksu);
+				}
+				if ("object" === typeof apatch && "function" === typeof apatch.exec)
+				{
+					console.debug("Debug: ``execute = apatch.exec;``");
+					return apatch.exec.bind(apatch);
+				}
+				return undefined;
+			}
 			
-			function displayActionSlot() {
-				if (isDisplayingActionSlot) {
-					console.debug("Debug: ``true === isDisplayingActionSlot;``");
+			function displayActionSlot()
+			{
+				if (isOperatingActionSlot)
+				{
+					console.debug("Debug: ``displayActionSlot: true === isOperatingActionSlot;``");
 					return;
 				}
-				isDisplayingActionSlot = true;
-				console.debug("Debug: ``isDisplayingActionSlot = true;``");
+				isOperatingActionSlot = true;
+				console.debug("Debug: ``displayActionSlot: isOperatingActionSlot = true;``");
 				const actionSlotElement = document.getElementById("actionSlot");
 				actionSlotElement.innerHTML = "Please wait while loading the action slot. ";
 				actionSlotElement.className = "content loadingColor";
@@ -225,11 +347,13 @@
 					.then(response => response.text())
 					.then(data => {
 						const dataTrimmed = data.trim();
-						if ("A" === dataTrimmed || "B" === dataTrimmed) {
+						if ("A" === dataTrimmed || "B" === dataTrimmed)
+						{
 							actionSlotElement.innerHTML = `The current action slot is <b>${dataTrimmed}</b>. `;
 							actionSlotElement.className = "content informationColor";
 							console.log(`Info: The current action slot is <b>${dataTrimmed}</b>. `);
-						} else {
+						} else
+						{
 							actionSlotElement.innerHTML = "<b>Error</b>: An invalid action slot value is detected. ";
 							actionSlotElement.className = "content errorColor";
 							console.error("Error: An invalid action slot value is detected. ");
@@ -242,49 +366,55 @@
 						console.error("Fatal: Failed to fetch or parse the action slot due to the following error. \n", error);
 					})
 					 .finally(() => {
-						isDisplayingActionSlot = false;
-						console.debug("Debug: ``isDisplayingActionSlot = false;``");
+						isOperatingActionSlot = false;
+						console.debug("Debug: ``displayActionSlot: isOperatingActionSlot = false;``");
 					});
 			}
-			async function swapActionSlotTo(targetValue) {
-				if (isSwappingActionSlot) {
-					console.debug("Debug: ``true === isSwappingActionSlot;``");
+			async function swapActionSlotTo(targetValue)
+			{
+				if (isOperatingActionSlot)
+				{
+					console.debug("Debug: ``swapActionSlotTo: true === isOperatingActionSlot;``");
 					return;
 				}
-				isSwappingActionSlot = true;
-				console.debug("Debug: ``isSwappingActionSlot = true;``");
+				isOperatingActionSlot = true;
+				console.debug("Debug: ``swapActionSlotTo: isOperatingActionSlot = true;``");
 				const actionStatusElement = document.getElementById("actionStatus");
-				const defaultDisplayTime = 5000; /* millisecond(s) */
-				if (window.ksu !== undefined && window.ksu.exec !== undefined) {
-					if ("A" === targetValue || "B" === targetValue) {
-						const { errno, stdout, stderr } = await window.ksu.exec(
-							`chmod u+w "${actionSlotFilePath}" && echo -n "${targetValue}" > "${actionSlotFilePath}" && chmod -w "${actionSlotFilePath}"`
+				if ("function" === typeof execute)
+					if ("A" === targetValue || "B" === targetValue)
+					{
+						const stdout = await execute(
+							`rm -f "${actionSlotFilePath}" && echo -n "${targetValue}" > "${actionSlotFilePath}" && chmod 444 "${actionSlotFilePath}"`
 						);
-						if (EXIT_SUCCESS === errno) {
+						if ("" === stdout)
+						{
 							actionStatusElement.innerHTML = `Successfully swapped the action slot to ${targetValue}. `
 							actionStatusElement.className = "content status statusShown informationColor";
 							console.log(`Info: Successfully swapped the action slot to ${targetValue}. `);
-							displayActionSlot();
 							setTimeout(() => {
 								actionStatusElement.className = "content status statusHidden informationColor";
 								actionStatusElement.innerHTML = "";
 								console.debug("Debug: Successfully hid the action status. ");
-								isSwappingActionSlot = false;
-								displayActionSlot();
-							}, defaultDisplayTime);
-						} else {
-							actionStatusElement.innerHTML = `<b>Error</b>: Failed to swap the action slot to ${targetValue}. `
-							actionStatusElement.className = "content status statusShown errorColor";
-							console.error(`Error: Failed to update the action slot to ${targetValue} due to the following error. `, { errno, stdout, stderr });
-							setTimeout(() => {
-								actionStatusElement.className = "content status statusHidden informationColor";
-								actionStatusElement.innerHTML = "";
-								console.debug("Debug: Successfully hid the action status. ");
-								isSwappingActionSlot = false;
-								console.debug("Debug: ``isSwappingActionSlot = false;``");
+								isOperatingActionSlot = false;
+								console.debug("Debug: ``swapActionSlotTo: isOperatingActionSlot = false;``");
 							}, defaultDisplayTime);
 						}
-					} else {
+						else
+						{
+							actionStatusElement.innerHTML = `<b>Error</b>: Failed to swap the action slot to ${targetValue}. `
+							actionStatusElement.className = "content status statusShown errorColor";
+							console.error(`Error: Failed to update the action slot to ${targetValue} due to the following error. `, stdout);
+							setTimeout(() => {
+								actionStatusElement.className = "content status statusHidden informationColor";
+								actionStatusElement.innerHTML = "";
+								console.debug("Debug: Successfully hid the action status. ");
+								isOperatingActionSlot = false;
+								console.debug("Debug: ``swapActionSlotTo: isOperatingActionSlot = false;``");
+							}, defaultDisplayTime);
+						}
+					}
+					else
+					{
 						actionStatusElement.innerHTML = "<b>Warning</b>: Skipped swapping the action slot due to the invalid parameter passed. "
 						actionStatusElement.className = "content status statusShown warningColor";
 						console.warn("Warning: Failed to update the action slot due to the invalid parameter passed. ");
@@ -292,120 +422,270 @@
 							actionStatusElement.className = "content status statusHidden informationColor";
 							actionStatusElement.innerHTML = "";
 							console.debug("Debug: Successfully hid the action status. ");
-							isSwappingActionSlot = false;
-							console.debug("Debug: ``isSwappingActionSlot = false;``");
+							isOperatingActionSlot = false;
+							console.debug("Debug: ``swapActionSlotTo: isOperatingActionSlot = false;``");
 						}, defaultDisplayTime);
 					}
-				} else {
-					actionStatusElement.innerHTML = `<b>Fatal</b>: Failed to swap the action slot to ${targetValue} due to the undefined \`\`window.ksu.exec\`\`. `
+				else
+				{
+					actionStatusElement.innerHTML = `<b>Fatal</b>: Failed to swap the action slot to ${targetValue} due to the undefined shell execution function. `
 					actionStatusElement.className = "content status statusShown fatalColor";
-					console.error(`Fatal: Failed to swap the action slot to ${targetValue} due to the undefined \`\`window.ksu.exec\`\`. `);
+					console.error(`Fatal: Failed to swap the action slot to ${targetValue} due to the undefined shell execution function. `);
+					isOperatingActionSlot = false;
+					console.debug("Debug: ``swapActionSlotTo: isOperatingActionSlot = false;``");
 					setTimeout(() => {
 						actionStatusElement.className = "content status statusHidden informationColor";
 						actionStatusElement.innerHTML = "";
 						console.debug("Debug: Successfully hid the action status. ");
-						isSwappingActionSlot = false;
-						console.debug("Debug: ``isSwappingActionSlot = false;``");
 					}, defaultDisplayTime);
 				}
+				displayActionSlot();
+			}
+			async function fetchScript()
+			{
+				if (isOperatingActionSlot)
+				{
+					console.debug("Debug: ``fetchScript: true === isOperatingActionSlot;``");
+					return;
+				}
+				isOperatingActionSlot = true;
+				console.debug("Debug: ``fetchScript: isOperatingActionSlot = true;``");
+				
+				/* Get the selected script from the dropdown */
+				const selectedScript = document.getElementById("actionSelection").value;
+				const actionStatusElement = document.getElementById("actionStatus");
+				if (
+					"action" === selectedScript || "actionA" === selectedScript || "actionB" === selectedScript
+					|| "post-fs-data" === selectedScript || "service" === selectedScript || "uninstall" === selectedScript)
+				{
+					actionStatusElement.innerHTML = `Please wait while fetching the \`\`${selectedScript}.sh\`\`. `;
+					actionStatusElement.className = "content status statusShown loadingColor";
+					console.log(`Info: Please wait while fetching the \`\`${selectedScript}.sh\`\`. `);
+				}
+				else
+				{
+					actionStatusElement.innerHTML = "<b>Warning</b>: Fetching an script located outside the dropdown. ";
+					actionStatusElement.className = "content status statusShown warningColor";
+					console.warn(`Warning: Fetching an script located outside the dropdown. `);
+				}
+				const remoteScriptDigestURL = `${remoteModuleURL}/${selectedScript}.sh.sha512`;
+				const remoteScripContentURL = `${remoteModuleURL}/${selectedScript}.sh`;
+				const localScriptFilePath = `${moduleDirectoryPath}/${selectedScript}.sh`;
+				
+				try
+				{
+					/* Fetch the script digest */
+					const scriptDigestResponse = await fetch(remoteScriptDigestURL);
+					if (!scriptDigestResponse.ok)
+						throw new Error(`Error: Failed to fetch the script due to the HTTP ${scriptDigestResponse.status} signal when fetching the SHA-512 hash value. `);
+					const expectedScriptDigest = (await scriptDigestResponse.text()).trim().toLowerCase();
+					
+					/* Fetch the script content */
+					const scriptContentResponse = await fetch(remoteScripContentURL);
+					if (!scriptContentResponse.ok)
+						throw new Error(`Error: Failed to fetch the script due to the HTTP ${scriptContentResponse.status} signal when fetching the script content. `);
+					const scriptContent = await scriptContentResponse.text();
+					
+					/* Compute the SHA-512 hash value for the script content */
+					const encoder = new TextEncoder();
+					const data = encoder.encode(scriptContent);
+					const hashBuffer = await crypto.subtle.digest("SHA-512", data);
+					const hashArray = Array.from(new Uint8Array(hashBuffer));
+					const actualDigest = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+					if (actualDigest !== expectedScriptDigest)
+						throw new Error("Error: Failed to fetch the script due to the mismatched digest. ");
+					
+					/* Write to local script via the shell execution */
+					if ("function" !== typeof execute)
+						throw new Error("Fatal: Failed to fetch the script due to the undefined shell execution function. ");
+					const base64 = btoa(unescape(encodeURIComponent(scriptContent)));
+					const stdout = await execute(`echo "${base64}" | base64 -d > "${localScriptFilePath}" && chmod 544 "${localScriptFilePath}"`);
+					if ("" !== stdout)
+						throw new Error("Error: Failed to fetch the script due to failures in writing. ");
+					
+					/* Release the success signal */
+					actionStatusElement.innerHTML = `Successfully fetched ${selectedScript}.sh from GitHub. `;
+					actionStatusElement.className = "content status statusShown informationColor";
+					console.log(`Info: Successfully fetched ${selectedScript}.sh from GitHub. `);
+					setTimeout(() => {
+						actionStatusElement.className = "content status statusHidden informationColor";
+						actionStatusElement.innerHTML = "";
+						console.debug("Debug: Successfully hid the action status. ");
+						isOperatingActionSlot = false;
+						console.debug("Debug: ``fetchScript: isOperatingActionSlot = false;``");
+					}, defaultDisplayTime);
+			}
+			catch (exception)
+			{
+				let formattedMessage = "<b>Fatal</b>: Failed to fetch the script due to unknown exceptions. ";
+				if ("string" === typeof exception.message && exception.message.includes(":"))
+				{
+						const colonIndex = exception.message.indexOf(":");
+						const beforeColon = exception.message.substring(0, colonIndex);
+						const afterColon = exception.message.substring(colonIndex);
+						formattedMessage = `<b>${beforeColon}</b>${afterColon}`;
+				}
+				actionStatusElement.innerHTML = formattedMessage;
+				actionStatusElement.className = "content status statusShown fatalColor";
+				console.error(exception.message);
+				setTimeout(() => {
+						actionStatusElement.className = "content status statusHidden informationColor";
+						actionStatusElement.innerHTML = "";
+						console.debug("Debug: Successfully hid the action status. ");
+						isOperatingActionSlot = false;
+						console.debug("Debug: ``fetchScript: isOperatingActionSlot = false;``");
+				}, defaultDisplayTime);
+		}
 			}
 			
-			function renderTree(key, value) {
-				if (typeof key === "string" && typeof value === "object" && value !== null) {
-					if ("" === key || "_" === key || "*" === key) {
-						const fragment = document.createDocumentFragment();
-						if (Array.isArray(value)) {
-							value.forEach(item => {
-								const itemDiv = document.createElement("div");
-								itemDiv.className = "leafNode";
-								const itemSpan = document.createElement("span");
-								itemSpan.textContent = `"${item}"`; 
-								itemSpan.className = "stringColor";
-								itemDiv.appendChild(itemSpan);
-								fragment.appendChild(itemDiv);
-							});
-						} else {
-							Object.keys(value).forEach(subKey => {
-								fragment.appendChild(renderTree(subKey, value[subKey]));
-							});
-						}
-						return fragment;
-					} else {
-						const details = document.createElement("details");
-						const summary = document.createElement("summary");
-						if (1 === key.length && 'A' <= key && key <= 'Z') {
-							summary.textContent = key;
-						} else {
-							const keySpan = document.createElement("span");
-							keySpan.textContent = `"${key}"`;
-							keySpan.className = "stringColor";
-							summary.appendChild(keySpan);
-						}
-						details.appendChild(summary);
-						if (Array.isArray(value)) {
-							value.forEach(item => {
-								const itemDiv = document.createElement("div");
-								itemDiv.className = "leafNode";
-								const itemSpan = document.createElement("span");
-								itemSpan.textContent = `"${item}"`; 
-								itemSpan.className = "stringColor";
-								itemDiv.appendChild(itemSpan);
-								details.appendChild(itemDiv);
-							});
-						} else {
-							Object.keys(value).forEach(subKey => {
-								details.appendChild(renderTree(subKey, value[subKey]));
-							});
-						}
-						return details;
+			function createKeySpan(key)
+			{
+				const keySpan = document.createElement("span");
+				if ("string" === typeof key)
+					if (key.length === 1 && key >= 'A' && key <= 'Z')
+					{
+						keySpan.textContent = key;
+						keySpan.className = "charColor";
 					}
-				} else {
-					const leafElement = document.createElement("div");
-					leafElement.className = "leafNode";
-					const keySpan = document.createElement("span"), valueSpan = document.createElement("span");
-					if (typeof key === "string") {
-						if (1 === key.length && 'A' <= key && key <= 'Z') {
-							keySpan.textContent = key;
-							keySpan.className = "charColor";
-						} else {
-							keySpan.textContent = `"${key}"`;
-							keySpan.className = "stringColor";
-						}
-					} else {
+					else if (/^[\x20-\x7E]*$/.test(key))
+					{
+						const escaped = key.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+						keySpan.textContent = `"${escaped}"`;
+						keySpan.className = "stringColor";
+					}
+					else
+					{
 						keySpan.textContent = "undefined";
 						keySpan.className = "undefinedColor";
 					}
-					if (typeof value === "string") {
-						valueSpan.textContent = `"${value}"`;
+				else if ("number" === typeof key || "bigint" == typeof key)
+				{
+					keySpan.textContent = key;
+					keySpan.className = "numberColor";
+				}
+				else if ("boolean" === typeof key)
+				{
+					keySpan.textContent = key ? "true" : "false";
+					keySpan.className = "booleanColor";
+				}
+				else if (null === key)
+				{
+					keySpan.textContent = "null";
+					keySpan.className = "nullColor";
+				}
+				else
+				{
+					keySpan.textContent = "undefined";
+					keySpan.className = "undefinedColor";
+				}
+				return keySpan;
+			}
+			function createValueSpan(value)
+			{
+				const valueSpan = document.createElement("span");
+				if ("string" === typeof value)
+					if (/^[\x20-\x7E]*$/.test(value))
+					{
+						const escaped = value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+						valueSpan.textContent = `"${escaped}"`;
 						valueSpan.className = "stringColor";
-					} else if (typeof value === "boolean") {
-						valueSpan.textContent = value ? "true" : "false";
-						valueSpan.className = "booleanColor";
-					} else if (null === value) {
-						valueSpan.textContent = "null";
-						valueSpan.className = "nullColor";
 					}
-					leafElement.appendChild(keySpan);
+					else
+					{
+						valueSpan.textContent = "undefined";
+						valueSpan.className = "undefinedColor";
+					}
+				else if ("number" === typeof value || "bigint" == typeof value)
+				{
+					valueSpan.textContent = value;
+					valueSpan.className = "numberColor";
+				}
+				else if ("boolean" === typeof value)
+				{
+					valueSpan.textContent = value ? "true" : "false";
+					valueSpan.className = "booleanColor";
+				}
+				else if (null === value)
+				{
+					valueSpan.textContent = "null";
+					valueSpan.className = "nullColor";
+				}
+				else
+				{
+					valueSpan.textContent = "undefined";
+					valueSpan.className = "undefinedColor";
+				}
+				return valueSpan;
+			}
+			function renderTree(key, value, depth = 0)
+			{
+				if ("object" === typeof value && value !== null)
+					if ("" === key || "_" === key || "*" === key)
+					{
+						const fragment = document.createDocumentFragment();
+						if (Array.isArray(value))
+							value.forEach(item => {
+								const itemDiv = document.createElement("div");
+								itemDiv.className = "leafNode";
+								itemDiv.style.setProperty("--depth", depth);
+								itemDiv.appendChild(createValueSpan(item));
+								fragment.appendChild(itemDiv);
+							});
+						else
+							Object.keys(value).forEach(subKey => {
+								fragment.appendChild(renderTree(subKey, value[subKey], depth));
+							});
+						return fragment;
+					}
+					else
+					{
+						const details = document.createElement("details");
+						const summary = document.createElement("summary");
+						summary.style.setProperty("--depth", depth);
+						summary.appendChild(createKeySpan(key));
+						details.appendChild(summary);
+						if (Array.isArray(value))
+							value.forEach(item => {
+								const itemDiv = document.createElement("div");
+								itemDiv.className = "leafNode";
+								itemDiv.style.setProperty("--depth", depth + 1);
+								itemDiv.appendChild(createValueSpan(item));
+								details.appendChild(itemDiv);
+							});
+						else
+							Object.keys(value).forEach(subKey => {
+								details.appendChild(renderTree(subKey, value[subKey], depth + 1));
+							});
+						return details;
+					}
+				else
+				{
+					const leafElement = document.createElement("div");
+					leafElement.className = "leafNode";
+					leafElement.style.setProperty("--depth", depth);
+					leafElement.appendChild(createKeySpan(key));
 					leafElement.appendChild(document.createTextNode(": "));
-					leafElement.appendChild(valueSpan);
+					leafElement.appendChild(createValueSpan(value));
 					return leafElement;
 				}
 			}
-			function displayDatabaseTree() {
-				if (isDisplayingDatabaseTree) {
-					console.debug("Debug: ``true === isDisplayingDatabaseTree;``");
+			function displayDatabase()
+			{
+				if (isOperatingDatabase)
+				{
+					console.debug("Debug: ``displayDatabase: true === isOperatingDatabase;``");
 					return;
 				}
-				isDisplayingDatabaseTree = true;
-				console.debug("Debug: ``isDisplayingDatabaseTree = true;``");
-				fetch("./database.json")
+				isOperatingDatabase = true;
+				console.debug("Debug: ``displayDatabase: isOperatingDatabase = true;``");
+				fetch(`./${databaseFileName}`)
 					.then(response => response.json())
 					.then(jsonData => {
 						const databaseElement = document.getElementById("databaseTree");
 						databaseElement.innerHTML = "";
-						databaseElement.className = "treeViewer informationColor";
+						databaseElement.className = "content databaseViewer informationColor";
 						Object.keys(jsonData).forEach(rootKey => {
-							databaseElement.appendChild(renderTree(rootKey, jsonData[rootKey]));
+							databaseElement.appendChild(renderTree(rootKey, jsonData[rootKey], 0));
 						});
 						console.log("Info: Successfully displayed the database tree. ");
 					})
@@ -416,24 +696,109 @@
 						console.error("Fatal: Failed to load the database due to the following error. \n", error);
 					})
 					 .finally(() => {
-						isDisplayingDatabaseTree = false;
-						console.debug("Debug: ``isDisplayingDatabaseTree = false;``");
+						isOperatingDatabase = false;
+						console.debug("Debug: ``displayDatabase: isOperatingDatabase = false;``");
 					});
 			}
-			
-			const moduleId = "bypasser"
-			const actionSlotFileName = "action.prop"
-			const actionSlotFilePath = `/data/adb/modules/${moduleId}/${actionSlotFileName}`
-			
-			let isDisplayingActionSlot = false;
-			let isSwappingActionSlot = false;
-			let isDisplayingDatabaseTree = false;
-			
-			if (window.apatch !== undefined && window.apatch.ksu === undefined) {
-				window.ksu = window.apatch;
+			async function fetchDatabase()
+			{
+				if (isOperatingDatabase)
+				{
+					console.debug("Debug: ``fetchDatabase: true === isOperatingDatabase;``");
+					return;
+				}
+				isOperatingDatabase = true;
+				console.debug("Debug: ``fetchDatabase: isOperatingDatabase = true;``");
+				const databaseStatusElement = document.getElementById("databaseStatus");
+				databaseStatusElement.innerHTML = "Please wait while fetching the database. ";
+				databaseStatusElement.className = "content status statusShown loadingColor";
+				console.log("Info: Please wait while fetching the database. ");
+				
+				try
+				{
+					/* Fetch the database digest */
+					const databaseDigestResponse = await fetch(`${remoteWebrootURL}/${databaseFileName}.sha512`);
+					if (!databaseDigestResponse.ok)
+						throw new Error(`Error: Failed to fetch the database due to the HTTP ${databaseDigestResponse.status} signal when fetching the SHA-512 hash value. `);
+					const expectedDatabaseDigest = (await databaseDigestResponse.text()).trim().toLowerCase();
+					
+					/* Fetch the database content */
+					const databaseContentResponse = await fetch(`${remoteWebrootURL}/${databaseFileName}`);
+					if (!databaseContentResponse.ok)
+						throw new Error(`Error: Failed to fetch the database due to the HTTP ${databaseContentResponse.status} signal when fetching the database content. `);
+					const databaseContent = await databaseContentResponse.text();
+					
+					/* Compute the SHA-512 hash value for the database content */
+					const encoder = new TextEncoder();
+					const data = encoder.encode(databaseContent);
+					const hashBuffer = await crypto.subtle.digest("SHA-512", data);
+					const hashArray = Array.from(new Uint8Array(hashBuffer));
+					const actualDigest = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+					if (actualDigest !== expectedDatabaseDigest)
+						throw new Error("Error: Failed to fetch the database due to the mismatched digest. ");
+					
+					/* Write to the local database via the shell execution */
+					if ("function" !== typeof execute)
+						throw new Error("Fatal: Failed to fetch the database due to the undefined shell execution function. ");
+					const base64 = btoa(unescape(encodeURIComponent(databaseContent)));
+					const stdout = await execute(`echo "${base64}" | base64 -d > "${databaseFilePath}" && chmod 444 "${databaseFilePath}"`);
+					if ("" !== stdout)
+						throw new Error("Error: Failed to fetch the database due to failures in writing. ");
+					
+					/* Release the success signal */
+					databaseStatusElement.innerHTML = "Successfully fetched the database from GitHub. ";
+					databaseStatusElement.className = "content status statusShown informationColor";
+					console.log("Info: Successfully fetched the database from GitHub. ");
+					setTimeout(() => {
+						databaseStatusElement.className = "content status statusHidden informationColor";
+						databaseStatusElement.innerHTML = "";
+						console.debug("Debug: Successfully hid the database status. ");
+						isOperatingDatabase = false;
+						console.debug("Debug: ``fetchDatabase: isOperatingDatabase = false;``");
+					}, defaultDisplayTime);
+					
+					/* Refresh the displayed tree */
+					displayDatabase();
+				}
+				catch (exception)
+				{
+					let formattedMessage = "<b>Fatal</b>: Failed to fetch the database due to unknown exceptions. ";
+					if ("string" === typeof exception.message && exception.message.includes(":"))
+					{
+						const colonIndex = exception.message.indexOf(":");
+						const beforeColon = exception.message.substring(0, colonIndex);
+						const afterColon = exception.message.substring(colonIndex);
+						formattedMessage = `<b>${beforeColon}</b>${afterColon}`;
+					}
+					databaseStatusElement.innerHTML = formattedMessage;
+					databaseStatusElement.className = "content status statusShown fatalColor";
+					console.error(exception.message);
+					setTimeout(() => {
+						databaseStatusElement.className = "content status statusHidden informationColor";
+						databaseStatusElement.innerHTML = "";
+						console.debug("Debug: Successfully hid the database status. ");
+						isOperatingDatabase = false;
+						console.debug("Debug: ``fetchDatabase: isOperatingDatabase = false;``");
+					}, defaultDisplayTime);
+				}
 			}
+			
+			const moduleId = "bypasser";
+			const moduleDirectoryPath = `/data/adb/modules/${moduleId}`;
+			const webrootDirectoryPath = `${moduleDirectoryPath}/webroot`;
+			const actionSlotFileName = "action.prop";
+			const actionSlotFilePath = `${webrootDirectoryPath}/${actionSlotFileName}`;
+			const databaseFileName = "database.json";
+			const databaseFilePath = `${webrootDirectoryPath}/${databaseFileName}`;
+			const remoteModuleURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src";
+			const remoteWebrootURL=`${remoteModuleURL}/webroot`;
+			const defaultDisplayTime = 5000; /* millisecond(s) */
+			
+			const execute = locateExecutionFunction();
+			let isOperatingActionSlot = false;
+			let isOperatingDatabase = false;
 			displayActionSlot();
-			displayDatabaseTree();
+			displayDatabase();
 		</script>
 	</body>
 </html>

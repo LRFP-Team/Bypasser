@@ -959,10 +959,10 @@ echo ""
 # Update (0bX00000) #
 echo "# Update (0bX00000) #"
 readonly targetAction="action${targetAB}.sh"
-readonly actionUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}"
-readonly actionDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}.sha512"
+readonly actionContentURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}"
+readonly actionDigestURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}.sha512"
 
-shellDigest="$(curl -sSfL -m ${curlTimeout} "${actionDigestUrl}")"
+shellDigest="$(curl -sSfL -m ${curlTimeout} "${actionDigestURL}")"
 if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellDigest}" ]];
 then
 	echo "Successfully fetched the SHA-512 value of the latest \`\`${targetAction}\`\` from GitHub. "
@@ -985,7 +985,7 @@ then
 		fi
 	else
 		echo "The target action \`\`${targetAction}\`\` is out-of-date and needs to be updated. "
-		shellContent="$(curl -sSfL -m ${curlTimeout} "${actionUrl}")"
+		shellContent="$(curl -sSfL -m ${curlTimeout} "${actionContentURL}")"
 		if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellContent}" ]];
 		then
 			echo "Successfully fetched the latest \`\`${targetAction}\`\` from GitHub. "

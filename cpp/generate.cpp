@@ -18,50 +18,50 @@
 #pragma pack(push, 1)
 struct LocalFileHeader
 {
-    uint32_t signature; // 0x04034b50
-    uint16_t versionNeeded;
-    uint16_t generalPurposeBitFlag;
-    uint16_t compressionMethod;
-    uint16_t lastModFileTime;
-    uint16_t lastModFileDate;
-    uint32_t crc32;
-    uint32_t compressedSize;
-    uint32_t uncompressedSize;
-    uint16_t fileNameLength;
-    uint16_t extraFieldLength;
+	uint32_t signature; // 0x04034b50
+	uint16_t versionNeeded;
+	uint16_t generalPurposeBitFlag;
+	uint16_t compressionMethod;
+	uint16_t lastModFileTime;
+	uint16_t lastModFileDate;
+	uint32_t crc32;
+	uint32_t compressedSize;
+	uint32_t uncompressedSize;
+	uint16_t fileNameLength;
+	uint16_t extraFieldLength;
 };
 
 struct CentralDirectoryFileHeader
 {
-    uint32_t signature; // 0x02014b50
-    uint16_t versionMadeBy;
-    uint16_t versionNeeded;
-    uint16_t generalPurposeBitFlag;
-    uint16_t compressionMethod;
-    uint16_t lastModFileTime;
-    uint16_t lastModFileDate;
-    uint32_t crc32;
-    uint32_t compressedSize;
-    uint32_t uncompressedSize;
-    uint16_t fileNameLength;
-    uint16_t extraFieldLength;
-    uint16_t fileCommentLength;
-    uint16_t diskNumberStart;
-    uint16_t internalFileAttributes;
-    uint32_t externalFileAttributes;
-    uint32_t localHeaderOffset;
+	uint32_t signature; // 0x02014b50
+	uint16_t versionMadeBy;
+	uint16_t versionNeeded;
+	uint16_t generalPurposeBitFlag;
+	uint16_t compressionMethod;
+	uint16_t lastModFileTime;
+	uint16_t lastModFileDate;
+	uint32_t crc32;
+	uint32_t compressedSize;
+	uint32_t uncompressedSize;
+	uint16_t fileNameLength;
+	uint16_t extraFieldLength;
+	uint16_t fileCommentLength;
+	uint16_t diskNumberStart;
+	uint16_t internalFileAttributes;
+	uint32_t externalFileAttributes;
+	uint32_t localHeaderOffset;
 };
 
 struct EndOfCentralDirectoryRecord
 {
-    uint32_t signature; // 0x06054b50
-    uint16_t numberOfThisDisk;
-    uint16_t diskWhereCentralDirectoryStarts;
-    uint16_t numberOfCentralDirectoryRecordsOnThisDisk;
-    uint16_t totalNumberOfCentralDirectoryRecords;
-    uint32_t sizeOfCentralDirectory;
-    uint32_t offsetOfStartOfCentralDirectory;
-    uint16_t commentLength;
+	uint32_t signature; // 0x06054b50
+	uint16_t numberOfThisDisk;
+	uint16_t diskWhereCentralDirectoryStarts;
+	uint16_t numberOfCentralDirectoryRecordsOnThisDisk;
+	uint16_t totalNumberOfCentralDirectoryRecords;
+	uint32_t sizeOfCentralDirectory;
+	uint32_t offsetOfStartOfCentralDirectory;
+	uint16_t commentLength;
 };
 #pragma pack(pop)
 
@@ -84,6 +84,17 @@ class Generator
 private:
 	inline static const std::string DefaultDatabaseFilePath = "database.json";
 	inline static const LogLevel DefaultLevel = LogLevel::Info;
+	inline static const std::vector<std::string> helpArguments{ "?", "/?", "-?", "h", "/h", "-h", "help", "/help", "--help" };
+	inline static const std::vector<std::string> inputDatabaseArguments{ "i", "/i", "-i", "inputDatabase", "/inputDatabase", "--inputDatabase" };
+	inline static const std::vector<std::string> logLevelArguments{ "l", "/l", "-l", "logLevel", "/logLevel", "--logLevel" };
+	inline static const std::vector<std::string> outputHmaV92WhitelistArguments{ "oa92w", "/oa92w", "-oa92w", "outputHmaV92Whitelist", "/outputHmaV92Whitelist", "--outputHmaV92Whitelist" };
+	inline static const std::vector<std::string> outputHmaV92BlacklistArguments{ "oa92b", "/oa92b", "-oa92b", "outputHmaV92Blacklist", "/outputHmaV92Blacklist", "--outputHmaV92Blacklist" };
+	inline static const std::vector<std::string> outputHmaV93WhitelistArguments{ "oa93w", "/oa93w", "-oa93w", "outputHmaV93Whitelist", "/outputHmaV93Whitelist", "--outputHmaV93Whitelist" };
+	inline static const std::vector<std::string> outputHmaV93BlacklistArguments{ "oa93b", "/oa93b", "-oa93b", "outputHmaV93Blacklist", "/outputHmaV93Blacklist", "--outputHmaV93Blacklist" };
+	inline static const std::vector<std::string> outputHmaossV93WhitelistArguments{ "os93w", "/os93w", "-os93w", "outputHmaossV93Whitelist", "/outputHmaossV93Whitelist", "--outputHmaossV93Whitelist" };
+	inline static const std::vector<std::string> outputHmaossV93BlacklistArguments{ "os93b", "/os93b", "-os93b", "outputHmaossV93Blacklist", "/outputHmaossV93Blacklist", "--outputHmaossV93Blacklist" };
+	inline static const std::vector<std::string> outputPathTesterArguments{ "op", "/op", "-op", "outputPathTester", "/outputPathTester", "--outputPathTester" };
+	inline static const std::vector<std::string> outputTrickyStoreTargetArguments{ "ot", "/ot", "-ot", "outputTrickyStoreTarget", "/outputTrickyStoreTarget", "--outputTrickyStoreTarget" };
 	inline static const std::regex Pattern = std::regex(REGEX_PATTERN);
 	inline static const std::vector<std::string> ApplicationPartitions{ "/data", "/product", "/system", "/system_ext", "/vendor" };
 	inline static const std::vector<std::string> ApplicationDirectoryNames{ "app", "app-private", "priv-app" };
@@ -91,8 +102,8 @@ private:
 	inline static const std::string ReportLink = "https://github.com/LRFP-Team/Bypasser/issues";
 	
 	unsigned short flag = 0 /* 0b 0000 0000 0000 0000 */;
-	std::string inputDatabaseFilePath = Generator::DefaultDatabaseFilePath;
-	LogLevel logLevel = Generator::DefaultLevel;
+	std::string inputDatabaseFilePath = DefaultDatabaseFilePath;
+	LogLevel logLevel = DefaultLevel;
 	std::string outputHmaV92WhitelistFilePath{};
 	std::string outputHmaV92BlacklistFilePath{};
 	std::string outputHmaV93WhitelistFilePath{};
@@ -101,17 +112,6 @@ private:
 	std::string outputHmaossV93BlacklistFilePath{};
 	std::string outputPathTesterFilePath{};
 	std::string outputTrickyStoreTargetFilePath{};
-	const std::vector<std::string> helpArguments{ "h", "/h", "-h", "help", "/help", "--help" };
-	const std::vector<std::string> inputDatabaseArguments{ "i", "/i", "-i", "inputDatabase", "/inputDatabase", "--inputDatabase" };
-	const std::vector<std::string> logLevelArguments{ "l", "/l", "-l", "logLevel", "/logLevel", "--logLevel" };
-	const std::vector<std::string> outputHmaV92WhitelistArguments{ "oa92w", "/oa92w", "-oa92w", "outputHmaV92Whitelist", "/outputHmaV92Whitelist", "--outputHmaV92Whitelist" };
-	const std::vector<std::string> outputHmaV92BlacklistArguments{ "oa92b", "/oa92b", "-oa92b", "outputHmaV92Blacklist", "/outputHmaV92Blacklist", "--outputHmaV92Blacklist" };
-	const std::vector<std::string> outputHmaV93WhitelistArguments{ "oa93w", "/oa93w", "-oa93w", "outputHmaV93Whitelist", "/outputHmaV93Whitelist", "--outputHmaV93Whitelist" };
-	const std::vector<std::string> outputHmaV93BlacklistArguments{ "oa93b", "/oa93b", "-oa93b", "outputHmaV93Blacklist", "/outputHmaV93Blacklist", "--outputHmaV93Blacklist" };
-	const std::vector<std::string> outputHmaossV93WhitelistArguments{ "os93w", "/os93w", "-os93w", "outputHmaossV93Whitelist", "/outputHmaossV93Whitelist", "--outputHmaossV93Whitelist" };
-	const std::vector<std::string> outputHmaossV93BlacklistArguments{ "os93b", "/os93b", "-os93b", "outputHmaossV93Blacklist", "/outputHmaossV93Blacklist", "--outputHmaossV93Blacklist" };
-	const std::vector<std::string> outputPathTesterArguments{ "op", "/op", "-op", "outputPathTester", "/outputPathTester", "--outputPathTester" };
-	const std::vector<std::string> outputTrickyStoreTargetArguments{ "ot", "/ot", "-ot", "outputTrickyStoreTarget", "/outputTrickyStoreTarget", "--outputTrickyStoreTarget" };
 	nlohmann::json j{};
 	
 	std::string vector2string(const std::vector<std::string>& arguments, const std::string& prefix, const std::string& separator, const std::string& suffix) const
@@ -154,17 +154,17 @@ private:
 	{
 		std::cout << "This is a generator for the " << MODULE_NAME << " rooting-layer system module. " << std::endl << std::endl;
 		std::cout << "Options: " << std::endl;
-		std::cout << "\t" << this->vector2string(this->helpArguments) << "\t\tPrint the help information. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->inputDatabaseArguments) << "<path>\t\tSpecify the input database JSON file path. The default value is \"" << Generator::DefaultDatabaseFilePath << "\". " << std::endl;
-		std::cout << "\t" << this->vector2string(this->logLevelArguments) << "<level>\t\tSpecify the log level (std::cerr) from " << this->logLevel2string(LogLevel::All) << " to " << this->logLevel2string(LogLevel::Off) << ". The default value is " << this->logLevel2string(Generator::DefaultLevel) << ". " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputHmaV92WhitelistArguments) << "<path>\t\tSpecify the output HMA v92 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputHmaV92BlacklistArguments) << "<path>\t\tSpecify the output HMA v92 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputHmaV93WhitelistArguments) << "<path>\t\tSpecify the output HMA v93 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputHmaV93BlacklistArguments) << "<path>\t\tSpecify the output HMA v93 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputHmaossV93WhitelistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputHmaossV93BlacklistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputPathTesterArguments) << "<path>\t\tSpecify the output path tester shell script file path. " << std::endl;
-		std::cout << "\t" << this->vector2string(this->outputTrickyStoreTargetArguments) << "<path>\t\tSpecify the output Tricky Store target text file path. " << std::endl << std::endl;
+		std::cout << "\t" << this->vector2string(helpArguments) << "\t\tPrint the help information. " << std::endl;
+		std::cout << "\t" << this->vector2string(inputDatabaseArguments) << "<path>\t\tSpecify the input database JSON file path. The default value is \"" << DefaultDatabaseFilePath << "\". " << std::endl;
+		std::cout << "\t" << this->vector2string(logLevelArguments) << "<level>\t\tSpecify the log level (std::cerr) from " << this->logLevel2string(LogLevel::All) << " to " << this->logLevel2string(LogLevel::Off) << ". The default value is " << this->logLevel2string(DefaultLevel) << ". " << std::endl;
+		std::cout << "\t" << this->vector2string(outputHmaV92WhitelistArguments) << "<path>\t\tSpecify the output HMA v92 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(outputHmaV92BlacklistArguments) << "<path>\t\tSpecify the output HMA v92 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(outputHmaV93WhitelistArguments) << "<path>\t\tSpecify the output HMA v93 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(outputHmaV93BlacklistArguments) << "<path>\t\tSpecify the output HMA v93 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(outputHmaossV93WhitelistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(outputHmaossV93BlacklistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(outputPathTesterArguments) << "<path>\t\tSpecify the output path tester shell script file path. " << std::endl;
+		std::cout << "\t" << this->vector2string(outputTrickyStoreTargetArguments) << "<path>\t\tSpecify the output Tricky Store target text file path. " << std::endl << std::endl;
 		std::cout << "Notes:" << std::endl;
 		std::cout << "\t1) All the arguments are optional and processed sequentially. If the same argument is provided multiple times, the last valid one will overwrite the previous ones. Unrecognized arguments, invalid argument values, or missing argument values will be skipped with a warning. " << std::endl;
 		std::cout << "\t2) If an input path is not specified, the program will use the corresponding default value. The program will return EOF (" << EOF << ") if the input database JSON file cannot be parsed. Parsing failures for other inputs will be skipped, and a warning will be issued. " << std::endl;
@@ -235,7 +235,7 @@ private:
 				break;
 			default:
 				if (character <= 31 || 127 == character)
-					formattedMessage += "\\x" + std::string(1, Generator::HexadecimalCharacterSet[character >> 4]) + std::string(1, Generator::HexadecimalCharacterSet[character & 15/* 0b 0000 1111 */]);
+					formattedMessage += "\\x" + std::string(1, HexadecimalCharacterSet[character >> 4]) + std::string(1, HexadecimalCharacterSet[character & 15/* 0b 0000 1111 */]);
 				else
 					formattedMessage += character;
 				break;
@@ -442,7 +442,7 @@ private:
 										{
 											packageName = packageName.substr(0, position);
 											this->print("Located the package name " + this->formatMessage(packageName) + " in the second-layer directory " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
-											if (std::regex_match(packageName, Generator::Pattern))
+											if (std::regex_match(packageName, Pattern))
 											{
 												/* Enter the third-layer directory */
 												this->print("Trying to enter the third-layer directory for " + this->formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
@@ -544,7 +544,7 @@ private:
 						size_t position = packageName.find('-');
 						if (std::string::npos != position)
 							packageName = packageName.substr(0, position);
-						if (std::regex_match(packageName, Generator::Pattern))
+						if (std::regex_match(packageName, Pattern))
 						{
 							++validFileFormCount;
 							bool isPlugin = false;
@@ -621,8 +621,8 @@ public:
 		this->flag = 0 /* 0b 0000 0000 0000 0000 */;
 		if (resetBeforeParsing)
 		{
-			this->inputDatabaseFilePath = Generator::DefaultDatabaseFilePath;
-			this->logLevel = Generator::DefaultLevel;
+			this->inputDatabaseFilePath = DefaultDatabaseFilePath;
+			this->logLevel = DefaultLevel;
 			this->outputHmaV92WhitelistFilePath.clear();
 			this->outputHmaV92BlacklistFilePath.clear();
 			this->outputHmaV93WhitelistFilePath.clear();
@@ -845,7 +845,7 @@ public:
 							size_t removedValueCount = 0;
 							if (this->j["C"].contains("") && this->j["C"][""].is_array())
 								for (nlohmann::json::iterator arrayIt = this->j["C"][""].begin(); arrayIt != this->j["C"][""].end(); )
-									if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Generator::Pattern))
+									if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
 										++arrayIt;
 									else
 									{
@@ -859,7 +859,7 @@ public:
 									if (entryIt.key().length() == 1 && 'A' <= entryIt.key()[0] && entryIt.key()[0] <= 'Z' && entryIt.value().is_array())
 									{
 										for (nlohmann::json::iterator arrayIt = entryIt.value().begin(); arrayIt != entryIt.value().end(); )
-											if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Generator::Pattern))
+											if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
 												++arrayIt;
 											else
 											{
@@ -882,7 +882,7 @@ public:
 								{
 									/* Compatible with $C^*$ */
 									for (const nlohmann::json& value : entryIt.value())
-										if (value.is_string() && std::regex_match(value.get<std::string>(), Generator::Pattern))
+										if (value.is_string() && std::regex_match(value.get<std::string>(), Pattern))
 											this->j["C"][""][entryIt.key()].push_back(value.get<std::string>());
 										else
 											++removedValueCount;
@@ -894,13 +894,13 @@ public:
 									if (!this->j["C"]["_"].contains(entryIt.key()))
 										this->j["C"]["_"][entryIt.key()] = nlohmann::json::array();
 									for (const nlohmann::json& value : entryIt.value())
-										if (value.is_string() && std::regex_match(value.get<std::string>(), Generator::Pattern))
+										if (value.is_string() && std::regex_match(value.get<std::string>(), Pattern))
 											this->j["C"]["_"][entryIt.key()].push_back(value.get<std::string>());
 										else
 											++removedValueCount;
 									entryIt = this->j["C"].erase(entryIt);
 								}
-								else if (std::regex_match(entryIt.key(), Generator::Pattern)/* && entryIt.value().is_null() */)
+								else if (std::regex_match(entryIt.key(), Pattern)/* && entryIt.value().is_null() */)
 								{
 									/* Compatible with Version 3.6.x ($C$) */
 									this->j["C"][""].push_back(entryIt.key());
@@ -942,7 +942,7 @@ public:
 						{
 							int removedValueCount = 0;
 							for (nlohmann::json::iterator arrayIt = this->j["D"].begin(); arrayIt != this->j["D"].end(); )
-								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Generator::Pattern))
+								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
 									++arrayIt;
 								else
 								{
@@ -965,7 +965,7 @@ public:
 						{
 							int removedValueCount = 0;
 							for (nlohmann::json::iterator arrayIt = this->j["M"].begin(); arrayIt != this->j["M"].end(); )
-								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Generator::Pattern))
+								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
 									++arrayIt;
 								else
 								{
@@ -988,11 +988,11 @@ public:
 						if (this->j.contains("N") && this->j["N"].is_object())
 						{
 							for (nlohmann::json::iterator outerEntryIt = this->j["N"].begin(); outerEntryIt != this->j["N"].end(); )
-								if (std::regex_match(outerEntryIt.key(), Generator::Pattern) && outerEntryIt.value().is_object())
+								if (std::regex_match(outerEntryIt.key(), Pattern) && outerEntryIt.value().is_object())
 								{
 									int removedEntryCount = 0;
 									for (nlohmann::json::iterator innerEntryIt = outerEntryIt.value().begin(); innerEntryIt != outerEntryIt.value().end(); )
-										if (std::regex_match(innerEntryIt.key(), Generator::Pattern) && innerEntryIt.value().is_boolean())
+										if (std::regex_match(innerEntryIt.key(), Pattern) && innerEntryIt.value().is_boolean())
 											++innerEntryIt;
 										else
 										{
@@ -1024,7 +1024,7 @@ public:
 						{
 							int removedValueCount = 0;
 							for (nlohmann::json::iterator arrayIt = this->j["S"].begin(); arrayIt != this->j["S"].end(); )
-								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Generator::Pattern))
+								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
 									++arrayIt;
 								else
 								{
@@ -1047,7 +1047,7 @@ public:
 						{
 							int removedEntryCount = 0;
 							for (nlohmann::json::iterator entryIt = this->j["T"].begin(); entryIt != this->j["T"].end(); )
-								if (std::regex_match(entryIt.key(), Generator::Pattern) && entryIt.value().is_boolean())
+								if (std::regex_match(entryIt.key(), Pattern) && entryIt.value().is_boolean())
 									++entryIt;
 								else
 									entryIt = this->j["T"].erase(entryIt);
@@ -1093,16 +1093,16 @@ public:
 		if (this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */)
 		{
 			this->flag &= 3/* 0b 0000 0000 0000 0011 */;
-			const size_t applicationPartitionCount = std::min(Generator::ApplicationPartitions.size(), static_cast<size_t>(6));
+			const size_t applicationPartitionCount = std::min(ApplicationPartitions.size(), static_cast<size_t>(6));
 			if (!(this->j["C"]["_"].contains("L") && this->j["C"]["_"]["L"].is_array()))
 				this->j["C"]["_"]["L"] = nlohmann::json::array();
 			size_t unrecordedPluginCount = 0, unrecordedNonPluginCount = 0;
 			for (size_t i = 0; i < applicationPartitionCount; ++i)
 			{
 				bool localFlag = true;
-				for (const std::string& applicationDirectoryName : Generator::ApplicationDirectoryNames)
+				for (const std::string& applicationDirectoryName : ApplicationDirectoryNames)
 				{
-					std::filesystem::path applicationDirectoryPath = Generator::ApplicationPartitions[i];
+					std::filesystem::path applicationDirectoryPath = ApplicationPartitions[i];
 					applicationDirectoryPath /= applicationDirectoryName;
 					if (!std::filesystem::is_symlink(applicationDirectoryPath) && std::filesystem::is_directory(applicationDirectoryPath) && !this->traverseApplicationDirectory(applicationDirectoryPath, unrecordedPluginCount, unrecordedNonPluginCount))
 						localFlag = false;
@@ -1111,7 +1111,7 @@ public:
 					this->flag |= 1 << (i + 2)/* 0b 0000 0000 (?)??? ??00 */;
 			}
 			if (unrecordedPluginCount || unrecordedNonPluginCount)
-				this->print("Found " + std::to_string(unrecordedPluginCount) + " unrecorded plugin(s) ($M$) and " + std::to_string(unrecordedNonPluginCount) + " unrecorded plain application(s) ($C$, $D$, or $M$). You are invited to report the generated configurations to " + Generator::ReportLink, LogLevel::Info);
+				this->print("Found " + std::to_string(unrecordedPluginCount) + " unrecorded plugin(s) ($M$) and " + std::to_string(unrecordedNonPluginCount) + " unrecorded plain application(s) ($C$, $D$, or $M$). You are invited to report the generated configurations to " + ReportLink, LogLevel::Info);
 			if (this->j["C"]["_"]["L"].empty())
 				this->j["C"]["_"].erase("L");
 			const size_t effectiveHighestBit = applicationPartitionCount + 2, highestBit = 8;

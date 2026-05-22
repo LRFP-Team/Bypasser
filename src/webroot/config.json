@@ -1,6 +1,11 @@
 {
-    "title": "Bypasser",
-    "icon": "icon.jpg",
-    "windowResize": false,
-    "exitConfirm": false
+	"$schema": "https://dergoogler.com",
+	"title": "Bypasser",
+	"icon": "icon.jpg",
+	"windowResize": false,
+	"exitConfirm": false,
+	"type": "webui",
+	"extra": {
+		"configurable": true
+	}
 }
