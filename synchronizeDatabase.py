@@ -710,7 +710,7 @@ def main() -> int:
 	databaseFileName = "database.json"
 	actionAFileName, actionBFileName = "actionA.sh", "actionB.sh"
 	selfURL = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
-	pluginURL = "https://modules.lsposed.org/modules.json"
+	#pluginURL = "https://modules.lsposed.org/modules.json"
 	cppSourceFolderPath = "cpp"
 	cppSourceMainFileName = "generate"
 	extensionsExcluded = (".prop", ".sha512")
@@ -719,7 +719,7 @@ def main() -> int:
 	regularUpdater = RegularUpdater(srcFolderPath, webrootName, databaseFileName, actionAFileName, actionBFileName)
 	if regularUpdater.gitPull() and regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
 		databaseFlag = (
-			regularUpdater.synchronizeDatabase({"D":selfURL, "M":pluginURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
+			regularUpdater.synchronizeDatabase({"D":selfURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
 			and regularUpdater.compileCPP(cppSourceFolderPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
 		)
 		differenceFlag = regularUpdater.checkShell()

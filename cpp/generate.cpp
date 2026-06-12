@@ -236,7 +236,11 @@ private:
 				break;
 			default:
 				if (character <= 31 || 127 == character)
-					formattedMessage += "\\x" + std::string(1, HexadecimalCharacterSet[character >> 4]) + std::string(1, HexadecimalCharacterSet[character & 15/* 0b 0000 1111 */]);
+				{
+					formattedMessage += "\\x";
+					formattedMessage += HexadecimalCharacterSet[character >> 4];
+					formattedMessage += HexadecimalCharacterSet[character & 15/* 0b 0000 1111 */];
+				}
 				else
 					formattedMessage += character;
 				break;

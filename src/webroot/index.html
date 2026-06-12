@@ -149,15 +149,16 @@
 		
 		.databaseViewer {
 			/* background-color: rgba(102, 102, 102, 0.6); */
+			width: 100%;
 			padding: 5px 0;
 			border-radius: 10px;
+			overflow-x: hidden;
 		}
 		summary {
 			color: #00FF00;
 			width: calc(100% - (var(--depth, 0) + 1) * 20px);
 			margin-left: calc(var(--depth, 0) * 20px);
 			margin-bottom: 2px;
-			border-radius: 5px;
 			white-space: nowrap;
 			overflow-x: auto;
 			outline: none;
