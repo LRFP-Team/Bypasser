@@ -1,3 +1,11 @@
+## Bypasser_v2026062002
+
+- Adjusted the logic of ``action.sh``. 
+- Updated the web UI. 
+- Adjusted to update only the specified generator. 
+
+---
+
 ## Bypasser_v2026042806
 
 - Implemented the game of cat and mouse. 

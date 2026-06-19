@@ -292,14 +292,15 @@ class RegularUpdater:
 	__DefaultExecutionTimeout = 15
 	__PositiveAnswers = ("Y", "YES", "1", "T", "TRUE")
 	def __init__(
-		self:object, srcFolderPath:str, webrootName:str, databaseFileName:str, actionAFileName:str, actionBFileName:str, 
+		self:object, srcDirectoryPath:str, webrootName:str, databaseFileName:str, cppBinaryDirectoryName:str, actionAFileName:str, actionBFileName:str, 
 		connectionTimeout:int|float = DatabaseManager.getDefaultConnectionTimeout(), executionTimeout:int|float = __DefaultExecutionTimeout
 	) -> object: # 0b00000000 -> 0b00000001
 		try:
 			# Parameters #
-			self.__srcFolderPath = srcFolderPath
+			self.__srcDirectoryPath = srcDirectoryPath
 			self.__webrootName = webrootName
 			self.__databaseFileName = databaseFileName
+			self.__cppBinaryDirectoryName = cppBinaryDirectoryName
 			self.__actionAFileName = actionAFileName
 			self.__actionBFileName = actionBFileName
 			self.__connectionTimeout = connectionTimeout if isinstance(connectionTimeout, (int, float)) and 0 < connectionTimeout <= 2147483 else DatabaseManager.getDefaultConnectionTimeout()
@@ -309,11 +310,12 @@ class RegularUpdater:
 				self.__executionTimeout = RegularUpdater.__DefaultExecutionTimeout
 			
 			# Initialization #
-			self.__webrootFolderPath = os.path.join(self.__srcFolderPath, self.__webrootName)
-			self.__databaseFilePath = os.path.join(self.__webrootFolderPath, self.__databaseFileName)
-			self.__webrootFilePath = os.path.join(self.__srcFolderPath, self.__webrootName + ".zip")
-			self.__actionAFilePath = os.path.join(self.__srcFolderPath, self.__actionAFileName)
-			self.__actionBFilePath = os.path.join(self.__srcFolderPath, self.__actionBFileName)
+			self.__webrootDirectoryPath = os.path.join(self.__srcDirectoryPath, self.__webrootName)
+			self.__databaseFilePath = os.path.join(self.__webrootDirectoryPath, self.__databaseFileName)
+			self.__cppBinaryDirectroyPath = os.path.join(self.__srcDirectoryPath, self.__cppBinaryDirectoryName)
+			self.__webrootFilePath = os.path.join(self.__srcDirectoryPath, self.__webrootName + ".zip")
+			self.__actionAFilePath = os.path.join(self.__srcDirectoryPath, self.__actionAFileName)
+			self.__actionBFilePath = os.path.join(self.__srcDirectoryPath, self.__actionBFileName)
 			
 			# Main #
 			self.__databaseManager = DatabaseManager(databaseFilePath = self.__databaseFilePath, connectionTimeout = self.__connectionTimeout)
@@ -480,7 +482,7 @@ class RegularUpdater:
 		else:
 			print("Please check the database again before saving. ")
 		return False
-	def compileCPP(self:object, cppSourceFolderPath:str, cppSourceMainFileName:str, forceCompilation:bool = False) -> bool: # 0b00?10111 + 0b00000100 -> 0b00?11011
+	def compileCPP(self:object, cppSourceDirectoryPath:str, cppSourceMainFileName:str, forceCompilation:bool = False) -> bool: # 0b00?10111 + 0b00000100 -> 0b00?11011
 		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 5:
 			self.__flag = self.__flag & 0b00100011 | 0b00010100
 			localFlag = True
@@ -491,7 +493,7 @@ class RegularUpdater:
 			for entryABI in tripleABI:
 				keyABI, valueABI, _ = entryABI
 				try:
-					cppBinaryFilePath = os.path.join(self.__webrootFolderPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
+					cppBinaryFilePath = os.path.join(self.__cppBinaryDirectroyPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
 					entryABI[2] = cppBinaryFilePath
 					if not os.path.isfile(cppBinaryFilePath):
 						localFlag = False
@@ -508,28 +510,35 @@ class RegularUpdater:
 			else:
 				choice = True
 			if choice:
-				localFlag = True
-				cppSourceFilePath = os.path.join(cppSourceFolderPath, cppSourceMainFileName + ".cpp")
-				for keyABI, valueABI, cppBinaryFilePath in tripleABI:
-					try:
-						result = run((
-							"{0}-clang++".format(keyABI), "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceFolderPath, 
-							cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
-						), capture_output = True, text = True, timeout = self.__executionTimeout)
-						if result.returncode != EXIT_SUCCESS:
+				try:
+					os.makedirs(self.__cppBinaryDirectroyPath, exist_ok = True)
+					localFlag = True
+					print("Successfully prepared the directory {0}. ".format(repr(self.__cppBinaryDirectroyPath)))
+				except BaseException as e:
+					localFlag = False
+					print("Failed to prepare the directory {0} due to {1}. ".format(repr(self.__cppBinaryDirectroyPath), repr(e)))
+				if localFlag:
+					cppSourceFilePath = os.path.join(cppSourceDirectoryPath, cppSourceMainFileName + ".cpp")
+					for keyABI, valueABI, cppBinaryFilePath in tripleABI:
+						try:
+							result = run((
+								"{0}-clang++".format(keyABI), "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceDirectoryPath, 
+								cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
+							), capture_output = True, text = True, timeout = self.__executionTimeout)
+							if result.returncode != EXIT_SUCCESS:
+								localFlag = False
+								print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
+							elif result.stdout or result.stderr:
+								localFlag = False
+								print("Compiled {0} to {1} with warnings {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
+							else:
+								print("Successfully compiled {0} to {1} without errors or warnings. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath)))
+						except TimeoutExpired as e:
 							localFlag = False
-							print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
-						elif result.stdout or result.stderr:
+							print("Failed to compile the CPP due to {0}. ".format({"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout}))
+						except BaseException as e:
 							localFlag = False
-							print("Compiled {0} to {1} with warnings {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
-						else:
-							print("Successfully compiled {0} to {1} without errors or warnings. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath)))
-					except TimeoutExpired as e:
-						localFlag = False
-						print("Failed to compile the CPP due to {0}. ".format({"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout}))
-					except BaseException as e:
-						localFlag = False
-						print("Failed to compile the CPP due to {0}. ".format(repr(e)))
+							print("Failed to compile the CPP due to {0}. ".format(repr(e)))
 				if localFlag:
 					self.__flag += 0b00000100
 					return True
@@ -542,25 +551,25 @@ class RegularUpdater:
 	def compress(self:object, extensionsExcluded:tuple|list|set) -> bool: # 0b00?11011 | 0b00011100 -> 0b00?11111
 		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 6 and isinstance(extensionsExcluded, (tuple, list, set)):
 			self.__flag = self.__flag & 0b00100011 | 0b00011000
-			if os.path.isdir(self.__webrootFolderPath):
+			if os.path.isdir(self.__webrootDirectoryPath):
 				try:
 					with ZipFile(self.__webrootFilePath, "w") as zipf:
-						for root, _, fileNames in os.walk(self.__webrootFolderPath):
+						for root, _, fileNames in os.walk(self.__webrootDirectoryPath):
 							for fileName in fileNames:
 								if os.path.splitext(fileName)[1] not in extensionsExcluded:
 									filePath = os.path.join(root, fileName)
-									relativePath = os.path.relpath(filePath, self.__webrootFolderPath)
+									relativePath = os.path.relpath(filePath, self.__webrootDirectoryPath)
 									zipInfo = ZipInfo(relativePath)
 									zipInfo.external_attr = 0o644 << 16
 									with open(filePath, "rb") as f:
 										zipf.writestr(zipInfo, f.read())
 					self.__flag |= 0b00011100
-					print("Successfully compressed the web UI folder {0} to {1}. ".format(repr(self.__webrootFolderPath), repr(self.__webrootFilePath)))
+					print("Successfully compressed the web UI folder {0} to {1}. ".format(repr(self.__webrootDirectoryPath), repr(self.__webrootFilePath)))
 					return True
 				except BaseException as e:
-					print("Failed to compress the web UI folder {0} to {1} due to {2}. ".format(repr(self.__webrootFolderPath), repr(self.__webrootFilePath), repr(e)))
+					print("Failed to compress the web UI folder {0} to {1} due to {2}. ".format(repr(self.__webrootDirectoryPath), repr(self.__webrootFilePath), repr(e)))
 			else:
-				print("The webroot folder path {0} does not exist or exists not as a folder. ".format(repr(self.__webrootFolderPath))) 
+				print("The webroot folder path {0} does not exist or exists not as a folder. ".format(repr(self.__webrootDirectoryPath))) 
 		else:
 			print("Please compile the CPP before compressing the webroot folder. ")
 		return False
@@ -569,12 +578,12 @@ class RegularUpdater:
 			self.__flag &= 0b00011111
 			filePaths = []
 			try:
-				for root, _, fileNames in os.walk(self.__srcFolderPath):
+				for root, _, fileNames in os.walk(self.__srcDirectoryPath):
 					for fileName in fileNames:
 						if os.path.splitext(fileName)[1] == ".sh":
 							filePaths.append(os.path.join(root, fileName))
 			except BaseException as e:
-				print("Failed to walk {0} due to {1}. ".format(repr(self.__srcFolderPath), repr(e)))
+				print("Failed to walk {0} due to {1}. ".format(repr(self.__srcDirectoryPath), repr(e)))
 			filePaths.sort()
 			totalCount = len(filePaths)
 			if totalCount:
@@ -610,7 +619,7 @@ class RegularUpdater:
 					localFlag = False
 					print("Failed to verify the differences between {0} and {1} due to {2}".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath), repr(e)))
 			else:
-				print("The source folder path {0} does not contain any shell scripts. ".format(repr(self.__srcFolderPath)))
+				print("The source folder path {0} does not contain any shell scripts. ".format(repr(self.__srcDirectoryPath)))
 		else:
 			print("Please initialize the updater before checking differences. ")
 		return False
@@ -619,7 +628,7 @@ class RegularUpdater:
 			self.__flag &= 0b00111111
 			filePaths = []
 			try:
-				for root, _, fileNames in os.walk(self.__srcFolderPath):
+				for root, _, fileNames in os.walk(self.__srcDirectoryPath):
 					for fileName in fileNames:
 						filePath = os.path.join(root, fileName)
 						if os.path.splitext(fileName)[1] == ".sha512":
@@ -630,7 +639,7 @@ class RegularUpdater:
 						else:
 							filePaths.append(filePath)
 			except BaseException as e:
-				print("Failed to walk {0} due to {1}. ".format(repr(self.__srcFolderPath), repr(e)), end = "")
+				print("Failed to walk {0} due to {1}. ".format(repr(self.__srcDirectoryPath), repr(e)), end = "")
 			filePaths.sort()
 			totalCount = len(filePaths)
 			if totalCount:
@@ -638,14 +647,14 @@ class RegularUpdater:
 				print("Generating SHA-512 value files for {0} item(s). ".format(totalCount))
 				for i, filePath in enumerate(filePaths, start = 1):
 					try:
-						if os.path.join(self.__srcFolderPath, self.__webrootName + ".zip") == filePath:
+						if os.path.join(self.__srcDirectoryPath, self.__webrootName + ".zip") == filePath:
 							digests = []
-							for root, _, fileNames in os.walk(os.path.join(self.__srcFolderPath, self.__webrootName)):
+							for root, _, fileNames in os.walk(os.path.join(self.__srcDirectoryPath, self.__webrootName)):
 								for fileName in fileNames:
 									if os.path.splitext(fileName)[1].lower() not in (".prop", ".sha512"):
 										fileP = os.path.join(root, fileName)
 										with open(fileP, "rb") as f:
-											digests.append(sha512(f.read()).hexdigest() + "  " + os.path.relpath(fileP, self.__srcFolderPath))
+											digests.append(sha512(f.read()).hexdigest() + "  " + os.path.relpath(fileP, self.__srcDirectoryPath))
 							digests.sort()
 							digest = "\n".join(digests)
 						else:
@@ -705,22 +714,23 @@ class RegularUpdater:
 
 def main() -> int:
 	# Parameters #
-	srcFolderPath = "src"
+	srcDirectoryPath = "src"
 	webrootName = "webroot"
 	databaseFileName = "database.json"
+	cppBinaryDirectoryName = "generators"
 	actionAFileName, actionBFileName = "actionA.sh", "actionB.sh"
 	selfURL = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
 	#pluginURL = "https://modules.lsposed.org/modules.json"
-	cppSourceFolderPath = "cpp"
+	cppSourceDirectoryPath = "cpp"
 	cppSourceMainFileName = "generate"
 	extensionsExcluded = (".prop", ".sha512")
 	
 	# Updater #
-	regularUpdater = RegularUpdater(srcFolderPath, webrootName, databaseFileName, actionAFileName, actionBFileName)
+	regularUpdater = RegularUpdater(srcDirectoryPath, webrootName, databaseFileName, cppBinaryDirectoryName, actionAFileName, actionBFileName)
 	if regularUpdater.gitPull() and regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
 		databaseFlag = (
 			regularUpdater.synchronizeDatabase({"D":selfURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
-			and regularUpdater.compileCPP(cppSourceFolderPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
+			and regularUpdater.compileCPP(cppSourceDirectoryPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
 		)
 		differenceFlag = regularUpdater.checkShell()
 		if databaseFlag and differenceFlag:

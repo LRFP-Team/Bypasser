@@ -5,21 +5,23 @@ This is a developing rooting-layer system module for systematically bypassing en
 This module will only take effect when users install it or click the ``action`` button. The current supported features are as follows. 
 
 - Welcome (0b00000X): Perform built-in configurations for this module. 
-- Zygisk Traces (0b0000X0): Deploy correct configurations for different Zygisk solutions according to the Zygisk implementation, Shamiko, NoHello, and Zygisk Assistant modules used. 
-- HMA Configurations (0b000X00): Generate relevant configurations for HMA and its variants based on the cloud database (along with the web UI updating) and local packages (if enabled). Users are required to manually import the configurations via HMA or one of its variants. Networks to GitHub are optional. 
-- Tricky Store (0b00X000): Generate Tricky Store configurations directly based on the cloud database. The configurations will be written directly to the Tricky Store configuration folder. Networks to GitHub are optional. 
-- Shell (0b0X0000): Perform some shell commands. Please check ``actionA.sh`` for details. 
+- Update (0b0000X0): Perform regular dynamic updates for ``actionA.sh``/``actionB.sh``, the specified generator, and the web UI. Networks to GitHub are required. 
+- Zygisk Traces (0b000X00): Deploy correct configurations for different Zygisk solutions according to the Zygisk implementation, Shamiko, NoHello, and Zygisk Assistant modules used. 
+- HMA Configurations (0b00X000): Generate relevant configurations for HMA and its variants based on the cloud database (along with the web UI updating) and local packages (if enabled). Users are required to manually import the configurations via HMA or one of its variants. 
+- Tricky Store (0b0X0000): Generate Tricky Store configurations directly based on the cloud database. The configurations will be written directly to the Tricky Store configuration folder. 
+- Shell (0bX00000): Perform some shell commands. Please check ``actionA.sh`` for details. 
   - Disable sensitive applications automatically installed by Google. 
   - Handle sensitive policies and properties. 
   - Enforce SELinux (Use ``setenforce 0`` to reset if necessary). 
   - Check whether the kernel version involves banned strings. 
   - Patch ``/etc/compatconfig/services-platform-compat-config.xml``. 
   - Enable the feature of hiding desktop icons on devices running Android 10 or above. 
-- Update (0bX00000): Perform regular dynamic updates for ``actionA.sh``, ``actionB.sh``, and the web UI (processed in the HMA Configuration stage). Networks to GitHub are required. 
 
 Please kindly be aware that this module will only optimize the rooting and injection environments based on the current environments. 
 This module will not include, install, enable, disable, or uninstall any other modules or plugins. 
 It is highly recommended to handle the environments according to [https://github.com/LRFP-Team/LRFP/tree/main/Bypassers](https://github.com/LRFP-Team/LRFP/tree/main/Bypassers) before using this module. 
+For users using KernelSU or one of its variants, patching ``/etc/compatconfig/services-platform-compat-config.xml`` will only take effect if a metamodule is installed. 
+Meanwhile, please only install a metamodule when other rooting-layer system modules require modification of the ``/system`` partition. 
 
 The implementation and bypassing of these environments should be challenging and complex procedures. 
 Users should learn related knowledge before taking these actions. 
@@ -27,6 +29,7 @@ Relying on one-key solutions or paying others for remote or onsite LRFP environm
 
 The updates for this module can be divided into module updates and regular updates. All module updates are written in [./Release](./Release) instead of GitHub releases. 
 Unless otherwise specified, regular updates by pressing the ``action`` button in the root manager are adequate to keep up with the latest bypassing solutions. 
+Users can also use the web UI to update the specified shell script, which is also part of regular updates. 
 Whether an update commit is a module update or a regular update, the time in the commit message is always based on HKT (UTC+8). 
 
 ## Compilation

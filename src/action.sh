@@ -83,11 +83,11 @@ function getTheKeyPressed
 	fi
 }
 
-clearCaches &> /dev/null
+clearCaches > /dev/null 2>&1
 chmod 755 "${actionFolderPath}" 2>/dev/null && cd "${actionFolderPath}" 2>/dev/null
 if [[ $? == ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleId}" ]];
 then
-	setPermissions &> /dev/null
+	setPermissions > /dev/null 2>&1
 	if [[ ! -f "${actionPropFilePath}" ]];
 	then
 		mkdir -p "${webrootFolderPath}" && echo "A" > "${actionPropFilePath}"
@@ -97,7 +97,7 @@ then
 		else
 			echo "The action configuration file \"${actionPropFilePath}\" was missing and could not be recovered. "
 		fi
-		setPermissions &> /dev/null
+		setPermissions > /dev/null 2>&1
 	fi
 	if [[ -f "${actionPropFilePath}" ]];
 	then
@@ -138,14 +138,19 @@ then
 		echo "Please try to flash the latest version of the ${moduleName} rooting-layer system module. "
 		exitCode=${EXIT_FAILURE}
 	fi
-	setPermissions &> /dev/null 2>/dev/null && chmod 755 "${actionFolderPath}" 2>/dev/null
+	setPermissions > /dev/null 2>&1 && chmod 755 "${actionFolderPath}" 2>/dev/null
 else
 	echo "Failed to execute \`\`action.sh\`\` since the working directory \"$(pwd)\" is unexpected. "
 	echo "Please try to flash the latest version of the ${moduleName} rooting-layer system module. "
 	exitCode=${EOF}
 fi
-clearCaches &> /dev/null
-if [[ ("true" == "${KSU}" && "true" != "${KSU_SUKISU}") || "true" == "${APATCH}" ]];
+clearCaches > /dev/null 2>&1
+pauseFlag="false"
+if [[ "true" == "${KSU}" && "true" != "${KSU_SUKISU}" ]];
+then
+	pauseFlag="true"
+fi
+if [[ "true" == "${pauseFlag}" || "true" == "${APATCH}" ]];
 then
 	if [[ $# -lt 1 ]];
 	then

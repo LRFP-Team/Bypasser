@@ -75,6 +75,13 @@ else
 fi
 androidVersion="$(getprop ro.build.version.release)"
 androidVersion=${androidVersion%%.*}
+if echo "${androidVersion}" | grep -qE '^[0-9]+$';
+then
+	echo "The Android major version is ${androidVersion}. "
+else
+	androidVersion=17
+	echo "Failed to detect the Android major version, which has been defaulted to ${androidVersion}. "
+fi
 if [[ "true" == "${BOOTMODE}" ]];
 then
 	if [[ "${KSU}" == "true" ]];
@@ -201,8 +208,238 @@ else
 fi
 echo ""
 
-# Zygisk Traces (0b0000X0) #
-echo "# Zygisk Traces (0b0000X0) #"
+# Update (0b0000X0) #
+echo "# Update (0b0000X0) #"
+readonly curlTimeout=10
+readonly currentAB="A"
+readonly targetAB="B"
+readonly targetAction="action${targetAB}.sh"
+readonly actionDigestURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}.sha512"
+readonly actionContentURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}"
+readonly webrootName="webroot"
+readonly webrootDirectoryPath="${webrootName}"
+readonly actionPropFileName="action.prop"
+readonly actionPropFilePath="${webrootDirectoryPath}/${actionPropFileName}"
+readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip.sha512"
+readonly downloadTimeout=30
+readonly cppBinaryFileName="generate_$(getprop ro.product.cpu.abi)"
+readonly cppBinaryDigestURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/generators/${cppBinaryFileName}.sha512"
+readonly cppBinaryDirectoryPath="generators"
+readonly cppBinaryFilePath="${cppBinaryDirectoryPath}/${cppBinaryFileName}"
+readonly cppBinaryURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/generators/${cppBinaryFileName}"
+readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip"
+readonly webrootFilePath="${webrootName}.zip"
+
+updatedAB="${currentAB}"
+shellDigest="$(curl -sSfL -m ${curlTimeout} "${actionDigestURL}")"
+if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellDigest}" ]];
+then
+	echo "Successfully fetched the SHA-512 value of the latest \`\`${targetAction}\`\` from GitHub. "
+	if [[ -f "${targetAction}" && "$(sha512sum "${targetAction}" | cut -d " " -f1)" == "${shellDigest}" ]];
+	then
+		echo "The target action \`\`${targetAction}\`\` is already up-to-date. "
+		if [[ -f "${actionPropFilePath}" && "$(cat "${actionPropFilePath}")" == "${currentAB}" ]];
+		then
+			echo "The action slot remained ${currentAB}. "
+		else
+			echo "The action slot seemed inconsistent with the actual one. "
+			rm -f "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
+			if [[ $? -eq ${EXIT_SUCCESS} && -f "${actionPropFilePath}" ]];
+			then
+				echo "Successfully synchronized the actual action slot to \"${actionPropFilePath}\". "
+			else
+				exitCode=$((exitCode | 2))
+				echo "Failed to synchronize the actual action slot to \"${actionPropFilePath}\". "
+			fi
+		fi
+	else
+		echo "The target action \`\`${targetAction}\`\` is out-of-date and needs to be updated. "
+		shellContent="$(curl -sSfL -m ${curlTimeout} "${actionContentURL}")"
+		if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellContent}" ]];
+		then
+			echo "Successfully fetched the latest \`\`${targetAction}\`\` from GitHub. "
+			if [[ "$(echo "${shellContent}" | sha512sum | cut -d " " -f1)" == "${shellDigest}" ]];
+			then
+				echo "Successfully verified the latest \`\`${targetAction}\`\`. "
+				if echo "${shellContent}" | sh -n;
+				then
+					echo "The latest \`\`${targetAction}\`\` successfully passed the local shell syntax check (sh). "
+					rm -f "${targetAction}" && echo "${shellContent}" > "${targetAction}" && chmod 744 "${targetAction}"
+					if [[ $? -eq ${EXIT_SUCCESS} && -f "${targetAction}" ]];
+					then
+						echo "Successfully updated \`\`${targetAction}\`\`. "
+						updatedAB="${targetAB}"
+						rm -f "${actionPropFilePath}" && echo -n "${targetAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
+						if [[ $? -eq ${EXIT_SUCCESS} && -f "${actionPropFilePath}" ]];
+						then
+							echo "Successfully swapped the action slot to ${targetAB} in \"${actionPropFilePath}\". "
+						else
+							exitCode=$((exitCode | 2))
+							echo "Failed to swap the action slot to ${targetAB} in \"${actionPropFilePath}\". "
+						fi
+					else
+						exitCode=$((exitCode | 2))
+						echo "Failed to update \`\`${targetAction}\`\`. "
+					fi
+				else
+					exitCode=$((exitCode | 2))
+					echo "The latest \`\`${targetAction}\`\` failed to pass the local shell syntax check (sh). "
+				fi
+			else
+				exitCode=$((exitCode | 2))
+				echo "Failed to verify the latest \`\`${targetAction}\`\`. "
+			fi
+		else
+			exitCode=$((exitCode | 2))
+			echo "Failed to fetch the latest \`\`${targetAction}\`\` from GitHub. "
+		fi
+		unset shellContent
+	fi
+else
+	exitCode=$((exitCode | 2))
+	echo "Failed to fetch the SHA-512 value of the latest \`\`${targetAction}\`\` from GitHub. "
+fi
+cppBinaryDigest="$(curl -sSfL -m ${curlTimeout} "${cppBinaryDigestURL}")"
+if [[ $? -eq ${EXIT_SUCCESS} && -n "${cppBinaryDigest}" ]];
+then
+	echo "Successfully fetched the SHA-512 value of the latest \`\`${cppBinaryFilePath}\`\` from GitHub. "
+	if [[ -f "${cppBinaryFilePath}" && "$(sha512sum "${cppBinaryFilePath}" | cut -d " " -f1)" == "${cppBinaryDigest}" ]];
+	then
+		echo "The generator is already up-to-date. "
+	else
+		echo "The current generator is out-of-date and needs to be updated. "
+		abortFlag=${EXIT_SUCCESS}
+		if [[ -f "${cppBinaryFilePath}" ]];
+		then
+			rm -rf "${cppBinaryFilePath}.bak" && mv "${cppBinaryFilePath}" "${cppBinaryFilePath}.bak"
+			if [[ $? -eq ${EXIT_SUCCESS} && -f "${cppBinaryFilePath}.bak" ]];
+			then
+				echo "Successfully moved \"${cppBinaryFilePath}\" to \"${cppBinaryFilePath}.bak\". "
+			else
+				abortFlag=${EXIT_FAILURE}
+				exitCode=$((exitCode | 2))
+				echo "Failed to move \"${cppBinaryFilePath}\" to \"${cppBinaryFilePath}.bak\". "
+			fi
+		else
+			echo "No old generators were found to be backed up. "
+		fi
+		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
+		then
+			echo "Trying to download the latest generator within ${downloadTimeout} seconds. "
+			curl -fL --progress-bar --connect-timeout ${curlTimeout} -m ${downloadTimeout} "${cppBinaryURL}" -o "${cppBinaryFilePath}"
+			if [[ "$(sha512sum "${cppBinaryFilePath}" | cut -d " " -f1)" == "${cppBinaryDigest}" ]];
+			then
+				echo "Successfully updated and verified the generator. "
+				if [[ -f "${cppBinaryFilePath}.bak" ]];
+				then
+					rm -f "${cppBinaryFilePath}.bak"
+					if [[ $? -eq ${EXIT_SUCCESS} ]];
+					then
+						echo "Successfully removed \"${cppBinaryFilePath}.bak\". "
+					else
+						echo "Failed to remove \"${cppBinaryFilePath}.bak\". "
+					fi
+				else
+					echo "No old generators that should be removed were found. "
+				fi
+			else
+				exitCode=$((exitCode | 2))
+				echo "Failed to update or verify the generator. "
+				if [[ -f "${cppBinaryFilePath}.bak" ]];
+				then
+					rm -f "${cppBinaryFilePath}" && mv "${cppBinaryFilePath}.bak" "${cppBinaryFilePath}"
+					if [[ $? -eq ${EXIT_SUCCESS} && -f "${cppBinaryFilePath}" ]];
+					then
+						echo "Successfully restored \"${cppBinaryFilePath}.bak\" to \"${cppBinaryFilePath}\". "
+					else
+						echo "Failed to restore \"${cppBinaryFilePath}.bak\" to \"${cppBinaryFilePath}\". "
+					fi
+				else
+					echo "No old generators that should be removed were found. "
+				fi
+			fi
+		fi
+	fi
+else
+	exitCode=$((exitCode | 2))
+	echo "Failed to fetch the SHA-512 value of the latest \`\`${cppBinaryFileName}\`\` from GitHub. "
+fi
+webrootDigest="$(curl -sSfL -m ${curlTimeout} "${webrootDigestUrl}")"
+if [[ $? -eq ${EXIT_SUCCESS} && -n "${webrootDigest}" ]];
+then
+	echo "Successfully fetched the SHA-512 value of the latest ZIP file of the web UI. "
+	if [[ -d "${webrootDirectoryPath}" && "$(find "${webrootDirectoryPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
+	then
+		echo "The current web UI is already up-to-date. "
+	else
+		echo "The current web UI is out-of-date and needs to be updated. "
+		abortFlag=${EXIT_SUCCESS}
+		if [[ -d "${webrootDirectoryPath}" ]];
+		then
+			rm -rf "${webrootDirectoryPath}.bak" && mv -fT "${webrootDirectoryPath}" "${webrootDirectoryPath}.bak"
+			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}.bak" ]];
+			then
+				echo "Successfully moved \"${webrootDirectoryPath}\" to \"${webrootDirectoryPath}.bak\". "
+			else
+				abortFlag=${EXIT_FAILURE}
+				exitCode=$((exitCode | 2))
+				echo "Failed to move \"${webrootDirectoryPath}\" to \"${webrootDirectoryPath}.bak\". "
+			fi
+		else
+			echo "No old web UI directories were found to be backed up. "
+		fi
+		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
+		then
+			echo "Trying to download the latest web UI within ${downloadTimeout} seconds. "
+			curl -fL --progress-bar --connect-timeout ${curlTimeout} -m ${downloadTimeout} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootDirectoryPath}" && rm -f "${webrootFilePath}"
+			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}" && "$(find "${webrootDirectoryPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
+			then
+				echo "Successfully updated and verified the web UI. "
+				if [[ -d "${webrootDirectoryPath}.bak" ]];
+				then
+					rm -f "${actionPropFilePath}" && echo -n "${updatedAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
+					if [[ $? -eq ${EXIT_SUCCESS} ]];
+					then
+						echo "Successfully restored the action slot \"${updatedAB}\". "
+						rm -rf "${webrootDirectoryPath}.bak"
+						if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootDirectoryPath}.bak" ]];
+						then
+							echo "Successfully removed \"${webrootDirectoryPath}.bak\". "
+						else
+							echo "Failed to remove \"${webrootDirectoryPath}.bak\". "
+						fi
+					else
+						echo "Failed to restore the action slot \"${updatedAB}\". "
+					fi
+				else
+					echo "No old web UI directories that should be removed were found. "
+				fi
+			else
+				exitCode=$((exitCode | 2))
+				echo "Failed to update or verify the web UI. "
+				if [[ -d "${webrootDirectoryPath}.bak" ]];
+				then
+					rm -rf "${webrootDirectoryPath}" && mv -fT "${webrootDirectoryPath}.bak" "${webrootDirectoryPath}"
+					if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}" ]];
+					then
+						echo "Successfully restored \"${webrootDirectoryPath}.bak\" to \"${webrootDirectoryPath}\". "
+					else
+						echo "Failed to restore \"${webrootDirectoryPath}.bak\" to \"${webrootDirectoryPath}\". "
+					fi
+				else
+					echo "No old web UI directories were found for restoring. "
+				fi
+			fi
+		fi
+	fi
+else
+	exitCode=$((exitCode | 2))
+	echo "Failed to fetch the SHA-512 value of the latest ZIP file of the web UI. "
+fi
+echo ""
+
+# Zygisk Traces (0b000X00) #
+echo "# Zygisk Traces (0b000X00) #"
 readonly magiskModuleFolder="${adbFolder}/modules"
 readonly zygiskSolutionModuleId="zygisksu"
 readonly zygiskNextConfigurationDirectoryPath="${adbFolder}/zygisksu"
@@ -274,7 +511,7 @@ then
 					then
 						echo "Successfully created the Shamiko whitelist configuration file \"${shamikoWhitelistConfigurationFilePath}\". "
 					else
-						exitCode=$((exitCode | 2))
+						exitCode=$((exitCode | 4))
 						echo "Failed to create the Shamiko whitelist configuration file \"${shamikoWhitelistConfigurationFilePath}\". "
 					fi
 				fi
@@ -327,7 +564,7 @@ then
 					then
 						echo "Successfully created the NoHello whitelist configuration file \"${noHelloWhitelistConfigurationFilePath}\". "
 					else
-						exitCode=$((exitCode | 2))
+						exitCode=$((exitCode | 4))
 						echo "Failed to create the NoHello whitelist configuration file \"${noHelloWhitelistConfigurationFilePath}\". "
 					fi
 				fi
@@ -353,7 +590,7 @@ then
 					then
 						echo "Successfully wrote \"1\" to the Zygisk Next denylist policy configuration file \"${zygiskNextDenylistPolicyConfigurationFilePath}\". "
 					else
-						exitCode=$((exitCode | 2))
+						exitCode=$((exitCode | 4))
 						echo "Failed to write \"1\" to the Zygisk Next denylist policy configuration file \"${zygiskNextDenylistPolicyConfigurationFilePath}\". "
 					fi
 				fi
@@ -367,7 +604,7 @@ then
 					then
 						echo "Successfully wrote \"${toBeWritten}\" to the Zygisk Next denylist enforce configuration file \"${zygiskNextDenylistEnforceConfigurationFilePath}\". "
 					else
-						exitCode=$((exitCode | 2))
+						exitCode=$((exitCode | 4))
 						echo "Failed to write \"${toBeWritten}\" to the Zygisk Next denylist enforce configuration file \"${zygiskNextDenylistEnforceConfigurationFilePath}\". "
 					fi
 				fi
@@ -406,7 +643,7 @@ then
 			then
 				if [[ "${APATCH}" == "true" ]];
 				then
-					echo "The Shamiko module does not work with Apatch or NeoZygisk. Please consider removing this module and switching to ReZygisk + NeHello. "
+					echo "The Shamiko module does not work with Apatch or NeoZygisk. Please consider removing this module and switching to ReZygisk + NoHello. "
 				else
 					echo "The Shamiko module does not work with NeoZygisk. Please consider either switching to Zygisk Next or removing this module. "
 				fi
@@ -427,23 +664,10 @@ else
 fi
 echo ""
 
-# HMA Configurations (0b000X00) #
-echo "# HMA Configurations (0b000X00) #"
-readonly webrootName="webroot"
-readonly curlTimeout=10
-readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip.sha512"
-readonly webrootDirectoryPath="${webrootName}"
-readonly downloadTimeout=30
-readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip"
-readonly webrootFilePath="${webrootName}.zip"
-readonly currentAB="A"
-readonly targetAB="B"
-readonly actionPropFileName="action.prop"
-readonly actionPropFilePath="${webrootDirectoryPath}/${actionPropFileName}"
+# HMA Configurations (0b00X000) #
+echo "# HMA Configurations (0b00X000) #"
 readonly databaseFileName="database.json"
 readonly databaseFilePath="${webrootDirectoryPath}/${databaseFileName}"
-readonly cppBinaryFileName="generate"
-readonly cppBinaryFilePath="${webrootDirectoryPath}/${cppBinaryFileName}_$(getprop ro.product.cpu.abi)"
 if [[ -n "${EXTERNAL_STORAGE}" ]];
 then
 	readonly generationOutputDirectoryPath="${EXTERNAL_STORAGE}/Download/.${moduleName}"
@@ -507,79 +731,7 @@ function getTheKeyPressed
 	fi
 }
 
-webrootDigest="$(curl -sSfL -m ${curlTimeout} "${webrootDigestUrl}")"
-if [[ $? -eq ${EXIT_SUCCESS} && -n "${webrootDigest}" ]];
-then
-	echo "Successfully fetched the SHA-512 value of the latest ZIP file of the web UI. "
-	if [[ -d "${webrootDirectoryPath}" && "$(find "${webrootDirectoryPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
-	then
-		echo "The current web UI is already up-to-date. "
-	else
-		echo "The current web UI is out-of-date and needs to be updated. "
-		abortFlag=${EXIT_SUCCESS}
-		if [[ -d "${webrootDirectoryPath}" ]];
-		then
-			rm -rf "${webrootDirectoryPath}.bak" && mv -fT "${webrootDirectoryPath}" "${webrootDirectoryPath}.bak"
-			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}.bak" ]];
-			then
-				echo "Successfully moved \"${webrootDirectoryPath}\" to \"${webrootDirectoryPath}.bak\". "
-			else
-				abortFlag=${EXIT_FAILURE}
-				exitCode=$((exitCode | 32))
-				echo "Failed to move \"${webrootDirectoryPath}\" to \"${webrootDirectoryPath}.bak\". "
-			fi
-		else
-			echo "No old web UI directories were found to be backed up. "
-		fi
-		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
-		then
-			echo "Trying to download the latest web UI within ${downloadTimeout} seconds. "
-			curl -fL --progress-bar --connect-timeout ${curlTimeout} -m ${downloadTimeout} "${webrootUrl}" -o "${webrootFilePath}" && unzip "${webrootFilePath}" -d "${webrootDirectoryPath}" && rm -f "${webrootFilePath}"
-			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}" && "$(find "${webrootDirectoryPath}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort)" == "${webrootDigest}" ]];
-			then
-				echo "Successfully updated and verified the web UI. "
-				if [[ -d "${webrootDirectoryPath}.bak" ]];
-				then
-					rm -f "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
-					if [[ $? -eq ${EXIT_SUCCESS} ]];
-					then
-						echo "Successfully restored the action slot \"${currentAB}\". "
-						rm -rf "${webrootDirectoryPath}.bak"
-						if [[ $? -eq ${EXIT_SUCCESS} && ! -e "${webrootDirectoryPath}.bak" ]];
-						then
-							echo "Successfully removed \"${webrootDirectoryPath}.bak\". "
-						else
-							echo "Failed to remove \"${webrootDirectoryPath}.bak\". "
-						fi
-					else
-						echo "Failed to restore the action slot \"${currentAB}\". "
-					fi
-				else
-					echo "No old web UI directories that should be removed were found. "
-				fi
-			else
-				exitCode=$((exitCode | 32))
-				echo "Failed to update or verify the web UI. "
-				if [[ -d "${webrootDirectoryPath}.bak" ]];
-				then
-					rm -rf "${webrootDirectoryPath}" && mv -fT "${webrootDirectoryPath}.bak" "${webrootDirectoryPath}"
-					if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}" ]];
-					then
-						echo "Successfully restored \"${webrootDirectoryPath}.bak\" to \"${webrootDirectoryPath}\". "
-					else
-						echo "Failed to restore \"${webrootDirectoryPath}.bak\" to \"${webrootDirectoryPath}\". "
-					fi
-				else
-					echo "No old web UI directories were found for restoring. "
-				fi
-			fi
-		fi
-	fi
-else
-	exitCode=$((exitCode | 32))
-	echo "Failed to fetch the SHA-512 value of the latest ZIP file of the web UI. "
-fi
-if [[ $((exitCode & 32)) -ne ${EXIT_SUCCESS} ]];
+if [[ $((exitCode & 2)) -ne ${EXIT_SUCCESS} ]];
 then
 	echo "The updating of the \`\`${databaseFileName}\`\` might fail. This will use the cache to generate the configurations for HMA and its variants. "
 fi
@@ -595,58 +747,58 @@ then
 		then
 			echo "Successfully generated the HMA v92 whitelist configuration JSON file \"${hmaV92WhitelistConfigurationFilePath}\". "
 		else
-			exitCode=$((exitCode | 4))
+			exitCode=$((exitCode | 8))
 			echo "Failed to generate the HMA v92 whitelist configuration JSON file \"${hmaV92WhitelistConfigurationFilePath}\". "
 		fi
 		if [[ -f "${hmaV92BlacklistConfigurationFilePath}" ]];
 		then
 			echo "Successfully generated the HMA v92 blacklist configuration JSON file \"${hmaV92BlacklistConfigurationFilePath}\". "
 		else
-			exitCode=$((exitCode | 4))
+			exitCode=$((exitCode | 8))
 			echo "Failed to generate the HMA v92 blacklist configuration JSON file \"${hmaV92BlacklistConfigurationFilePath}\". "
 		fi
 		if [[ -f "${hmaV93WhitelistConfigurationFilePath}" ]];
 		then
 			echo "Successfully generated the HMA v93 whitelist configuration JSON file \"${hmaV93WhitelistConfigurationFilePath}\". "
 		else
-			exitCode=$((exitCode | 4))
+			exitCode=$((exitCode | 8))
 			echo "Failed to generate the HMA v93 whitelist configuration JSON file \"${hmaV93WhitelistConfigurationFilePath}\". "
 		fi
 		if [[ -f "${hmaV93BlacklistConfigurationFilePath}" ]];
 		then
 			echo "Successfully generated the HMA v93 blacklist configuration JSON file \"${hmaV93BlacklistConfigurationFilePath}\". "
 		else
-			exitCode=$((exitCode | 4))
+			exitCode=$((exitCode | 8))
 			echo "Failed to generate the HMA v93 blacklist configuration JSON file \"${hmaV93BlacklistConfigurationFilePath}\". "
 		fi
 		if [[ -f "${hmaossV93WhitelistConfigurationFilePath}" ]];
 		then
 			echo "Successfully generated the HMA-OSS v93 whitelist configuration JSON file \"${hmaossV93WhitelistConfigurationFilePath}\". "
 		else
-			exitCode=$((exitCode | 4))
+			exitCode=$((exitCode | 8))
 			echo "Failed to generate the HMA-OSS v93 whitelist configuration JSON file \"${hmaossV93WhitelistConfigurationFilePath}\". "
 		fi
 		if [[ -f "${hmaossV93BlacklistConfigurationFilePath}" ]];
 		then
 			echo "Successfully generated the HMA-OSS v93 blacklist configuration JSON file \"${hmaossV93BlacklistConfigurationFilePath}\". "
 		else
-			exitCode=$((exitCode | 4))
+			exitCode=$((exitCode | 8))
 			echo "Failed to generate the HMA-OSS v93 blacklist configuration JSON file \"${hmaossV93BlacklistConfigurationFilePath}\". "
 		fi
 		if [[ -f "${pathTesterFilePath}" ]];
 		then
 			echo "Successfully generated the path tester shell script file \"${pathTesterFilePath}\". "
 		else
-			exitCode=$((exitCode | 4))
+			exitCode=$((exitCode | 8))
 			echo "Failed to generate the path tester shell script file \"${pathTesterFilePath}\". "
 		fi
 	else
-		exitCode=$((exitCode | 4))
+		exitCode=$((exitCode | 8))
 		echo "Failed to generate relevant files for HMA and its variants. "
 	fi
 	chmod -x "${cppBinaryFilePath}"
 else
-	exitCode=$((exitCode | 4))
+	exitCode=$((exitCode | 8))
 	echo "Failed to prepare the directory \"${generationOutputDirectoryPath}\". "
 fi
 if [[ $# -ge 1 ]];
@@ -665,7 +817,7 @@ then
 	oldConfigurationFolderCount=0
 	removedOldConfigurationFolderCount=0
 	echo "Removing old configuration directories of HMA and its variants. "
-	for oldConfigurationDirectoryPath in $(find "${largerOldScanningScope}" -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
+	for oldConfigurationDirectoryPath in $(find "${largerOldScanningScope}" -type d -a \( -name "*h_m_a_l*" -o -name "*hma*" -o -name "*hma1*" -o -name "hmal*" \))
 	do
 		if [[ -e "${oldConfigurationDirectoryPath}/config.json" && -d "${oldConfigurationDirectoryPath}/log" ]];
 		then
@@ -679,7 +831,7 @@ then
 			fi
 		fi
 	done
-	for oldConfigurationDirectoryPath in $(find "${smallerOldScanningScope}" -mindepth 2 -type d -and \( -name "*h_m_a_l*" -or -name "*hma*" -or -name "*hma1*" -or -name "hmal*" \))
+	for oldConfigurationDirectoryPath in $(find "${smallerOldScanningScope}" -mindepth 2 -type d -a \( -name "*h_m_a_l*" -o -name "*hma*" -o -name "*hma1*" -o -name "hmal*" \))
 	do
 		if [[ -z "$(ls -A "${oldConfigurationDirectoryPath}")" ]];
 		then
@@ -705,8 +857,8 @@ then
 fi
 echo ""
 
-# Tricky Store (0b00X000) #
-echo "# Tricky Store (0b00X000) #"
+# Tricky Store (0b0X0000) #
+echo "# Tricky Store (0b0X0000) #"
 readonly trickyStoreConfigurationDirectoryPath="${adbFolder}/tricky_store"
 readonly trickyStoreSecurityPatchFileName="security_patch.txt"
 readonly trickyStoreSecurityPatchFilePath="${trickyStoreConfigurationDirectoryPath}/${trickyStoreSecurityPatchFileName}"
@@ -723,7 +875,7 @@ then
 		then
 			echo "Successfully removed \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		else
-			exitCode=$((exitCode | 8))
+			exitCode=$((exitCode | 16))
 			echo "Failed to remove \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		fi
 	else
@@ -771,8 +923,8 @@ fi
 unset trickyStoreTargetContent
 echo ""
 
-# Shell (0b0X0000) #
-echo "# Shell (0b0X0000) #"
+# Shell (0bX00000) #
+echo "# Shell (0bX00000) #"
 readonly sensitiveApplications="com.google.android.safetycore com.google.android.contactkeys"
 readonly policiesToBeDeleted="hidden_api_policy hidden_api_policy_p_apps hidden_api_policy_pre_p_apps hidden_api_blacklist_exemptions"
 readonly propertiesToBeSet="ro.boot.vbmeta.device_state:locked ro.boot.verifiedbootstate:green vendor.boot.secboot:enabled"
@@ -798,7 +950,7 @@ do
 			disabledSensitiveApplicationCount=$((disabledSensitiveApplicationCount + 1))
 			echo "- The sensitive application \"${sensitiveApplication}\" was detected, which has been disabled. "
 		else
-			exitCode=$((exitCode | 16))
+			exitCode=$((exitCode | 32))
 			echo "- The sensitive application \"${sensitiveApplication}\" was detected, which failed to be disabled. "
 		fi
 	fi
@@ -818,7 +970,7 @@ do
 	then
 		echo "- The execution of \`\`settings delete global ${policyToBeDeleted}\`\` succeeded. "
 	else
-		exitCode=$((exitCode | 16))
+		exitCode=$((exitCode | 32))
 		echo "- The execution of \`\`settings delete global ${policyToBeDeleted}\`\` failed. "
 	fi
 done
@@ -838,7 +990,7 @@ do
 			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be and successfully set to \"${propertyValue}\". "
 		else
 			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be but failed to set to \"${propertyValue}\". "
-			exitCode=$((exitCode | 16))
+			exitCode=$((exitCode | 32))
 		fi
 	fi
 done
@@ -856,7 +1008,7 @@ do
 	resetprop --delete "${propertyToBeDeleted}"
 	if getprop "${propertyToBeDeleted}" | grep -qE "[A-Za-z0-9_-]";
 	then
-		exitCode=$((exitCode | 16))
+		exitCode=$((exitCode | 32))
 		echo "- The execution of \`\`resetprop --delete \"${propertyToBeDeleted}\"\`\` failed. "
 	fi
 done
@@ -867,7 +1019,7 @@ then
 	then
 		echo "- Successfully removed persistent property traces from \"${persistentPropertyFilePath}\". "
 	else
-		exitCode=$((exitCode | 16))
+		exitCode=$((exitCode | 32))
 		echo "- Failed to remove persistent property traces from \"${persistentPropertyFilePath}\". "
 	fi
 else
@@ -926,11 +1078,11 @@ then
 			then
 				echo "Successfully generated \"${targetXmlFilePath}\". "
 			else
-				exitCode=$((exitCode | 16))
+				exitCode=$((exitCode | 32))
 				echo "Failed to generate \"${targetXmlFilePath}\". "
 			fi
 		else
-			exitCode=$((exitCode | 16))
+			exitCode=$((exitCode | 32))
 			echo "Failed to create the directory \"${targetXmlDirectoryPath}\". "
 		fi
 	fi
@@ -953,81 +1105,6 @@ then
 	else
 		echo "Failed to enable the feature of hiding desktop icons (Android ${androidVersion}). "
 	fi
-fi
-echo ""
-
-# Update (0bX00000) #
-echo "# Update (0bX00000) #"
-readonly targetAction="action${targetAB}.sh"
-readonly actionContentURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}"
-readonly actionDigestURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}.sha512"
-
-shellDigest="$(curl -sSfL -m ${curlTimeout} "${actionDigestURL}")"
-if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellDigest}" ]];
-then
-	echo "Successfully fetched the SHA-512 value of the latest \`\`${targetAction}\`\` from GitHub. "
-	if [[ -f "${targetAction}" && "$(sha512sum "${targetAction}" | cut -d " " -f1)" == "${shellDigest}" ]];
-	then
-		echo "The target action \`\`${targetAction}\`\` is already up-to-date. "
-		if [[ -f "${actionPropFilePath}" && "$(cat "${actionPropFilePath}")" == "${currentAB}" ]];
-		then
-			echo "The action slot remained ${currentAB}. "
-		else
-			echo "The action slot seemed inconsistent with the actual one. "
-			rm -f "${actionPropFilePath}" && echo -n "${currentAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
-			if [[ $? -eq ${EXIT_SUCCESS} && -f "${actionPropFilePath}" ]];
-			then
-				echo "Successfully synchronized the actual action slot to \"${actionPropFilePath}\". "
-			else
-				exitCode=$((exitCode | 32))
-				echo "Failed to synchronize the actual action slot to \"${actionPropFilePath}\". "
-			fi
-		fi
-	else
-		echo "The target action \`\`${targetAction}\`\` is out-of-date and needs to be updated. "
-		shellContent="$(curl -sSfL -m ${curlTimeout} "${actionContentURL}")"
-		if [[ $? -eq ${EXIT_SUCCESS} && -n "${shellContent}" ]];
-		then
-			echo "Successfully fetched the latest \`\`${targetAction}\`\` from GitHub. "
-			if [[ "$(echo "${shellContent}" | sha512sum | cut -d " " -f1)" == "${shellDigest}" ]];
-			then
-				echo "Successfully verified the latest \`\`${targetAction}\`\`. "
-				if echo "${shellContent}" | sh -n;
-				then
-					echo "The latest \`\`${targetAction}\`\` successfully passed the local shell syntax check (sh). "
-					rm -f "${targetAction}" && echo "${shellContent}" > "${targetAction}" && chmod 744 "${targetAction}"
-					if [[ $? -eq ${EXIT_SUCCESS} && -f "${targetAction}" ]];
-					then
-						echo "Successfully updated \`\`${targetAction}\`\`. "
-						rm -f "${actionPropFilePath}" && echo -n "${targetAB}" > "${actionPropFilePath}" && chmod 444 "${actionPropFilePath}"
-						if [[ $? -eq ${EXIT_SUCCESS} && -f "${actionPropFilePath}" ]];
-						then
-							echo "Successfully switched the action slot to ${targetAB} in \"${actionPropFilePath}\". "
-						else
-							exitCode=$((exitCode | 32))
-							echo "Failed to switch the action slot to ${targetAB} in \"${actionPropFilePath}\". "
-						fi
-					else
-						exitCode=$((exitCode | 32))
-						echo "Failed to update \`\`${targetAction}\`\`. "
-					fi
-				else
-					exitCode=$((exitCode | 32))
-					echo "The latest \`\`${targetAction}\`\` failed to pass the local shell syntax check (sh). "
-				fi
-			else
-				exitCode=$((exitCode | 32))
-				echo "Failed to verify the latest \`\`${targetAction}\`\`. "
-			fi
-		else
-			exitCode=$((exitCode | 32))
-			echo "Failed to fetch the latest \`\`${targetAction}\`\` from GitHub. "
-		fi
-		unset shellContent
-	fi
-else
-	exitCode=$((exitCode | 32))
-	echo "Failed to fetch the SHA-512 value of the latest \`\`${targetAction}\`\` from GitHub. "
 fi
 echo ""
 

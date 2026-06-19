@@ -34,15 +34,15 @@ function setPermissions
 	return ${returnCode}
 }
 
-clearCaches &> /dev/null
+clearCaches > /dev/null 2>&1
 chmod 755 "${moduleFolderPath}" 2>/dev/null && cd "${moduleFolderPath}" 2>/dev/null
 if [[ $? -eq ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleId}" ]];
 then
-	setPermissions &> /dev/null
+	setPermissions > /dev/null 2>&1
 	# TODO #
-	setPermissions &> /dev/null 2>/dev/null && chmod 755 "${moduleFolderPath}" 2>/dev/null
+	setPermissions > /dev/null 2>&1 && chmod 755 "${moduleFolderPath}" 2>/dev/null
 else
 	exit ${EXIT_FAILURE}
 fi
-clearCaches &> /dev/null
+clearCaches > /dev/null 2>&1
 exit ${EXIT_SUCCESS}

@@ -6,7 +6,7 @@ readonly EOF=255
 readonly moduleName="Bypasser"
 readonly moduleId="bypasser"
 readonly moduleVersion="$(date +%Y%m%d%H)"
-readonly moduleFolderPath="$(dirname "$0")"
+readonly moduleDirectoryPath="$(dirname "$0")"
 
 function setPermissions
 {
@@ -38,7 +38,7 @@ function setPermissions
 
 echo "Welcome to the builder for the ${moduleName} rooting-layer system module! "
 echo "The absolute path to this script is \"$(cd "$(dirname "$0")" && pwd)/$(basename "$0")\". "
-chmod 755 "${moduleFolderPath}" && cd "${moduleFolderPath}"
+chmod 755 "${moduleDirectoryPath}" && cd "${moduleDirectoryPath}"
 if [[ $? == ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleName}" ]];
 then
 	echo "The current working directory is \"$(pwd)\". "
@@ -58,11 +58,11 @@ fi
 # Check (13--15) #
 readonly currentPattern="readonly currentAB="
 readonly targetPattern="readonly targetAB="
-readonly srcFolderPath="src"
+readonly srcDirectoryPath="src"
 readonly shellAFileName="actionA.sh"
-readonly shellAFilePath="${srcFolderPath}/${shellAFileName}"
+readonly shellAFilePath="${srcDirectoryPath}/${shellAFileName}"
 readonly shellBFileName="actionB.sh"
-readonly shellBFilePath="${srcFolderPath}/${shellBFileName}"
+readonly shellBFilePath="${srcDirectoryPath}/${shellBFileName}"
 
 if [[ -z "$(find . -name "*.sh" -exec bash -n {} \; 2>&1)" ]];
 then
@@ -92,13 +92,12 @@ else
 	exit 15
 fi
 
-# Compile (16) #
-readonly webrootName="webroot"
-readonly webrootFolderPath="${srcFolderPath}/${webrootName}"
+# Compile (16--17) #
+readonly cppBinaryDirectoryPath="${srcDirectoryPath}/generators"
 readonly readTimeout=10
-readonly cppSourceFolderPath="cpp"
+readonly cppSourceDirectoryPath="cpp"
 readonly cppSourceFileName="generate.cpp"
-readonly cppSourceFilePath="${cppSourceFolderPath}/${cppSourceFileName}"
+readonly cppSourceFilePath="${cppSourceDirectoryPath}/${cppSourceFileName}"
 readonly cppBinaryFileName="generate"
 
 tripleABI=(
@@ -113,7 +112,7 @@ do
 	entryABI="${tripleABI[$i]}"
 	keyABI="${entryABI%,*}"
 	valueABI="${entryABI#*, }"
-	cppBinaryFilePath="${webrootFolderPath}/${cppBinaryFileName}_${valueABI}"
+	cppBinaryFilePath="${cppBinaryDirectoryPath}/${cppBinaryFileName}_${valueABI}"
 	tripleABI[${i}]="${entryABI}, ${cppBinaryFilePath}"
 	if [[ ! -f "${cppBinaryFilePath}" ]];
 	then
@@ -146,56 +145,67 @@ else
 fi
 if [[ ${EXIT_SUCCESS} -eq ${choiceFlag} ]];
 then
-	compilationFlag=${EXIT_SUCCESS}
-	for entryABI in "${tripleABI[@]}";
-	do
-		keyABI="$(echo "${entryABI}" | awk -F ', ' '{print $1}')"
-		valueABI="$(echo "${entryABI}" | awk -F ', ' '{print $2}')"
-		cppBinaryFilePath="$(echo "${entryABI}" | awk -F ', ' '{print $3}')"
-		compilationOutputs="$(${keyABI}-clang++ -O3 -Wall -Wextra -Wpedantic -I "${cppSourceFolderPath}" "${cppSourceFilePath}" -o "${cppBinaryFilePath}" -static-libstdc++ -fPIE -pie 2>&1)"
-		returnCode=$?
-		if [[ ${EXIT_SUCCESS} == ${returnCode} && -z "${compilationOutputs}" && -f "${cppBinaryFilePath}" ]];
-		then
-			echo "Successfully compiled \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\". "
-		else
-			compilationFlag=${EXIT_FAILURE}
-			if [[ -n "${compilationOutputs}" ]];
-			then
-				echo "Failed to compile \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\", or warnings occurred during the compilation. Details are as follows. "
-				echo "${compilationOutputs}"
-			else
-				echo "Failed to compile \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\", or warnings occurred during the compilation. "
-			fi
-		fi
-	done
-	if [[ ${EXIT_SUCCESS} -ne ${compilationFlag} ]];
+	mkdir -p "${cppBinaryDirectoryPath}"
+	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
-		exit 16
+		echo "Successfully prepared the directory \"${cppBinaryDirectoryPath}\". "
+		compilationFlag=${EXIT_SUCCESS}
+		for entryABI in "${tripleABI[@]}";
+		do
+			keyABI="$(echo "${entryABI}" | awk -F ', ' '{print $1}')"
+			valueABI="$(echo "${entryABI}" | awk -F ', ' '{print $2}')"
+			cppBinaryFilePath="$(echo "${entryABI}" | awk -F ', ' '{print $3}')"
+			compilationOutputs="$(${keyABI}-clang++ -O3 -Wall -Wextra -Wpedantic -I "${cppSourceDirectoryPath}" "${cppSourceFilePath}" -o "${cppBinaryFilePath}" -static-libstdc++ -fPIE -pie 2>&1)"
+			returnCode=$?
+			if [[ ${EXIT_SUCCESS} == ${returnCode} && -z "${compilationOutputs}" && -f "${cppBinaryFilePath}" ]];
+			then
+				echo "Successfully compiled \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\". "
+			else
+				compilationFlag=${EXIT_FAILURE}
+				if [[ -n "${compilationOutputs}" ]];
+				then
+					echo "Failed to compile \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\", or warnings occurred during the compilation. Details are as follows. "
+					echo "${compilationOutputs}"
+				else
+					echo "Failed to compile \"${cppSourceFilePath}\" to \"${cppBinaryFilePath}\", or warnings occurred during the compilation. "
+				fi
+			fi
+		done
+		if [[ ${EXIT_SUCCESS} -ne ${compilationFlag} ]];
+		then
+			exit 16
+		fi
+	else
+		echo "Failed to prepare the directory \"${cppBinaryDirectoryPath}\". "
+		exit 17
 	fi
 fi
 
 # Pack (21--27) #
-readonly webrootFilePath="${srcFolderPath}/${webrootName}.zip"
+readonly webrootName="webroot"
+readonly webrootDirectoryPath="${srcDirectoryPath}/${webrootName}"
+readonly webrootFilePath="${srcDirectoryPath}/${webrootName}.zip"
 readonly propFileName="module.prop"
-readonly propFilePath="${srcFolderPath}/${propFileName}"
+readonly propFilePath="${srcDirectoryPath}/${propFileName}"
 readonly propContent="id=${moduleId}\n\
 name=${moduleName}\n\
 version=v${moduleVersion}\n\
 versionCode=${moduleVersion}\n\
 author=LRFP Team\n\
 description=This is a developing rooting-layer system module for systematically bypassing environment detection related to LRFP for Android devices, where the abbreviation \"LRFP\" stands for Low-level, Rooting, Frameworks, and Plugins. \n\
-updateJson=https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/update.json"
-readonly zipFolderPath="Release"
+updateJson=https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/update.json\n\
+webuiIcon=webroot/icon.jpg"
+readonly zipDirectoryPath="Release"
 readonly zipFileName="${moduleName}_v${moduleVersion}.zip"
-readonly zipFilePath="${zipFolderPath}/${zipFileName}"
+readonly zipFilePath="${zipDirectoryPath}/${zipFileName}"
 
-if [[ -d "${srcFolderPath}" && -d "${srcFolderPath}/META-INF" && -d "${srcFolderPath}/system" ]];
+if [[ -d "${srcDirectoryPath}" && -d "${srcDirectoryPath}/META-INF" && -d "${srcDirectoryPath}/system" ]];
 then
 	echo "Sources were found to be packed. "
-	if [[ -d "${webrootFolderPath}" ]];
+	if [[ -d "${webrootDirectoryPath}" ]];
 	then
 		echo "The web UI folder was found to be packed. "
-		(cd "${webrootFolderPath}" && find . -type f ! -name "*.sha512" ! -name "*.prop" | zip -J -r -v -@ -) > "${webrootFilePath}"
+		(cd "${webrootDirectoryPath}" && find . -type f ! -name "*.sha512" ! -name "*.prop" | zip -J -r -v -@ -) > "${webrootFilePath}"
 		if [[ $? -eq ${EXIT_SUCCESS} && -f "${webrootFilePath}" ]];
 		then
 			echo "Successfully packed the web UI folder. "
@@ -214,7 +224,7 @@ then
 	if [[ ${EXIT_SUCCESS} -eq ${propFlag} && -f "${propFilePath}" ]];
 	then
 		echo "Successfully generated the property file \"${propFilePath}\". "
-		if [[ -z "$(find "${srcFolderPath}" -type f -name "*.sha512" -delete 2>&1)" ]]
+		if [[ -z "$(find "${srcDirectoryPath}" -type f -name "*.sha512" -delete 2>&1)" ]]
 		then
 			echo "Successfully removed all the previous SHA-512 value files. "
 		else
@@ -223,12 +233,12 @@ then
 		fi
 		sha512SuccessCount=0
 		sha512TotalCount=0
-		for file in $(find "${srcFolderPath}" -type f);
+		for file in $(find "${srcDirectoryPath}" -type f);
 		do
 			sha512TotalCount=$(expr ${sha512TotalCount} + 1)
 			if [[ "${webrootFilePath}" == "${file}" ]];
 			then
-				(cd ${srcFolderPath} && find "${webrootName}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort) > "${webrootFilePath}.sha512"
+				(cd ${srcDirectoryPath} && find "${webrootName}" -type f ! -name "*.sha512" ! -name "*.prop" -exec sha512sum {} \; | sort) > "${webrootFilePath}.sha512"
 				sha512ExitCode=$?
 				if [[ ${sha512TotalCount} -ge 1 && ${sha512TotalCount} -le 9 ]];
 				then
@@ -259,14 +269,14 @@ then
 		then
 			exit 23
 		fi
-		if [[ ! -d "${zipFolderPath}" ]];
+		if [[ ! -d "${zipDirectoryPath}" ]];
 		then
-			mkdir -p "${zipFolderPath}"
+			mkdir -p "${zipDirectoryPath}"
 		fi
-		if [[ -d "${zipFolderPath}" ]];
+		if [[ -d "${zipDirectoryPath}" ]];
 		then
-			echo "Successfully prepared the ZIP folder path \"${zipFolderPath}\". "
-			(cd "${srcFolderPath}" && zip -J -r -v - * -x "${webrootName}.zip" -x "${webrootName}.zip.sha512") > "${zipFilePath}"
+			echo "Successfully prepared the ZIP directory \"${zipDirectoryPath}\". "
+			(cd "${srcDirectoryPath}" && zip -J -r -v - * -x "${webrootName}.zip" -x "${webrootName}.zip.sha512") > "${zipFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -f "${zipFilePath}" ]];
 			then
 				echo "Successfully packed the ${moduleName} rooting-layer system module to \"${zipFilePath}\" via the ``zip`` command! "
@@ -275,7 +285,7 @@ then
 				exit 24
 			fi
 		else
-			echo "Failed to prepare the ZIP folder path \"${zipFolderPath}\". "
+			echo "Failed to prepare the ZIP directory \"${zipDirectoryPath}\". "
 			exit 25
 		fi
 	else
@@ -288,9 +298,9 @@ else
 fi
 
 # Changelog (31--33) #
-readonly changelogFolderPath="."
+readonly changelogDirectoryPath="."
 readonly changelogFileName="changelog.md"
-readonly changelogFilePath="${changelogFolderPath}/${changelogFileName}"
+readonly changelogFilePath="${changelogDirectoryPath}/${changelogFileName}"
 
 if [[ $# -ge 1 ]];
 then
@@ -302,10 +312,10 @@ then
 		history=""
 		echo "Failed to read the changelog \"${changelogFilePath}\". "
 	fi
-	mkdir -p "${changelogFolderPath}"
-	if [[ $? -eq ${EXIT_SUCCESS} && -d "${changelogFolderPath}" ]];
+	mkdir -p "${changelogDirectoryPath}"
+	if [[ $? -eq ${EXIT_SUCCESS} && -d "${changelogDirectoryPath}" ]];
 	then
-		echo "Successfully prepared the changelog folder path \"${changelogFolderPath}\". "
+		echo "Successfully prepared the changelog directory \"${changelogDirectoryPath}\". "
 		echo -e "## ${moduleName}_v${moduleVersion}\n" > "${changelogFilePath}"
 		if [[ $? -eq ${EXIT_SUCCESS} && -f "${changelogFilePath}" ]];
 		then
@@ -314,7 +324,7 @@ then
 			do
 				echo "${argument}" >> "${changelogFilePath}"
 			done
-			echo >> "${changelogFilePath}"
+			echo -e "\n---\n" >> "${changelogFilePath}"
 			echo "${history}" >> "${changelogFilePath}"
 			if [[ $? -eq ${EXIT_SUCCESS} && -f "${changelogFilePath}" ]];
 			then
@@ -328,7 +338,7 @@ then
 			exit 32
 		fi
 	else
-		echo "Failed to prepare the changelog folder path \"${changelogFolderPath}\". "
+		echo "Failed to prepare the changelog directory \"${changelogDirectoryPath}\". "
 		exit 33
 	fi
 else
@@ -337,9 +347,9 @@ else
 fi
 
 # Update (34--36) #
-readonly updateFolderPath="."
+readonly updateDirectoryPath="."
 readonly updateFileName="update.json"
-readonly updateFilePath="${updateFolderPath}/${updateFileName}"
+readonly updateFilePath="${updateDirectoryPath}/${updateFileName}"
 readonly updateContent="{\n\
 	\"version\":\"v${moduleVersion}\", \n\
 	\"versionCode\":${moduleVersion}, \n\
@@ -347,10 +357,10 @@ readonly updateContent="{\n\
 	\"changelog\":\"https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/${changelogFileName}\"\n\
 }"
 
-mkdir -p "${updateFolderPath}"
-if [[ $? -eq ${EXIT_SUCCESS} && -d "${updateFolderPath}" ]];
+mkdir -p "${updateDirectoryPath}"
+if [[ $? -eq ${EXIT_SUCCESS} && -d "${updateDirectoryPath}" ]];
 then
-	echo "Successfully prepared the update folder path \"${updateFolderPath}\". "
+	echo "Successfully prepared the update directory \"${updateDirectoryPath}\". "
 	echo -e -n "$updateContent" > "${updateFilePath}"
 	if [[ $? -eq ${EXIT_SUCCESS} && -f "${updateFilePath}" ]];
 	then
@@ -360,10 +370,10 @@ then
 		exit 34
 	fi
 else
-	echo "Failed to prepare the update folder path \"${updateFolderPath}\". "
+	echo "Failed to prepare the update directory \"${updateDirectoryPath}\". "
 	exit 35
 fi
-setPermissions && chmod 755 "${moduleFolderPath}"
+setPermissions && chmod 755 "${moduleDirectoryPath}"
 if [[ $? == ${EXIT_SUCCESS} ]];
 then
 	echo "Successfully set permissions. "
