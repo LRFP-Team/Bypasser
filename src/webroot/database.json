@@ -495,6 +495,7 @@
 		"com.hujiayucc.notask",
 		"com.hujiayucc.rpointer",
 		"com.hx.fanqie",
+		"com.hyperosfix.browser",
 		"com.install.appinstall.xl",
 		"com.jakting.duolingo",
 		"com.janking.viewperf",
@@ -825,6 +826,7 @@
 		"io.github.auag0.pokegopip",
 		"io.github.bbzq",
 		"io.github.bikekoala.aa.display.beta",
+		"io.github.bilihomehider",
 		"io.github.brucezhang1993.warp_loves_play_store",
 		"io.github.cctyl.coolmarkhook",
 		"io.github.chipppppppppp.binnosoko",
@@ -1088,6 +1090,7 @@
 		"xyz.cirno.noswipetokill",
 		"xyz.cirno.pseudodcdimming",
 		"xyz.cirno.unfuckzui",
+		"xyz.melodylsp.codec",
 		"xyz.thewhitedog9487.freeunlock",
 		"xyz.xfqlittlefan.ciwong.hello",
 		"xyz.xfqlittlefan.notdeveloper",
@@ -1146,6 +1149,7 @@
 		"com.oneplus.brickmode",
 		"com.oneplus.gallery",
 		"com.quicinc.voice.activation",
+		"dev.codex.chaoxingdeadline",
 		"net.oneplus.launcher"
 	],
 	"T": {
@@ -1153,5 +1157,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.5+HKT20260620192856643722017"
+	"V": "3.8.5.5+HKT20260620193828392149120"
 }
