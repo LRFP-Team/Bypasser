@@ -24,6 +24,7 @@ class DatabaseManager:
 	__DefaultConnectionTimeout = 10
 	__DefaultEncoding = "utf-8"
 	__Pattern = compile("^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$")
+	__SpanPattern = compile("<span[^<>]*>([A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+)</span>")
 	__Caches = {}
 	__MajorVersion = 3
 	def __init__(self:object, databaseFilePath:str = __DefaultDatabaseFilePath, connectionTimeout:int|float = __DefaultConnectionTimeout, encoding:str = __DefaultEncoding) -> object:
@@ -35,6 +36,7 @@ class DatabaseManager:
 		except:
 			self.__encoding = DatabaseManager.__DefaultEncoding
 		self.__database = None
+		self.__get = None
 	def __getVersionString(self:object) -> str:
 		if isinstance(self.__database, dict):
 			stack, keyCounts = [(value, 1) for value in reversed(self.__database.values())], [DatabaseManager.__MajorVersion, len(self.__database)]
@@ -226,29 +228,35 @@ class DatabaseManager:
 		packageNames = set()
 		if isinstance(URL, str) and isinstance(d, dict):
 			if URL not in DatabaseManager.__Caches:
-				r = __import__("requests").get(URL, timeout = self.__connectionTimeout)
+				if self.__get is None:
+					self.__get = __import__("requests").get
+				r = self.__get(URL, timeout = self.__connectionTimeout)
 				if 200 == r.status_code:
 					DatabaseManager.__Caches[URL] = r.content
 				else:
 					d[URL] = r.status_code
 			if URL in DatabaseManager.__Caches:
-				obj = loads(DatabaseManager.__Caches[URL])
-				if isinstance(obj, list):
-					for item in obj:
-						if isinstance(item, dict) and "name" in item and DatabaseManager.__Pattern.match(item["name"]):
-							packageNames.add(item["name"])
-				elif isinstance(obj, dict) and "$D$" in obj and isinstance(obj["$D$"], list):
-					for item in obj["$D$"]:
-						if (
-							isinstance(item, dict) and "packageName" in item and "category" in item and len(item["category"]) <= 5
-							and item["category"].startswith("$D") and item["category"].endswith("$")
-						):
-							if isinstance(item["packageName"], (tuple, list, set)):
-								for packageName in item["packageName"]:
-									if DatabaseManager.__Pattern.match(packageName):
-										packageNames.add(packageName)
-							elif isinstance(item["packageName"], str) and DatabaseManager.__Pattern.match(item["packageName"]):
-								packageNames.add(item["packageName"])
+				try:
+					obj = loads(DatabaseManager.__Caches[URL])
+					if isinstance(obj, list):
+						for item in obj:
+							if isinstance(item, dict) and "name" in item and DatabaseManager.__Pattern.match(item["name"]):
+								packageNames.add(item["name"])
+					elif isinstance(obj, dict) and "$D$" in obj and isinstance(obj["$D$"], list):
+						for item in obj["$D$"]:
+							if (
+								isinstance(item, dict) and "packageName" in item and "category" in item and len(item["category"]) <= 5
+								and item["category"].startswith("$D") and item["category"].endswith("$")
+							):
+								if isinstance(item["packageName"], (tuple, list, set)):
+									for packageName in item["packageName"]:
+										if DatabaseManager.__Pattern.match(packageName):
+											packageNames.add(packageName)
+								elif isinstance(item["packageName"], str) and DatabaseManager.__Pattern.match(item["packageName"]):
+									packageNames.add(item["packageName"])
+				except BaseException as e:
+					for packageName in DatabaseManager.__SpanPattern.findall(DatabaseManager.__Caches[URL].decode("utf-8")):
+						packageNames.add(packageName)
 		return packageNames
 	def updateFromURLs(self:object, URLs:tuple|list|set|str, key:str, incrementalUpdate:bool = True) -> tuple:
 		try:
@@ -272,6 +280,12 @@ class DatabaseManager:
 				return (False, 0, KeyError("The database was not initialized or the condition ``key in (\"D\", \"M\")`` was not satisfied. "))
 		except BaseException as e:
 			return (False, 0, e)
+	def summary(self:object, key:str) -> dict:
+		d = {}
+		if isinstance(self.__database, dict) and isinstance(key, str):
+			if key in self.__database and isinstance(self.__database[key], (tuple, list)):
+				d[key] = len(self.__database[key])
+		return d
 	def save(self:object) -> tuple:
 		if isinstance(self.__database, dict):
 			self.__database["V"] = self.__getVersionString()
@@ -463,6 +477,7 @@ class RegularUpdater:
 						print("Failed to update package names of ${0}$ from {1} due to {2}. ".format(key, value, repr(d)))
 				else:
 					print("The key passed was neither \'D\' nor \'M\'. ")
+			print("Current $\\|D\\|$ is {0}, and $\\|M\\|$ is {1}. ".format(self.__databaseManager.summary('D'), self.__databaseManager.summary('M')))
 			if localFlag:
 				self.__flag += 0b00000100
 				return True
@@ -720,7 +735,7 @@ def main() -> int:
 	cppBinaryDirectoryName = "generators"
 	actionAFileName, actionBFileName = "actionA.sh", "actionB.sh"
 	selfURL = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
-	#pluginURL = "https://modules.lsposed.org/modules.json"
+	pluginURL = "https://modules.lsposed.org" # "https://modules.lsposed.org/modules.json"
 	cppSourceDirectoryPath = "cpp"
 	cppSourceMainFileName = "generate"
 	extensionsExcluded = (".prop", ".sha512")
@@ -729,7 +744,7 @@ def main() -> int:
 	regularUpdater = RegularUpdater(srcDirectoryPath, webrootName, databaseFileName, cppBinaryDirectoryName, actionAFileName, actionBFileName)
 	if regularUpdater.gitPull() and regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
 		databaseFlag = (
-			regularUpdater.synchronizeDatabase({"D":selfURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
+			regularUpdater.synchronizeDatabase({"D":selfURL, "M":pluginURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
 			and regularUpdater.compileCPP(cppSourceDirectoryPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
 		)
 		differenceFlag = regularUpdater.checkShell()
