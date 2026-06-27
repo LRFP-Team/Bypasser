@@ -201,52 +201,9 @@ private:
 		else
 			return false;
 	}
-	static std::string formatMessage(const std::string& message)
+	static std::string escapeString(const std::string& message)
 	{
-		std::string formattedMessage = "\"";
-		for (unsigned char character : message)
-			switch (character)
-			{
-			case '\a': // \x07
-				formattedMessage += "\\a";
-				break;
-			case '\b': // 0x08
-				formattedMessage += "\\b";
-				break;
-			case '\t': // \x09
-				formattedMessage += "\\t";
-				break;
-			case '\n': // \x0A
-				formattedMessage += "\\n";
-				break;
-			case '\v': // \x0B
-				formattedMessage += "\\v";
-				break;
-			case '\f': // \x0C
-				formattedMessage += "\\f";
-				break;
-			case '\r': // \x0D
-				formattedMessage += "\\r";
-				break;
-			case '\"':
-			case '\'':
-			case '\\':
-				formattedMessage += "\\";
-				formattedMessage += character;
-				break;
-			default:
-				if (character <= 31 || 127 == character)
-				{
-					formattedMessage += "\\x";
-					formattedMessage += HexadecimalCharacterSet[character >> 4];
-					formattedMessage += HexadecimalCharacterSet[character & 15/* 0b 0000 1111 */];
-				}
-				else
-					formattedMessage += character;
-				break;
-			}
-		formattedMessage += "\"";
-		return formattedMessage;
+		return nlohmann::json(message).dump();
 	}
 	bool checkoutApplication(const std::string& apkFilePath, bool& isPlugin)
 	{
@@ -294,7 +251,7 @@ private:
 							if ("assets/xposed_init" == fileName)
 							{
 								isPlugin = cdfh.uncompressedSize > 0;
-								this->print(std::string("Located ") + (isPlugin ? "true" : "false") + " \"assets/xposed_init\" in " + formatMessage(apkFilePath) + ". ", LogLevel::Trace);
+								this->print(std::string("Located ") + (isPlugin ? "true" : "false") + " \"assets/xposed_init\" in " + escapeString(apkFilePath) + ". ", LogLevel::Trace);
 								return true;
 							}
 							apkFile.seekg(cdfh.extraFieldLength + cdfh.fileCommentLength, std::ios::cur);
@@ -413,7 +370,7 @@ private:
 							if (isValid)
 							{
 								/* Enter the second-layer directory */
-								this->print("Trying to enter the second-layer directory for " + formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
+								this->print("Trying to enter the second-layer directory for " + escapeString(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
 								std::filesystem::directory_entry secondLayerEntry{};
 								for (std::filesystem::directory_iterator directoryIt = std::filesystem::directory_iterator(firstLayerEntry.path()); directoryIt != std::filesystem::directory_iterator(); ++directoryIt)
 									if (!directoryIt->is_symlink() && directoryIt->is_directory())
@@ -431,7 +388,7 @@ private:
 									}
 								if (isValid)
 								{
-									this->print("Entered the second-layer directory " + formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
+									this->print("Entered the second-layer directory " + escapeString(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 									std::string packageName = secondLayerEntry.path().filename().string();
 									const size_t position = packageName.find('-');
 									size_t packageNameLength = packageName.length();
@@ -446,11 +403,11 @@ private:
 										if (isValid)
 										{
 											packageName = packageName.substr(0, position);
-											this->print("Located the package name " + formatMessage(packageName) + " in the second-layer directory " + formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
+											this->print("Located the package name " + escapeString(packageName) + " in the second-layer directory " + escapeString(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 											if (std::regex_match(packageName, Pattern))
 											{
 												/* Enter the third-layer directory */
-												this->print("Trying to enter the third-layer directory for " + formatMessage(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
+												this->print("Trying to enter the third-layer directory for " + escapeString(secondLayerEntry.path().string()) + ". ", LogLevel::Trace);
 												std::filesystem::directory_entry thirdLayerEntry{};
 												for (std::filesystem::directory_iterator directoryIt = std::filesystem::directory_iterator(secondLayerEntry.path()); directoryIt != std::filesystem::directory_iterator(); ++directoryIt)
 												{
@@ -480,7 +437,7 @@ private:
 												}
 												if (isValid && !thirdLayerEntry.path().empty())
 												{
-													this->print("Entered the third-layer directory " + formatMessage(thirdLayerEntry.path().string()) + ". ", LogLevel::Trace);
+													this->print("Entered the third-layer directory " + escapeString(thirdLayerEntry.path().string()) + ". ", LogLevel::Trace);
 													++dataDirectoryFormCount;
 													bool isPlugin = false;
 													if (this->checkoutApplication(thirdLayerEntry.path().string(), isPlugin))
@@ -518,12 +475,12 @@ private:
 									isValid = false;
 							if (isValid)
 							{
-								this->print("Trying to enter the second-layer directory for " + formatMessage(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
+								this->print("Trying to enter the second-layer directory for " + escapeString(firstLayerEntry.path().string()) + ". ", LogLevel::Trace);
 								std::filesystem::path apkFilePathObject = firstLayerEntry.path();
 								apkFilePathObject /= directoryName + ".apk";
 								if (!std::filesystem::is_symlink(apkFilePathObject) && std::filesystem::is_regular_file(apkFilePathObject))
 								{
-									this->print("Entered the second-layer directory " + formatMessage(apkFilePathObject.string()) + ". ", LogLevel::Trace);
+									this->print("Entered the second-layer directory " + escapeString(apkFilePathObject.string()) + ". ", LogLevel::Trace);
 									++nonDataDirectoryFormCount;
 									bool isPlugin = false;
 									if (this->checkoutApplication(apkFilePathObject.string(), isPlugin))
@@ -567,12 +524,12 @@ private:
 					else
 						++invalidFormCount;
 				}
-				this->print("Finished traversing " + formatMessage(directoryPath.string()) + " with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(dataDirectoryFormCount) + "(" + std::to_string(dataDirectoryFormSuccessCount) + " + " + std::to_string(dataDirectoryFormFailureCount) + ") + " + std::to_string(nonDataDirectoryFormCount) + "(" + std::to_string(nonDataDirectoryFormSuccessCount) + " + " + std::to_string(nonDataDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Debug);
+				this->print("Finished traversing " + escapeString(directoryPath.string()) + " with " + std::to_string(formCount) + "{" + std::to_string(directoryFormCount) + "[" + std::to_string(dataDirectoryFormCount) + "(" + std::to_string(dataDirectoryFormSuccessCount) + " + " + std::to_string(dataDirectoryFormFailureCount) + ") + " + std::to_string(nonDataDirectoryFormCount) + "(" + std::to_string(nonDataDirectoryFormSuccessCount) + " + " + std::to_string(nonDataDirectoryFormFailureCount) + ") + " + std::to_string(invalidDirectoryFormCount) + " + " + std::to_string(failureInstallationCount) + "(" + std::to_string(failureInstallationRemovedCount) + " + " + std::to_string(failureInstallationUnremovedCount) + ")] + " + std::to_string(fileFormCount) + "[" + std::to_string(validFileFormCount) + "(" + std::to_string(validFileFormSuccessCount) + " + " + std::to_string(validFileFormFailureCount) + ") + " + std::to_string(invalidFileFormCount) + "]" + " + " + std::to_string(invalidFormCount) + "} processed. ", LogLevel::Debug);
 				return true;
 			}
 			catch (...)
 			{
-				this->print("Failed to traverse " + formatMessage(directoryPath.string()) + ". ", LogLevel::Warning);
+				this->print("Failed to traverse " + escapeString(directoryPath.string()) + ". ", LogLevel::Warning);
 				return false;
 			}
 		else

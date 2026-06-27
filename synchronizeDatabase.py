@@ -280,12 +280,12 @@ class DatabaseManager:
 				return (False, 0, KeyError("The database was not initialized or the condition ``key in (\"D\", \"M\")`` was not satisfied. "))
 		except BaseException as e:
 			return (False, 0, e)
-	def summary(self:object, key:str) -> dict:
-		d = {}
+	def summary(self:object, key:str) -> int:
 		if isinstance(self.__database, dict) and isinstance(key, str):
 			if key in self.__database and isinstance(self.__database[key], (tuple, list)):
-				d[key] = len(self.__database[key])
-		return d
+				return len(self.__database[key])
+		else:
+			return None
 	def save(self:object) -> tuple:
 		if isinstance(self.__database, dict):
 			self.__database["V"] = self.__getVersionString()
