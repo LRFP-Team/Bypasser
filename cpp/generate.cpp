@@ -201,9 +201,9 @@ private:
 		else
 			return false;
 	}
-	static std::string escapeString(const std::string& message)
+	static std::string escapeString(const std::string& s)
 	{
-		return nlohmann::json(message).dump();
+		return nlohmann::json(s).dump(-1, '\t', true);
 	}
 	bool checkoutApplication(const std::string& apkFilePath, bool& isPlugin)
 	{

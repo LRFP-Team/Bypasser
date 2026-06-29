@@ -303,7 +303,7 @@ class DatabaseManager:
 
 
 class RegularUpdater:
-	__DefaultExecutionTimeout = 15
+	__DefaultExecutionTimeout = 20
 	__PositiveAnswers = ("Y", "YES", "1", "T", "TRUE")
 	def __init__(
 		self:object, srcDirectoryPath:str, webrootName:str, databaseFileName:str, cppBinaryDirectoryName:str, actionAFileName:str, actionBFileName:str, 

@@ -640,6 +640,7 @@
 		"com.somebody.vipFucker",
 		"com.sotap.module",
 		"com.souleven.photosfix",
+		"com.souleven.wap",
 		"com.spoof.cosa",
 		"com.spoofmydevice",
 		"com.ss.android.ugc.aweme.removeblindwatermark",
@@ -782,6 +783,7 @@
 		"eu.hxreborn.cleanshare",
 		"eu.hxreborn.discoveradsfilter",
 		"eu.hxreborn.gboardmaterialexpressiveblack",
+		"eu.hxreborn.gdialerdechip",
 		"eu.hxreborn.ghfastpass",
 		"eu.hxreborn.phdp",
 		"eu.hxreborn.qsboundlesstiles",
@@ -921,6 +923,7 @@
 		"io.kazutoiris.mrga",
 		"io.kazutoiris.pure.shot",
 		"io.mesalabs.knoxpatch",
+		"io.mo.glassmic",
 		"io.noisyfox.oplongshotxposed",
 		"it.eldavo.pib",
 		"it.kapfer.digitalesamt.liberator",
@@ -1006,6 +1009,7 @@
 		"org.hello.coolapk",
 		"org.klab.alwaysonfps",
 		"org.klab.batteryinfo",
+		"org.klab.gcboost",
 		"org.klab.pixelspoof",
 		"org.liuyi.mifreeformx",
 		"org.lsposed.daemon",
@@ -1104,6 +1108,7 @@
 		"xyz.cirno.unfuckzui",
 		"xyz.melodylsp.codec",
 		"xyz.thewhitedog9487.freeunlock",
+		"xyz.wjm13206.freeunlock",
 		"xyz.xfqlittlefan.ciwong.hello",
 		"xyz.xfqlittlefan.notdeveloper",
 		"yep.python.hook",
@@ -1169,5 +1174,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.5+HKT20260627221103318960620"
+	"V": "3.8.5.5+HKT20260630035043927800688"
 }
