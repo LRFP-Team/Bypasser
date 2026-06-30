@@ -7,42 +7,4 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          sparse-checkout: |
-            cpp
-            src
-            build.sh
-      
-      - name: Install the Android C++ compiler
-        run: |
-          cd "${HOME}"
-          NDK_VERSION="r29"
-          wget "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip"
-          unzip "android-ndk-${NDK_VERSION}-linux.zip"
-          rm "android-ndk-${NDK_VERSION}-linux.zip"
-          echo "${HOME}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
-      
-      - name: Build
-        run: |
-          cd "${{ github.workspace }}"
-          chmod 744 ./build.sh && ./build.sh
-        env:
-          TZ: 'Asia/Hong_Kong'
-      
-      - name: Prepare the artifact
-        id: artifact
-        run: |
-          cd "${{ github.workspace }}"
-          artifact="$(basename "$(find Release -type f | sort | tail -1)")"
-          echo "artifact=${artifact}" >> "${GITHUB_OUTPUT}"
-      
-      - name: Upload the artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: ${{ github.workspace }}/Release/${{ steps.artifact.outputs.artifact }}
-          archive: false
-          if-no-files-found: error
+    uses: ./.github/workflows/build.yml

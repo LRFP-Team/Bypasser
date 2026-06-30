@@ -7,58 +7,39 @@ on:
 
 jobs:
   build:
+    uses: ./.github/workflows/build.yml
+  
+  notify:
     runs-on: ubuntu-latest
+    needs: build
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
-      
-      - name: Install the Android C++ compiler
-        run: |
-          cd "${HOME}"
-          NDK_VERSION="r29"
-          wget "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip"
-          unzip "android-ndk-${NDK_VERSION}-linux.zip"
-          rm "android-ndk-${NDK_VERSION}-linux.zip"
-          echo "${HOME}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
-      
-      - name: Build
-        run: |
-          cd "${{ github.workspace }}"
-          chmod 744 ./build.sh && ./build.sh
-        env:
-          TZ: 'Asia/Hong_Kong'
-      
-      - name: Prepare the artifact
-        id: artifact
-        run: |
-          cd "${{ github.workspace }}"
-          artifact="$(basename "$(find Release -type f | sort | tail -1)")"
-          echo "artifact=${artifact}" >> "${GITHUB_OUTPUT}"
-      
-      - name: Upload the artifact
-        uses: actions/upload-artifact@v7
-        with:
-          path: ${{ github.workspace }}/Release/${{ steps.artifact.outputs.artifact }}
-          archive: false
-          if-no-files-found: error
+          fetch-depth: 0
       
       - name: Prepare information
         id: information
         run: |
           echo "time=HKT $(date '+%Y%m%d%H%M%S')" >> "${GITHUB_OUTPUT}"
-          if git rev-parse --verify HEAD~1 >/dev/null 2>&1;
+          previousCommit="${{ github.event.before }}"
+          currentCommit="${{ github.sha }}"
+          if [[ "0000000000000000000000000000000000000000" == "${previousCommit}" ]];
           then
-            changes="$(git diff --stat HEAD~1 HEAD)"
+            entryTree="$(git hash-object -t tree /dev/null)"
+            changes="$(git diff --stat "${entryTree}" "${currentCommit}")"
           else
-            changes="$(git show --stat HEAD)"
+            commonBase="$(git merge-base "${previousCommit}" "${currentCommit}")"
+            changes="$(git diff --stat "${commonBase}" "${currentCommit}")"
           fi
           maximumLength=3072
           if [[ ${#changes} -gt ${maximumLength} ]];
           then
             lastLine="$(echo "${changes}" | tail -n 1)"
             changes="$(echo "${changes:0:${maximumLength}}" | head -n -1)"$'\n...\n'"${lastLine}"
+          elif [[ -z "${changes}" ]];
+          then
+            changes="0 files changed, 0 insertions(+), 0 deletions(-)"
           fi
           echo "changes<<EOF" >> "${GITHUB_OUTPUT}"
           echo "${changes}" >> "${GITHUB_OUTPUT}"
@@ -73,7 +54,7 @@ jobs:
           token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           format: markdown
           message: |
-            New Push to GitHub! 
+            New push to GitHub! 
             
             - Repository: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
             - Branch: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})

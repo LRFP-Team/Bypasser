@@ -409,15 +409,15 @@ public:
 					if (dictionary.size() >= 1)
 					{
 						std::cout << "The most recent " << std::min(dictionary.size(), maximumCount) << " time delta(s) from " << escapeString(scoreFilePath) << " are as follows. " << std::endl;
-						std::vector<std::pair<int, long long int>>::const_iterator previousIterator = dictionary.cbegin();
-						std::vector<std::pair<int, long long int>>::const_iterator currentIterator = previousIterator++;
+						std::vector<std::pair<int, long long int>>::const_iterator nextIterator = dictionary.cbegin();
+						std::vector<std::pair<int, long long int>>::const_iterator currentIterator = nextIterator++;
 						const long long int currentTimestamp = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-						std::cout << "- [* -> " << timestamp2string(currentTimestamp) << "] - [" << previousIterator->first << " -> " << timestamp2string(previousIterator->second) << "] = " << (currentTimestamp  - previousIterator->second) << " ms" << std::endl;
+						std::cout << "- [* -> " << timestamp2string(currentTimestamp) << "] - [" << currentIterator->first << " -> " << timestamp2string(currentIterator->second) << "] = " << (currentTimestamp  - currentIterator->second) << " ms" << std::endl;
 						size_t deltaCount = 0;
 						while (currentIterator != dictionary.cend() && deltaCount < maximumCount)
 						{
-							std::cout << "- [" << currentIterator->first << " -> " << timestamp2string(currentIterator->second) << "] - [" << previousIterator->first << " -> " << timestamp2string(previousIterator->second) << "] = " << (currentIterator->second  - previousIterator->second) << " ms" << std::endl;
-							++previousIterator;
+							std::cout << "- [" << currentIterator->first << " -> " << timestamp2string(currentIterator->second) << "] - [" << nextIterator->first << " -> " << timestamp2string(nextIterator->second) << "] = " << (currentIterator->second  - nextIterator->second) << " ms" << std::endl;
+							++nextIterator;
 							++currentIterator;
 							++deltaCount;
 						}
