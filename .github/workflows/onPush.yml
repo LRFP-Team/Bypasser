@@ -10,59 +10,8 @@ jobs:
     uses: ./.github/workflows/build.yml
   
   notify:
-    runs-on: ubuntu-latest
     needs: build
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      
-      - name: Prepare information
-        id: information
-        run: |
-          echo "time=HKT $(date '+%Y%m%d%H%M%S')" >> "${GITHUB_OUTPUT}"
-          previousCommit="${{ github.event.before }}"
-          currentCommit="${{ github.sha }}"
-          if [[ "0000000000000000000000000000000000000000" == "${previousCommit}" ]];
-          then
-            entryTree="$(git hash-object -t tree /dev/null)"
-            changes="$(git diff --stat "${entryTree}" "${currentCommit}")"
-          else
-            commonBase="$(git merge-base "${previousCommit}" "${currentCommit}")"
-            changes="$(git diff --stat "${commonBase}" "${currentCommit}")"
-          fi
-          maximumLength=3072
-          if [[ ${#changes} -gt ${maximumLength} ]];
-          then
-            lastLine="$(echo "${changes}" | tail -n 1)"
-            changes="$(echo "${changes:0:${maximumLength}}" | head -n -1)"$'\n...\n'"${lastLine}"
-          elif [[ -z "${changes}" ]];
-          then
-            changes="0 files changed, 0 insertions(+), 0 deletions(-)"
-          fi
-          echo "changes<<EOF" >> "${GITHUB_OUTPUT}"
-          echo "${changes}" >> "${GITHUB_OUTPUT}"
-          echo "EOF" >> "${GITHUB_OUTPUT}"
-        env:
-          TZ: 'Asia/Hong_Kong'
-      
-      - name: Notify updates
-        uses: appleboy/telegram-action@master
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          format: markdown
-          message: |
-            New push to GitHub! 
-            
-            - Repository: [${{ github.repository }}](${{ github.server_url }}/${{ github.repository }})
-            - Branch: [${{ github.ref_name }}](${{ github.server_url }}/${{ github.repository }}/tree/${{ github.ref_name }})
-            - Commit: [${{ github.sha }}](${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }})
-            - Workflow: [Run #${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            - Time: ${{ steps.information.outputs.time }}
-            
-            Changes: 
-            ```
-            ${{ steps.information.outputs.changes }}
-            ```
+    uses: LRFP-Team/LRFP/.github/workflows/notify.yml@main
+    secrets:
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
