@@ -384,6 +384,7 @@
 		"com.chrxw.justenablednotification",
 		"com.chrxw.purenga",
 		"com.clipboardfix",
+		"com.clipvault.app",
 		"com.close.hook.ads",
 		"com.coderstory.flyme",
 		"com.coderstory.flyme10",
@@ -415,6 +416,7 @@
 		"com.dualguard",
 		"com.duolingo.kill",
 		"com.easy.tgPlus",
+		"com.eli.mfgx",
 		"com.emanuelef.remote_capture",
 		"com.evo.piccatcher",
 		"com.example.installhook",
@@ -824,6 +826,7 @@
 		"icu.freedomintrovert.YTSendCommAntiFraud",
 		"icu.insomnia.qavatar",
 		"icu.insomnia.zen",
+		"icu.nullptr.polyglot",
 		"icu.nullptr.twifucker",
 		"id.my.pjm.toys.nfcnci_patience",
 		"id.my.pjm.toys.noableism",
@@ -862,6 +865,7 @@
 		"io.github.chsbuffer.miuihelper",
 		"io.github.chsbuffer.revancedxposed",
 		"io.github.cloudburst.messengerex",
+		"io.github.codecodegogogo.newmipushenhance",
 		"io.github.cpatcher",
 		"io.github.dixtdf.key.forward",
 		"io.github.dixtdf.oplus.display",
@@ -1007,6 +1011,7 @@
 		"moe.chenxy.hyperpods",
 		"moe.henry_zhr.force_dark",
 		"moe.henry_zhr.kill_domain_verification",
+		"moe.lovefirefly.betterzuikey",
 		"moe.lyniko.hiderecent",
 		"moe.lyniko.replacecursor",
 		"moe.lz233.mitranslator",
@@ -1027,6 +1032,7 @@
 		"org.cf0x.konamiku",
 		"org.frknkrc44.hma_oss",
 		"org.hdhmc.bilihdpager",
+		"org.hdhmc.hyperwallpapermonet",
 		"org.hello.coolapk",
 		"org.klab.alwaysonfps",
 		"org.klab.batteryinfo",
@@ -1045,6 +1051,7 @@
 		"org.xiyu.githubdirect",
 		"org.xiyu.starx",
 		"org.zwanoo.android.speedtest",
+		"ox.fzer0x.fuckexfilemanager",
 		"pansong291.xposed.quickenergy",
 		"pansong291.xposed.quickenergy.qiufeng",
 		"pansong291.xposed.quickenergy.repair",
@@ -1197,5 +1204,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.5+HKT20260701020731264979189"
+	"V": "3.8.5.5+HKT20260707113358239821011"
 }
