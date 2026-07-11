@@ -480,6 +480,7 @@
 		"com.gswxxn.unlockmilink",
 		"com.gswxxn.xmsfnotichannel",
 		"com.guoshi.httpcanary",
+		"com.h3110w0r1d.phoenix",
 		"com.haostoo.wetypehookr",
 		"com.happwner",
 		"com.hcgstudio.miui.fuck.gesture",
@@ -661,6 +662,7 @@
 		"com.strawing.alwaysthemedicon",
 		"com.strawing.duckdevicepolicy",
 		"com.strawing.fuckdevicepolicy",
+		"com.sui.datamanager",
 		"com.suisho.disablescreenshotsound",
 		"com.suisho.pixelposed",
 		"com.sukisu.ultra",
@@ -681,6 +683,7 @@
 		"com.th7.flinspirer.admin",
 		"com.thinkdifferent.anywebview",
 		"com.three.minit.batteryresources",
+		"com.tianqianguai.reweibo",
 		"com.tlsu.opluscamerapro",
 		"com.topjohnwu.magisk",
 		"com.topmiaohan.superlist",
@@ -700,6 +703,7 @@
 		"com.variable.apkhook",
 		"com.varuns2002.disable_flag_secure",
 		"com.veo.hook.bili.speed",
+		"com.vince.geminimi",
 		"com.vivian8421.mipushenhance",
 		"com.w2016.fuckRealmeOTG",
 		"com.w2016.sensorfilter",
@@ -755,6 +759,7 @@
 		"com.yuuki.puresatusbar",
 		"com.yxer.compo.module",
 		"com.zdy.project.wechat_chatroom_helper",
+		"com.zgcwkj.xpmibackup",
 		"com.zhangnew.wechatmultiwebview",
 		"com.zhenxi.fundex2",
 		"com.zhenxi.funelf",
@@ -883,6 +888,7 @@
 		"io.github.howard20181.notificationiconfix",
 		"io.github.huajiqaq.farmadskip",
 		"io.github.huskydg.magisk",
+		"io.github.hypercopy",
 		"io.github.hyperisland",
 		"io.github.icepony.alwaysbatterysaver",
 		"io.github.icepony.alwayscreateuser",
@@ -1204,5 +1210,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.5+HKT20260707113358239821011"
+	"V": "3.8.5.5+HKT20260711191525102625812"
 }

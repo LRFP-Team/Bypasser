@@ -311,17 +311,26 @@ then
 		abortFlag=${EXIT_SUCCESS}
 		if [[ -f "${cppBinaryFilePath}" ]];
 		then
-			rm -rf "${cppBinaryFilePath}.bak" && mv "${cppBinaryFilePath}" "${cppBinaryFilePath}.bak"
+			rm -f "${cppBinaryFilePath}.bak" && mv "${cppBinaryFilePath}" "${cppBinaryFilePath}.bak"
 			if [[ $? -eq ${EXIT_SUCCESS} && -f "${cppBinaryFilePath}.bak" ]];
 			then
-				echo "Successfully moved \"${cppBinaryFilePath}\" to \"${cppBinaryFilePath}.bak\". "
+				echo "Successfully backed up \"${cppBinaryFilePath}\" by renaming it to \"${cppBinaryFilePath}.bak\". "
 			else
 				abortFlag=${EXIT_FAILURE}
 				exitCode=$((exitCode | 2))
-				echo "Failed to move \"${cppBinaryFilePath}\" to \"${cppBinaryFilePath}.bak\". "
+				echo "Failed to back up \"${cppBinaryFilePath}\" by renaming it to \"${cppBinaryFilePath}.bak\". "
 			fi
 		else
-			echo "No old generators were found to be backed up. "
+			echo "Skipped backing up the old generator \"${cppBinaryFilePath}\" due to its absence. "
+			mkdir -p "${cppBinaryDirectoryPath}"
+			if [[ $? -eq ${EXIT_SUCCESS} && -d "${cppBinaryDirectoryPath}" ]];
+			then
+				echo "Successfully prepared the directory \"${cppBinaryDirectoryPath}\". "
+			else
+				abortFlag=${EXIT_FAILURE}
+				exitCode=$((exitCode | 2))
+				echo "Failed to prepare the directory \"${cppBinaryDirectoryPath}\". "
+			fi
 		fi
 		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 		then
@@ -340,7 +349,7 @@ then
 						echo "Failed to remove \"${cppBinaryFilePath}.bak\". "
 					fi
 				else
-					echo "No old generators that should be removed were found. "
+					echo "The backup file \"${cppBinaryFilePath}.bak\" to be removed did not exist. "
 				fi
 			else
 				exitCode=$((exitCode | 2))
@@ -355,7 +364,7 @@ then
 						echo "Failed to restore \"${cppBinaryFilePath}.bak\" to \"${cppBinaryFilePath}\". "
 					fi
 				else
-					echo "No old generators that should be removed were found. "
+					echo "The backup file \"${cppBinaryFilePath}.bak\" to be restored did not exist. "
 				fi
 			fi
 		fi
@@ -379,14 +388,14 @@ then
 			rm -rf "${webrootDirectoryPath}.bak" && mv -fT "${webrootDirectoryPath}" "${webrootDirectoryPath}.bak"
 			if [[ $? -eq ${EXIT_SUCCESS} && -d "${webrootDirectoryPath}.bak" ]];
 			then
-				echo "Successfully moved \"${webrootDirectoryPath}\" to \"${webrootDirectoryPath}.bak\". "
+				echo "Successfully backed up \"${webrootDirectoryPath}\" by renaming it to \"${webrootDirectoryPath}.bak\". "
 			else
 				abortFlag=${EXIT_FAILURE}
 				exitCode=$((exitCode | 2))
-				echo "Failed to move \"${webrootDirectoryPath}\" to \"${webrootDirectoryPath}.bak\". "
+				echo "Failed to back up \"${webrootDirectoryPath}\" by renaming it to \"${webrootDirectoryPath}.bak\". "
 			fi
 		else
-			echo "No old web UI directories were found to be backed up. "
+			echo "Skipped backing up the old web UI directory \"${webrootDirectoryPath}\" due to its absence. "
 		fi
 		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 		then
@@ -412,7 +421,7 @@ then
 						echo "Failed to restore the action slot \"${updatedAB}\". "
 					fi
 				else
-					echo "No old web UI directories that should be removed were found. "
+					echo "The backup directory \"${webrootDirectoryPath}.bak\" to be removed did not exist. "
 				fi
 			else
 				exitCode=$((exitCode | 2))
@@ -427,7 +436,7 @@ then
 						echo "Failed to restore \"${webrootDirectoryPath}.bak\" to \"${webrootDirectoryPath}\". "
 					fi
 				else
-					echo "No old web UI directories were found for restoring. "
+					echo "The backup directory \"${webrootDirectoryPath}.bak\" to be restored did not exist. "
 				fi
 			fi
 		fi
@@ -873,10 +882,10 @@ then
 		echo "The security patch file was found at \"${trickyStoreSecurityPatchFilePath}\". "
 		if mv -f "${trickyStoreSecurityPatchFilePath}" "${trickyStoreSecurityPatchFilePath}.bak";
 		then
-			echo "Successfully removed \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
+			echo "Successfully removed \"${trickyStoreSecurityPatchFilePath}\" by renaming it to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		else
 			exitCode=$((exitCode | 16))
-			echo "Failed to remove \"${trickyStoreSecurityPatchFilePath}\" by renaming to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
+			echo "Failed to remove \"${trickyStoreSecurityPatchFilePath}\" by renaming it to \`\`${trickyStoreSecurityPatchFileName}.bak\`\`. "
 		fi
 	else
 		echo "The security patch file at \"${trickyStoreSecurityPatchFilePath}\" did not exist, which was proper. "
@@ -888,13 +897,13 @@ then
 		mv -f "${trickyStoreTargetFilePath}" "${trickyStoreTargetFilePath}.bak"
 		if [[ $? -eq ${EXIT_SUCCESS} && -f "${trickyStoreTargetFilePath}.bak" ]];
 		then
-			echo "Successfully moved \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+			echo "Successfully backed up \"${trickyStoreTargetFilePath}\" by renaming it to \"${trickyStoreTargetFilePath}.bak\". "
 		else
 			abortFlag=${EXIT_FAILURE}
-			echo "Failed to move \"${trickyStoreTargetFilePath}\" to \"${trickyStoreTargetFilePath}.bak\". "
+			echo "Failed to back up \"${trickyStoreTargetFilePath}\" by renaming it \"${trickyStoreTargetFilePath}.bak\". "
 		fi
 	else
-		echo "The backing up has been skipped since the Tricky Store target text file \"${trickyStoreTargetFilePath}\" did not exist. "
+		echo "Skipped backing up the Tricky Store target text file \"${trickyStoreTargetFilePath}\" due to its absence. "
 	fi
 	if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 	then
@@ -913,7 +922,7 @@ then
 					echo "Failed to restore \"${trickyStoreTargetFilePath}.bak\" to \"${trickyStoreTargetFilePath}\". "
 				fi
 			else
-				echo "The backup file \"${trickyStoreTargetFilePath}.bak\" does not exist. "
+				echo "The backup file \"${trickyStoreTargetFilePath}.bak\" to be restored did not exist. "
 			fi
 		fi
 	fi
