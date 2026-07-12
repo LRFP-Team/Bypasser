@@ -14,6 +14,7 @@ This module will only take effect when users install it or click the ``action`` 
   - Handle sensitive policies and properties. 
   - Enforce SELinux (Use ``setenforce 0`` to reset if necessary). 
   - Check whether the kernel version involves banned strings. 
+  - Check whether the system is signed with release keys. 
   - Patch ``/etc/compatconfig/services-platform-compat-config.xml``. 
   - Enable the feature of hiding desktop icons on devices running Android 10 or above. 
 

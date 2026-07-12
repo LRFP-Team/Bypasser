@@ -1070,6 +1070,12 @@ if [[ ${bannedSubStringFoundFlag} -eq ${EXIT_SUCCESS} ]];
 then
 	echo "No banned substrings were found in the kernel version \"${kernelVersion}\". "
 fi
+if [[ "release-keys" == "$(getprop ro.build.tags)" ]];
+then
+	echo "The system is already signed with release keys. "
+else
+	echo "Please ask the ROM developers to sign the system with release keys. "
+fi
 if [[ -s "${sourceXmlFilePath}" ]];
 then
 	if grep -qF 'enableAfterTargetSdk="0" id="143937733"' "${sourceXmlFilePath}";

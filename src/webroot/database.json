@@ -363,6 +363,7 @@
 		"com.bit747.clipboardfilter",
 		"com.bit747.smobajump",
 		"com.blanke.diaomao163",
+		"com.blizzard225.wallpapersetter",
 		"com.bubiu.counter",
 		"com.bug.gamehook",
 		"com.bug.hookvip",
@@ -938,6 +939,7 @@
 		"io.github.tehcneko.satback",
 		"io.github.tehcneko.sslunpinning",
 		"io.github.tehcneko.telespeed",
+		"io.github.timeline_unlocker.xposed",
 		"io.github.vvb2060.callrecording",
 		"io.github.vvb2060.magisk",
 		"io.github.wzhy.xaudiocapture",
@@ -1210,5 +1212,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.5+HKT20260711191525102625812"
+	"V": "3.8.5.5+HKT20260712192929173852240"
 }
