@@ -506,6 +506,7 @@
 		"com.houvven.impad",
 		"com.houvven.olocalnstall",
 		"com.htetz.monopatch",
+		"com.huaMax",
 		"com.hujiayucc.hook",
 		"com.hujiayucc.notask",
 		"com.hujiayucc.rpointer",
@@ -634,6 +635,7 @@
 		"com.rifsxd.ksunext",
 		"com.rifsxd.processhook",
 		"com.rosan.dhizuku.api.xposed",
+		"com.rww.wetypeswipe",
 		"com.sal.privacykit",
 		"com.samsung.music.qs.lagfix",
 		"com.senliast.updatesmanagerextended",
@@ -684,6 +686,7 @@
 		"com.th7.flinspirer.admin",
 		"com.thinkdifferent.anywebview",
 		"com.three.minit.batteryresources",
+		"com.tianqianguai.gramsieve",
 		"com.tianqianguai.reweibo",
 		"com.tlsu.opluscamerapro",
 		"com.topjohnwu.magisk",
@@ -735,6 +738,7 @@
 		"com.xiaoer.watermark",
 		"com.xiaohe.hyperclick",
 		"com.xiaoniu.zuiyouhook",
+		"com.xiyunmn.cwmhook",
 		"com.xiyunmn.puredupan.hook",
 		"com.xposed.miuiime",
 		"com.xtaolabs.fuck_huaya",
@@ -836,6 +840,7 @@
 		"icu.nullptr.twifucker",
 		"id.my.pjm.toys.nfcnci_patience",
 		"id.my.pjm.toys.noableism",
+		"idali.themebadgedicons",
 		"im.hoho.alipayinstallb",
 		"im.mingxi.miko",
 		"inc.whew.android.fakegapps",
@@ -940,6 +945,7 @@
 		"io.github.tehcneko.sslunpinning",
 		"io.github.tehcneko.telespeed",
 		"io.github.timeline_unlocker.xposed",
+		"io.github.twyora.douyinenhancer",
 		"io.github.vvb2060.callrecording",
 		"io.github.vvb2060.magisk",
 		"io.github.wzhy.xaudiocapture",
@@ -1114,6 +1120,7 @@
 		"tn.loukious.fakerunlocker",
 		"tn.payoneer.loukious",
 		"top.canyie.settingsfirewall",
+		"top.cbug.adbx",
 		"top.galqq",
 		"top.hookvip.pro",
 		"top.hookvip.wxtablet",
@@ -1212,5 +1219,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.5+HKT20260712192929173852240"
+	"V": "3.8.5.5+HKT20260715004941458003177"
 }
