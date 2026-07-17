@@ -934,7 +934,7 @@ echo ""
 
 # Shell (0bX00000) #
 echo "# Shell (0bX00000) #"
-readonly sensitiveApplications="com.google.android.safetycore com.google.android.contactkeys"
+readonly sensitiveApplications="com.google.android.contactkeys com.google.android.safetycore com.google.android.verifier"
 readonly policiesToBeDeleted="hidden_api_policy hidden_api_policy_p_apps hidden_api_policy_pre_p_apps hidden_api_blacklist_exemptions"
 readonly propertiesToBeSet="ro.boot.vbmeta.device_state:locked ro.boot.verifiedbootstate:green vendor.boot.secboot:enabled"
 readonly propertiesToExist="ro.boot.vbmeta.avb_version ro.boot.vbmeta.hash_alg ro.boot.vbmeta.size ro.boot.vbmeta.digest"
