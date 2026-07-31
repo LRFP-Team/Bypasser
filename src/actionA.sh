@@ -488,7 +488,13 @@ function isModuleInstalled
 	return ${EXIT_FAILURE}
 }
 
-if [[ "${ZYGISK_ENABLED}" == "1" ]];
+if znctl status 2>/dev/null | grep -qF "zygote_states:1" && znctl status 2>/dev/null | grep -qF "inject_state:1";
+then
+	znctlStatus="1"
+else
+	znctlStatus="0"
+fi
+if [[ "${ZYGISK_ENABLED}" == "1" || "${znctlStatus}" == "1" ]];
 then
 	zygiskSolutionModuleName="$(isModuleInstalled "${zygiskSolutionModuleId}")"
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
