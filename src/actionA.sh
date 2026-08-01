@@ -3,20 +3,15 @@
 readonly EXIT_SUCCESS=0
 readonly EXIT_FAILURE=1
 readonly EOF=255
-readonly VK_POWER=13
-readonly VK_SCREEN=20
-readonly VK_UP=38
-readonly VK_DOWN=40
 readonly moduleName="Bypasser"
-readonly moduleId="bypasser"
-readonly defaultTimeout=5
 readonly actionDirectoryPath="$(dirname "$0")"
+readonly moduleId="bypasser"
 readonly adbFolder="../.."
-readonly ksuFolder="${adbFolder}/ksu"
-readonly magiskFolder="${adbFolder}/magisk"
 readonly apatchFolder="${adbFolder}/ap"
-readonly startTime=$(date +%s%N)
+readonly magiskFolder="${adbFolder}/magisk"
+readonly ksuFolder="${adbFolder}/ksu"
 readonly magiskVulnerabilityVersion=27007
+readonly startTime=$(date +%s%N)
 exitCode=${EXIT_SUCCESS}
 
 function clearCaches
@@ -210,23 +205,23 @@ echo ""
 
 # Update (0b0000X0) #
 echo "# Update (0b0000X0) #"
-readonly curlTimeout=10
 readonly currentAB="A"
 readonly targetAB="B"
+readonly curlTimeout=10
 readonly targetAction="action${targetAB}.sh"
 readonly actionDigestURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}.sha512"
-readonly actionContentURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}"
 readonly webrootName="webroot"
 readonly webrootDirectoryPath="${webrootName}"
 readonly actionPropFileName="action.prop"
 readonly actionPropFilePath="${webrootDirectoryPath}/${actionPropFileName}"
-readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip.sha512"
-readonly downloadTimeout=50
+readonly actionContentURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${targetAction}"
 readonly cppBinaryFileName="generate_$(getprop ro.product.cpu.abi)"
 readonly cppBinaryDigestURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/generators/${cppBinaryFileName}.sha512"
 readonly cppBinaryDirectoryPath="generators"
 readonly cppBinaryFilePath="${cppBinaryDirectoryPath}/${cppBinaryFileName}"
+readonly downloadTimeout=50
 readonly cppBinaryURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/generators/${cppBinaryFileName}"
+readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip.sha512"
 readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip"
 readonly webrootFilePath="${webrootName}.zip"
 
@@ -451,11 +446,6 @@ echo ""
 echo "# Zygisk Traces (0b000X00) #"
 readonly magiskModuleFolder="${adbFolder}/modules"
 readonly zygiskSolutionModuleId="zygisksu"
-readonly zygiskNextConfigurationDirectoryPath="${adbFolder}/zygisksu"
-readonly zygiskNextDenylistEnforceConfigurationFileName="denylist_enforce"
-readonly zygiskNextDenylistEnforceConfigurationFilePath="${zygiskNextConfigurationDirectoryPath}/${zygiskNextDenylistEnforceConfigurationFileName}"
-readonly zygiskNextDenylistPolicyConfigurationFileName="denylist_policy"
-readonly zygiskNextDenylistPolicyConfigurationFilePath="${zygiskNextConfigurationDirectoryPath}/${zygiskNextDenylistPolicyConfigurationFileName}"
 readonly shamikoModuleId="zygisk_shamiko"
 readonly shamikoConfigurationDirectoryPath="${adbFolder}/shamiko"
 readonly shamikoWhitelistConfigurationFileName="whitelist"
@@ -465,6 +455,11 @@ readonly noHelloModuleId="zygisk_nohello"
 readonly noHelloConfigurationDirectoryPath="${adbFolder}/nohello"
 readonly noHelloWhitelistConfigurationFileName="whitelist"
 readonly noHelloWhitelistConfigurationFilePath="${noHelloConfigurationDirectoryPath}/${noHelloWhitelistConfigurationFileName}"
+readonly zygiskNextConfigurationDirectoryPath="${adbFolder}/zygisksu"
+readonly zygiskNextDenylistPolicyConfigurationFileName="denylist_policy"
+readonly zygiskNextDenylistPolicyConfigurationFilePath="${zygiskNextConfigurationDirectoryPath}/${zygiskNextDenylistPolicyConfigurationFileName}"
+readonly zygiskNextDenylistEnforceConfigurationFileName="denylist_enforce"
+readonly zygiskNextDenylistEnforceConfigurationFilePath="${zygiskNextConfigurationDirectoryPath}/${zygiskNextDenylistEnforceConfigurationFileName}"
 readonly rezygiskConfigurationDirectoryPath="${adbFolder}/rezygisk"
 readonly neozygiskConfigurationDirectoryPath="${adbFolder}/neozygisk"
 readonly builtInZygiskFilePath="${adbFolder}/magisk/zygisk"
@@ -488,7 +483,7 @@ function isModuleInstalled
 	return ${EXIT_FAILURE}
 }
 
-if znctl status 2>/dev/null | grep -qF "zygote_states:1" && znctl status 2>/dev/null | grep -qF "inject_state:1";
+if znctl status 2>/dev/null | grep -qF "inject_state:1";
 then
 	znctlStatus="1"
 else
@@ -681,14 +676,19 @@ echo ""
 
 # HMA Configurations (0b00X000) #
 echo "# HMA Configurations (0b00X000) #"
+readonly defaultTimeout=5
+readonly VK_UP=38
+readonly VK_DOWN=40
+readonly VK_POWER=13
+readonly VK_SCREEN=20
 readonly databaseFileName="database.json"
-readonly databaseFilePath="${webrootDirectoryPath}/${databaseFileName}"
 if [[ -n "${EXTERNAL_STORAGE}" ]];
 then
 	readonly generationOutputDirectoryPath="${EXTERNAL_STORAGE}/Download/.${moduleName}"
 else
 	readonly generationOutputDirectoryPath="/sdcard/Download/.${moduleName}"
 fi
+readonly databaseFilePath="${webrootDirectoryPath}/${databaseFileName}"
 readonly hmaV92WhitelistConfigurationFileName=".hmaV92WhitelistConfiguration.json"
 readonly hmaV92WhitelistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaV92WhitelistConfigurationFileName}"
 readonly hmaV92BlacklistConfigurationFileName=".hmaV92BlacklistConfiguration.json"
@@ -1130,10 +1130,10 @@ fi
 echo ""
 
 # Exit #
-readonly endTime=$(date +%s%N)
-readonly timeDelta=$((endTime - startTime - gapTime))
 readonly variableFileName="variables.log"
 readonly variableFilePath="${generationOutputDirectoryPath}/${variableFileName}"
+readonly endTime=$(date +%s%N)
+readonly timeDelta=$((endTime - startTime - gapTime))
 
 set > "${variableFilePath}"
 if [[ ${EXIT_SUCCESS} -eq $((exitCode & EXIT_FAILURE)) ]];

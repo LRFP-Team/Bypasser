@@ -1,3 +1,10 @@
+## Bypasser_v2026080202
+
+- Adjusted the variable order. 
+- Optimized the action scripts and the web UI. 
+
+---
+
 ## Bypasser_v2026062002
 
 - Adjusted the logic of ``action.sh``. 
