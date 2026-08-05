@@ -8,13 +8,14 @@ This module will only take effect when users install it or click the ``action`` 
 - Update (0b0000X0): Perform regular dynamic updates for ``actionA.sh``/``actionB.sh``, the specified generator, and the web UI. Networks to GitHub are required. 
 - Zygisk Traces (0b000X00): Deploy correct configurations for different Zygisk solutions according to the Zygisk implementation, Shamiko, NoHello, and Zygisk Assistant modules used. 
 - HMA Configurations (0b00X000): Generate relevant configurations for HMA and its variants based on the cloud database (along with the web UI updating) and local packages (if enabled). Users are required to manually import the configurations via HMA or one of its variants. 
-- Tricky Store (0b0X0000): Generate Tricky Store configurations directly based on the cloud database. The configurations will be written directly to the Tricky Store configuration folder. 
+- Tricky Store Configurations (0b0X0000): Generate Tricky Store configurations directly based on the cloud database. The configurations will be written directly to the Tricky Store configuration directory. 
 - Shell (0bX00000): Perform some shell commands. Please check ``actionA.sh`` for details. 
   - Disable sensitive applications automatically installed by Google. 
   - Handle sensitive policies and properties. 
   - Enforce SELinux (Use ``setenforce 0`` to reset if necessary). 
   - Check whether the kernel version involves banned strings. 
-  - Check whether the system is signed with release keys. 
+  - Check whether the ROM is signed with release keys. 
+  - Check whether the build type is ``user``. 
   - Patch ``/etc/compatconfig/services-platform-compat-config.xml``. 
   - Enable the feature of hiding desktop icons on devices running Android 10 or above. 
 
@@ -33,10 +34,10 @@ Unless otherwise specified, regular updates by pressing the ``action`` button in
 Users can also use the web UI to update the specified shell script, which is also part of regular updates. 
 Whether an update commit is a module update or a regular update, the time in the commit message is always based on HKT (UTC+8). 
 
-## Compilation
+## Build
 
 If you want to build the module for testing purposes on your own, please use ``git clone`` to clone this repository to your local device. 
-Execute ``./build.sh`` in the root folder of the local repository after you check carefully and grant suitable execution permissions. 
+Execute ``./build.sh`` in the root directory of the local repository after you check carefully and grant suitable execution permissions. 
 Submit modifications via a pull request (PR) if you wish to. 
 
 Regarding the C++ compilation, [Android C++ compilers](https://github.com/android/ndk/wiki) (that are adapted to your Android device) should be used to compile. 
@@ -47,7 +48,7 @@ Anyway, no matter what the compiler is, please ensure using C++17 (e.g., ``-std=
 
 Here, we express our faithful gratitude to all LRFP-related developers, especially the developers of different rooting solutions and the detailed [guidelines](https://github.com/LRFP-Team/LRFP/blob/main/Others/Links.md) for rooting-layer system module development. 
 
-We also sincerely thank [@pumPCin](https://github.com/pumPCin) for providing old configuration folders of HMA and its variants in [https://github.com/pumPCin/HMAL/issues/50](https://github.com/pumPCin/HMAL/issues/50). 
+We also sincerely thank [@pumPCin](https://github.com/pumPCin) for providing old configuration directories of HMA and its variants in [https://github.com/pumPCin/HMAL/issues/50](https://github.com/pumPCin/HMAL/issues/50). 
 
 ## Licensing
 

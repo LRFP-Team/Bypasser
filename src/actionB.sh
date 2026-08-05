@@ -86,7 +86,7 @@ then
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
 		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
-		echo "- install the latest Tricky Store (TS) module as a system module with the correct configurations, "
+		echo "- install the latest TEESimulator-RS module as a system module with the correct configurations, "
 		echo "- install the latest Audit Patch module as a system module, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
@@ -110,7 +110,7 @@ then
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
 		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
-		echo "- install the latest Tricky Store (TS) module as a system module with the correct configurations, "
+		echo "- install the latest TEESimulator-RS module as a system module with the correct configurations, "
 		echo "- install the latest Audit Patch module as a system module, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
@@ -143,7 +143,7 @@ then
 				echo "- deploy the latest Magisk Delta with the built-in Zygisk enabled, the whitelist mode enabled, and only applications requiring root privileges configured and granted in the Magisk Delta Manager, "
 				echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with the narrowest scope configured for each plugin, "
 				echo "- install the latest Play Integrity Fix (PIF) module, "
-				echo "- install the latest Tricky Store (TS) module with the correct configurations, "
+				echo "- install the latest TEESimulator-RS module with the correct configurations, "
 				echo "- install the latest Audit Patch module, "
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
 				if [[ ${androidVersion} -ge 12 ]];
@@ -172,7 +172,7 @@ then
 				echo "- install the latest Zygisk Next module with Denylist Policy set to Unmount Only, "
 				echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository with logging disabled and the narrowest scope configured for each plugin, "
 				echo "- install the latest Play Integrity Fix (PIF) module, "
-				echo "- install the latest Tricky Store (TS) module with the correct configurations, "
+				echo "- install the latest TEESimulator-RS module with the correct configurations, "
 				echo "- install the latest Audit Patch module, "
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
 				if [[ ${androidVersion} -ge 12 ]];
@@ -872,8 +872,8 @@ then
 fi
 echo ""
 
-# Tricky Store (0b0X0000) #
-echo "# Tricky Store (0b0X0000) #"
+# Tricky Store Configurations (0b0X0000) #
+echo "# Tricky Store Configurations (0b0X0000) #"
 readonly trickyStoreConfigurationDirectoryPath="${adbFolder}/tricky_store"
 readonly trickyStoreSecurityPatchFileName="security_patch.txt"
 readonly trickyStoreSecurityPatchFilePath="${trickyStoreConfigurationDirectoryPath}/${trickyStoreSecurityPatchFileName}"
@@ -1078,9 +1078,15 @@ then
 fi
 if [[ "release-keys" == "$(getprop ro.build.tags)" ]];
 then
-	echo "The system is already signed with release keys. "
+	echo "The ROM is already signed with release keys. "
 else
-	echo "Please ask the ROM developers to sign the system with release keys. "
+	echo "Please ask the ROM developers to sign the ROM with release keys. "
+fi
+if [[ "user" == "$(getprop ro.build.type)" ]];
+then
+	echo "The build type is already \`\`user\`\`. "
+else
+	echo "Please ask the ROM developers to build the ROM as \`\`user\`\` type. "
 fi
 if [[ -s "${sourceXmlFilePath}" ]];
 then

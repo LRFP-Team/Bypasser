@@ -491,6 +491,8 @@
 		"com.h3110w0r1d.phoenix",
 		"com.haostoo.wetypehookr",
 		"com.happwner",
+		"com.hazbu.xcam",
+		"com.hazbu.xpoint",
 		"com.hcgstudio.miui.fuck.gesture",
 		"com.hchen.appretention",
 		"com.hchen.autoseffswitch",
@@ -499,6 +501,7 @@
 		"com.hchen.pinningapp",
 		"com.hchen.switchfreeform",
 		"com.hd.hdtool",
+		"com.hearthstone.hsmod.speed",
 		"com.hello.world",
 		"com.hentai.q",
 		"com.hhvvg.anydebug",
@@ -507,6 +510,7 @@
 		"com.hhvvg.launcher3customizer",
 		"com.hiiro.fuckddvip",
 		"com.hiwechart.translate",
+		"com.hlocation",
 		"com.hook.fuckmimarket",
 		"com.hook.satelliteicon",
 		"com.hook.xblauncherxposedhook",
@@ -906,6 +910,7 @@
 		"io.github.duzhaokun123.yamf",
 		"io.github.enhancege",
 		"io.github.h465855hgg.toastblocker",
+		"io.github.hmqyhm.focuspenpro",
 		"io.github.hmqyhm.hyperoskeyboardfix",
 		"io.github.howard20181.hyperos.fcmlive",
 		"io.github.howard20181.hyperos.pmunlock",
@@ -951,6 +956,7 @@
 		"io.github.nkr00711.xviphook",
 		"io.github.nvg064.xiaomicharginganimation",
 		"io.github.optyui.wx.group",
+		"io.github.pigerzhu.onelab",
 		"io.github.qauxv",
 		"io.github.rezade05.hidebusybox",
 		"io.github.rushiranpise.gameunlocker",
@@ -977,6 +983,7 @@
 		"io.github.yagiyuu.linextra",
 		"io.github.yangyiyu08.taplusext",
 		"io.github.zensu357.camswap",
+		"io.github.zhou6514ctrl.virtualregion",
 		"io.kazutoiris.infinite.illusion",
 		"io.kazutoiris.mrga",
 		"io.kazutoiris.pure.shot",
@@ -1147,6 +1154,7 @@
 		"tn.payoneer.loukious",
 		"top.canyie.settingsfirewall",
 		"top.cbug.adbx",
+		"top.chuyb.fakeScreen",
 		"top.galqq",
 		"top.hookvip.pro",
 		"top.hookvip.wxtablet",
@@ -1248,5 +1256,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.5+HKT20260731173105178184110"
+	"V": "3.8.5.5+HKT20260806005411429336071"
 }
