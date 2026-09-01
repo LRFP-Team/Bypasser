@@ -5,7 +5,7 @@
 #include <regex>
 #include "nlohmann/json.hpp" // https://github.com/nlohmann/json
 inline constexpr const char* MODULE_NAME = "Bypasser";
-inline constexpr const char* CPP_VERSION = "3.8.5.5+HKT20260522000000000000000";
+inline constexpr const char* CPP_VERSION = "3.8.5.6+HKT20260901000000000000000";
 inline constexpr const char* REGEX_PATTERN = "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$";
 
 
@@ -95,6 +95,7 @@ private:
 	inline static const std::vector<std::string> ApplicationDirectoryNames{ "app", "app-private", "priv-app" };
 	inline static const std::string HexadecimalCharacterSet = "0123456789ABCDEF";
 	inline static const std::string ReportLink = "https://github.com/LRFP-Team/Bypasser/issues";
+	inline static const std::string TrickyStoreModulePropertyFilePath = "/data/adb/modules/tricky_store/module.prop";
 	
 	unsigned short flag = 0 /* 0b 0000 0000 0000 0000 */;
 	std::string inputDatabaseFilePath = DefaultDatabaseFilePath;
@@ -571,6 +572,40 @@ private:
 			}
 		s += suffix;
 		return s;
+	}
+	static bool checkTEESimulatorRS()
+	{
+		try
+		{
+			std::ifstream trickyStoreModulePropertyFile(TrickyStoreModulePropertyFilePath);
+			if (trickyStoreModulePropertyFile.is_open())
+			{
+				static const std::string charactersToBeRemoved = "\t\n\r ";
+				std::string line{};
+				while (std::getline(trickyStoreModulePropertyFile, line))
+				{
+					const size_t startingIndex = line.find_first_not_of(charactersToBeRemoved), endingIndex = line.find_last_not_of(charactersToBeRemoved);
+					if (startingIndex != std::string::npos)
+					{
+						line.erase(endingIndex + 1);
+						line.erase(0, startingIndex);
+						if ("name=TEESimulator-RS" == line)
+						{
+							trickyStoreModulePropertyFile.close();
+							return true;
+						}
+					}
+				}
+				trickyStoreModulePropertyFile.close();
+				return false;
+			}
+			else
+				return false;
+		}
+		catch (...)
+		{
+			return false;
+		}
 	}
 	
 public:
@@ -1906,13 +1941,19 @@ public:
 						targetPackageNames.push_back(entryIt.key());
 				std::sort(targetPackageNames.begin(), targetPackageNames.end());
 				targetPackageNames.erase(std::unique(targetPackageNames.begin(), targetPackageNames.end()), targetPackageNames.end());
-				for (nlohmann::json::const_iterator entryIt = this->j["T"].cbegin(); entryIt != this->j["T"].cend(); ++entryIt)
-					if (!entryIt.value().get<bool>())
-					{
-						const std::vector<std::string>::iterator position = std::find(targetPackageNames.begin(), targetPackageNames.end(), entryIt.key());
-						if (targetPackageNames.end() != position)
-							targetPackageNames.erase(position);
-					}
+				if (checkTEESimulatorRS())
+					this->print("Found TEESimulator-RS, skipping excluding the package names in \"T\" for the Tricky Store target file. ", LogLevel::Info);
+				else
+				{
+					this->print("TEESimulator-RS was not installed, excluding the package names in \"T\" for the Tricky Store target file. ", LogLevel::Debug);
+					for (nlohmann::json::const_iterator entryIt = this->j["T"].cbegin(); entryIt != this->j["T"].cend(); ++entryIt)
+						if (!entryIt.value().get<bool>())
+						{
+							const std::vector<std::string>::iterator position = std::find(targetPackageNames.begin(), targetPackageNames.end(), entryIt.key());
+							if (targetPackageNames.end() != position)
+								targetPackageNames.erase(position);
+						}
+				}
 				if ("." == this->outputTrickyStoreTargetFilePath)
 				{
 					for (const std::string& packageName : targetPackageNames)

@@ -23,9 +23,9 @@ class DatabaseManager:
 	__DefaultDatabaseFilePath = "database.json"
 	__DefaultConnectionTimeout = 10
 	__DefaultEncoding = "utf-8"
+	__Caches = {}
 	__Pattern = compile("^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$")
 	__SpanPattern = compile("<span[^<>]*>([A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+)</span>")
-	__Caches = {}
 	__MajorVersion = 3
 	def __init__(self:object, databaseFilePath:str = __DefaultDatabaseFilePath, connectionTimeout:int|float = __DefaultConnectionTimeout, encoding:str = __DefaultEncoding) -> object:
 		self.__databaseFilePath = databaseFilePath if isinstance(databaseFilePath, str) else DatabaseManager.__DefaultDatabaseFilePath
@@ -37,6 +37,32 @@ class DatabaseManager:
 			self.__encoding = DatabaseManager.__DefaultEncoding
 		self.__database = None
 		self.__get = None
+	@staticmethod
+	def loadCacheFile(cacheFilePath:str, encoding:str = __DefaultEncoding, error:str = "ignore") -> bool:
+		action = error.lower() if isinstance(error, str) else "ignore"
+		try:
+			with open(cacheFilePath, "r", encoding = encoding) as f:
+				caches = loads(f.read())
+			for key, value in caches.items():
+				if isinstance(key, str) and key not in DatabaseManager.__Caches:
+					if isinstance(value, str):
+						DatabaseManager.__Caches[key] = value.encode(encoding, errors = "ignore")
+					elif isinstance(value, bytes):
+						DatabaseManager.__Caches[key] = value
+			if action != "silent":
+				print("Successfully load caches from {0}. ".format(repr(cacheFilePath)))
+			return True
+		except BaseException as e:
+			if action.startswith("print"):
+				print("Failed to load caches from {0} due to {1}. ".format(repr(cacheFilePath), repr(e)))
+			if action.endswith("raise"):
+				raise e
+			elif action.endswith("return"):
+				return e
+			elif action.endswith("succeed"):
+				return True
+			else:
+				return False
 	def __getVersionString(self:object) -> str:
 		if isinstance(self.__database, dict):
 			stack, keyCounts = [(value, 1) for value in reversed(self.__database.values())], [DatabaseManager.__MajorVersion, len(self.__database)]
@@ -271,7 +297,7 @@ class DatabaseManager:
 							packageNames.update(self.__fetchPackageNamesFromURL(element, d))
 						except BaseException as e:
 							d[element] = e
-				if key in self.__database and isinstance(self.__database[key], (tuple, list, set)) and (not isinstance(incrementalUpdate, bool) or incrementalUpdate):
+				if key in self.__database and isinstance(self.__database[key], (tuple, list, set)) and incrementalUpdate is not False:
 					originalSize = len(self.__database[key])
 					packageNames.update(self.__database[key])
 				self.__database[key] = sorted(list(packageNames))
@@ -516,7 +542,7 @@ class RegularUpdater:
 					localFlag = False
 			if localFlag:
 				try:
-					if isinstance(forceCompilation, bool) and forceCompilation:
+					if forceCompilation is True:
 						choice = True
 					else:
 						choice = input("CPP executable binaries existing, would you like to compile the CPP sources again [yN]? ").upper() in RegularUpdater.__PositiveAnswers
@@ -702,7 +728,7 @@ class RegularUpdater:
 			self.__flag = self.__flag & 0b00111111 | 0b10000000
 			if "posix" == os.name:
 				try:
-					if isinstance(pushConfirmed, bool) and pushConfirmed:
+					if pushConfirmed is True:
 						choice = True
 					else:
 						choice = input("Would you like to upload the files to GitHub via ``git`` [yN]? ").upper() in RegularUpdater.__PositiveAnswers
@@ -734,6 +760,7 @@ def main() -> int:
 	databaseFileName = "database.json"
 	cppBinaryDirectoryName = "generators"
 	actionAFileName, actionBFileName = "actionA.sh", "actionB.sh"
+	cacheFilePath = "caches.json"
 	selfURL = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
 	pluginURL = "https://modules.lsposed.org" # "https://modules.lsposed.org/modules.json"
 	cppSourceDirectoryPath = "cpp"
@@ -743,6 +770,7 @@ def main() -> int:
 	# Updater #
 	regularUpdater = RegularUpdater(srcDirectoryPath, webrootName, databaseFileName, cppBinaryDirectoryName, actionAFileName, actionBFileName)
 	if regularUpdater.gitPull() and regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
+		DatabaseManager.loadCacheFile(cacheFilePath)
 		databaseFlag = (
 			regularUpdater.synchronizeDatabase({"D":selfURL, "M":pluginURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
 			and regularUpdater.compileCPP(cppSourceDirectoryPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
