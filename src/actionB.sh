@@ -77,8 +77,23 @@ else
 	androidVersion=17
 	echo "Failed to detect the Android major version, which has been defaulted to ${androidVersion}. "
 fi
-if [[ "true" == "${BOOTMODE}" ]];
+bootMode=""
+case "$(dumpsys display 2>/dev/null | grep -o 'mSafeMode=[a-z]*' | cut -d '=' -f2)" in
+	"true")
+		bootMode="safe"
+		;;
+	"false")
+		bootMode="normal"
+		;;
+esac
+if [[ "true" == "${BOOTMODE}" || -n "${bootMode}" ]];
 then
+	if [[ -n "${bootMode}" ]];
+	then
+		echo "Booted: The device is working in the ${bootMode} mode. "
+	else
+		echo "Booted: The device is working in an unknown mode. "
+	fi
 	if [[ "${KSU}" == "true" ]];
 	then
 		echo "KSU (${KSU_VER_CODE}): Please "
@@ -86,7 +101,7 @@ then
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
 		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
-		echo "- install the latest TEESimulator-RS module as a system module with the correct configurations, "
+		echo "- install the latest TEESimulator module as a system module with the correct configurations, "
 		echo "- install the latest Audit Patch module as a system module, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
@@ -110,7 +125,7 @@ then
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
 		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
-		echo "- install the latest TEESimulator-RS module as a system module with the correct configurations, "
+		echo "- install the latest TEESimulator module as a system module with the correct configurations, "
 		echo "- install the latest Audit Patch module as a system module, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
@@ -143,7 +158,7 @@ then
 				echo "- deploy the latest Magisk Delta with the built-in Zygisk enabled, the whitelist mode enabled, and only applications requiring root privileges configured and granted in the Magisk Delta Manager, "
 				echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with the narrowest scope configured for each plugin, "
 				echo "- install the latest Play Integrity Fix (PIF) module, "
-				echo "- install the latest TEESimulator-RS module with the correct configurations, "
+				echo "- install the latest TEESimulator module with the correct configurations, "
 				echo "- install the latest Audit Patch module, "
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
 				if [[ ${androidVersion} -ge 12 ]];
@@ -172,7 +187,7 @@ then
 				echo "- install the latest Zygisk Next module with Denylist Policy set to Unmount Only, "
 				echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository with logging disabled and the narrowest scope configured for each plugin, "
 				echo "- install the latest Play Integrity Fix (PIF) module, "
-				echo "- install the latest TEESimulator-RS module with the correct configurations, "
+				echo "- install the latest TEESimulator module with the correct configurations, "
 				echo "- install the latest Audit Patch module, "
 				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
 				if [[ ${androidVersion} -ge 12 ]];
@@ -688,6 +703,12 @@ then
 else
 	readonly generationOutputDirectoryPath="/sdcard/Download/.${moduleName}"
 fi
+readonly trickyStoreConfigurationDirectoryPath="${adbFolder}/tricky_store"
+readonly trickyStoreTargetFileName="target.txt"
+readonly trickyStoreTargetFilePath="${trickyStoreConfigurationDirectoryPath}/${trickyStoreTargetFileName}"
+readonly teesimConfigurationDirectoryPath="${adbFolder}/teesim"
+readonly teesimConfigurationFileName="config.json"
+readonly teesimConfigurationFilePath="${teesimConfigurationDirectoryPath}/${teesimConfigurationFileName}"
 readonly databaseFilePath="${webrootDirectoryPath}/${databaseFileName}"
 readonly hmaV92WhitelistConfigurationFileName=".hmaV92WhitelistConfiguration.json"
 readonly hmaV92WhitelistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaV92WhitelistConfigurationFileName}"
@@ -746,17 +767,40 @@ function getTheKeyPressed
 	fi
 }
 
+if [[ -d "${trickyStoreConfigurationDirectoryPath}" ]];
+then
+	otFlag="true"
+else
+	otFlag="false"
+fi
+if [[ -f "${teesimConfigurationFilePath}" ]];
+then
+	tcFlag="true"
+else
+	tcFlag="false"
+fi
 if [[ $((exitCode & 2)) -ne ${EXIT_SUCCESS} ]];
 then
-	echo "The updating of the \`\`${databaseFileName}\`\` might fail. This will use the cache to generate the configurations for HMA and its variants. "
+	if [[ "true" == "${otFlag}" || "true" == "${tcFlag}" ]];
+	then
+		echo "The updating of the \`\`${cppBinaryFilePath}\`\` or the \`\`${databaseFilePath}\`\` might fail. This will use the cache to generate the configurations for HMA and its variants, as well as for Tricky Store and its variants. "
+	else
+		echo "The updating of the \`\`${cppBinaryFilePath}\`\` or the \`\`${databaseFilePath}\`\` might fail. This will use the cache to generate the configurations for HMA and its variants. "
+	fi
 fi
-mkdir -p "${generationOutputDirectoryPath}"
-if [[ $? -eq ${EXIT_SUCCESS} && -d "${generationOutputDirectoryPath}" ]];
+generationFlag=${EXIT_FAILURE}
+if chmod u+x "${cppBinaryFilePath}";
 then
-	echo "Successfully prepared the directory \"${generationOutputDirectoryPath}\". "
-	chmod u+x "${cppBinaryFilePath}"
-	trickyStoreTargetContent="$("${cppBinaryFilePath}" -i "${databaseFilePath}" -l "Info" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}" -ot .)"
-	if [[ $? -eq ${EXIT_SUCCESS} ]];
+	echo "Successfully made \"${cppBinaryFilePath}\" temporarily executable. "
+	if [[ "true" == "${otFlag}" ]];
+	then
+		trickyStoreTargetContent="$("${cppBinaryFilePath}" -i "${databaseFilePath}" -l "Info" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}" -ot . -itc "${teesimConfigurationFilePath}" -otc "${teesimConfigurationFilePath}")"
+		generationFlag=$?
+	else
+		trickyStoreTargetContent="$("${cppBinaryFilePath}" -i "${databaseFilePath}" -l "Info" -oa92w "${hmaV92WhitelistConfigurationFilePath}" -oa92b "${hmaV92BlacklistConfigurationFilePath}" -oa93w "${hmaV93WhitelistConfigurationFilePath}" -oa93b "${hmaV93BlacklistConfigurationFilePath}" -os93w "${hmaossV93WhitelistConfigurationFilePath}" -os93b "${hmaossV93BlacklistConfigurationFilePath}" -op "${pathTesterFilePath}" -ot .)"
+		generationFlag=$?
+	fi
+	if [[ ${EXIT_SUCCESS} -eq ${generationFlag} ]];
 	then
 		if [[ -f "${hmaV92WhitelistConfigurationFilePath}" ]];
 		then
@@ -814,7 +858,7 @@ then
 	chmod -x "${cppBinaryFilePath}"
 else
 	exitCode=$((exitCode | 8))
-	echo "Failed to prepare the directory \"${generationOutputDirectoryPath}\". "
+	echo "Failed to make \"${cppBinaryFilePath}\" temporarily executable. "
 fi
 if [[ $# -ge 1 ]];
 then
@@ -874,11 +918,8 @@ echo ""
 
 # Tricky Store Configurations (0b0X0000) #
 echo "# Tricky Store Configurations (0b0X0000) #"
-readonly trickyStoreConfigurationDirectoryPath="${adbFolder}/tricky_store"
 readonly trickyStoreSecurityPatchFileName="security_patch.txt"
 readonly trickyStoreSecurityPatchFilePath="${trickyStoreConfigurationDirectoryPath}/${trickyStoreSecurityPatchFileName}"
-readonly trickyStoreTargetFileName="target.txt"
-readonly trickyStoreTargetFilePath="${trickyStoreConfigurationDirectoryPath}/${trickyStoreTargetFileName}"
 
 if [[ -d "${trickyStoreConfigurationDirectoryPath}" ]];
 then
@@ -906,6 +947,7 @@ then
 			echo "Successfully backed up \"${trickyStoreTargetFilePath}\" by renaming it to \"${trickyStoreTargetFilePath}.bak\". "
 		else
 			abortFlag=${EXIT_FAILURE}
+			exitCode=$((exitCode | 16))
 			echo "Failed to back up \"${trickyStoreTargetFilePath}\" by renaming it \"${trickyStoreTargetFilePath}.bak\". "
 		fi
 	else
@@ -918,6 +960,7 @@ then
 		then
 			echo "Successfully generated \"${trickyStoreTargetFilePath}\". "
 		else
+			exitCode=$((exitCode | 16))
 			echo "Failed to generate \"${trickyStoreTargetFilePath}\". "
 			if [[ -f "${trickyStoreTargetFilePath}.bak" ]];
 			then
@@ -936,6 +979,19 @@ else
 	echo "The Tricky Store configuration directory did not exist. "
 fi
 unset trickyStoreTargetContent
+if [[ -f "${teesimConfigurationFilePath}" ]];
+then
+	echo "The TEESimulator configuration file was found at \"${teesimConfigurationFilePath}\". "
+	if [[ ${EXIT_SUCCESS} -eq ${generationFlag} && $(stat -c %Y "${teesimConfigurationFilePath}") -gt ${startTime} ]];
+	then
+		echo "Successfully modified \"${teesimConfigurationFilePath}\". "
+	else
+		exitCode=$((exitCode | 16))
+		echo "Failed to modify \"${teesimConfigurationFilePath}\". "
+	fi
+else
+	echo "The TEESimulator configuration file did not exist. "
+fi
 echo ""
 
 # Shell (0bX00000) #
@@ -1141,6 +1197,7 @@ readonly variableFilePath="${generationOutputDirectoryPath}/${variableFileName}"
 readonly endTime=$(date +%s%N)
 readonly timeDelta=$((endTime - startTime - gapTime))
 
+mkdir -p "${generationOutputDirectoryPath}"
 set > "${variableFilePath}"
 if [[ ${EXIT_SUCCESS} -eq $((exitCode & EXIT_FAILURE)) ]];
 then

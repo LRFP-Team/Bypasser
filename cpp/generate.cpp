@@ -7,6 +7,7 @@
 inline constexpr const char* MODULE_NAME = "Bypasser";
 inline constexpr const char* CPP_VERSION = "3.8.5.6+HKT20260901000000000000000";
 inline constexpr const char* REGEX_PATTERN = "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$";
+inline constexpr const char* MODULE_ID = "bypasser";
 
 
 #pragma pack(push, 1)
@@ -78,18 +79,20 @@ class Generator
 private:
 	inline static const std::string DefaultDatabaseFilePath = "database.json";
 	inline static const LogLevel DefaultLevel = LogLevel::Info;
-	inline static const std::vector<std::string> helpArguments{ "?", "/?", "-?", "h", "/h", "-h", "help", "/help", "--help" };
-	inline static const std::vector<std::string> versionArguments{ "V", "/V", "-V", "version", "/version", "--version" };
-	inline static const std::vector<std::string> inputDatabaseArguments{ "i", "/i", "-i", "inputDatabase", "/inputDatabase", "--inputDatabase" };
-	inline static const std::vector<std::string> logLevelArguments{ "l", "/l", "-l", "logLevel", "/logLevel", "--logLevel" };
-	inline static const std::vector<std::string> outputHmaV92WhitelistArguments{ "oa92w", "/oa92w", "-oa92w", "outputHmaV92Whitelist", "/outputHmaV92Whitelist", "--outputHmaV92Whitelist" };
-	inline static const std::vector<std::string> outputHmaV92BlacklistArguments{ "oa92b", "/oa92b", "-oa92b", "outputHmaV92Blacklist", "/outputHmaV92Blacklist", "--outputHmaV92Blacklist" };
-	inline static const std::vector<std::string> outputHmaV93WhitelistArguments{ "oa93w", "/oa93w", "-oa93w", "outputHmaV93Whitelist", "/outputHmaV93Whitelist", "--outputHmaV93Whitelist" };
-	inline static const std::vector<std::string> outputHmaV93BlacklistArguments{ "oa93b", "/oa93b", "-oa93b", "outputHmaV93Blacklist", "/outputHmaV93Blacklist", "--outputHmaV93Blacklist" };
-	inline static const std::vector<std::string> outputHmaossV93WhitelistArguments{ "os93w", "/os93w", "-os93w", "outputHmaossV93Whitelist", "/outputHmaossV93Whitelist", "--outputHmaossV93Whitelist" };
-	inline static const std::vector<std::string> outputHmaossV93BlacklistArguments{ "os93b", "/os93b", "-os93b", "outputHmaossV93Blacklist", "/outputHmaossV93Blacklist", "--outputHmaossV93Blacklist" };
-	inline static const std::vector<std::string> outputPathTesterArguments{ "op", "/op", "-op", "outputPathTester", "/outputPathTester", "--outputPathTester" };
-	inline static const std::vector<std::string> outputTrickyStoreTargetArguments{ "ot", "/ot", "-ot", "outputTrickyStoreTarget", "/outputTrickyStoreTarget", "--outputTrickyStoreTarget" };
+	inline static const std::vector<std::string> HelpArguments{ "?", "/?", "-?", "h", "/h", "-h", "help", "/help", "--help" };
+	inline static const std::vector<std::string> InputDatabaseArguments{ "i", "/i", "-i", "inputDatabase", "/inputDatabase", "--inputDatabase" };
+	inline static const std::vector<std::string> InputTEESimulatorConfigurationArguments{ "itc", "/itc", "-itc", "inputTEESimulatorConfiguration", "inputTEESimulatorConfiguration", "inputTEESimulatorConfiguration" };
+	inline static const std::vector<std::string> LogLevelArguments{ "l", "/l", "-l", "logLevel", "/logLevel", "--logLevel" };
+	inline static const std::vector<std::string> OutputHmaV92BlacklistArguments{ "oa92b", "/oa92b", "-oa92b", "outputHmaV92Blacklist", "/outputHmaV92Blacklist", "--outputHmaV92Blacklist" };
+	inline static const std::vector<std::string> OutputHmaV92WhitelistArguments{ "oa92w", "/oa92w", "-oa92w", "outputHmaV92Whitelist", "/outputHmaV92Whitelist", "--outputHmaV92Whitelist" };
+	inline static const std::vector<std::string> OutputHmaV93BlacklistArguments{ "oa93b", "/oa93b", "-oa93b", "outputHmaV93Blacklist", "/outputHmaV93Blacklist", "--outputHmaV93Blacklist" };
+	inline static const std::vector<std::string> OutputHmaV93WhitelistArguments{ "oa93w", "/oa93w", "-oa93w", "outputHmaV93Whitelist", "/outputHmaV93Whitelist", "--outputHmaV93Whitelist" };
+	inline static const std::vector<std::string> OutputHmaossV93BlacklistArguments{ "os93b", "/os93b", "-os93b", "outputHmaossV93Blacklist", "/outputHmaossV93Blacklist", "--outputHmaossV93Blacklist" };
+	inline static const std::vector<std::string> OutputHmaossV93WhitelistArguments{ "os93w", "/os93w", "-os93w", "outputHmaossV93Whitelist", "/outputHmaossV93Whitelist", "--outputHmaossV93Whitelist" };
+	inline static const std::vector<std::string> OutputPathTesterArguments{ "op", "/op", "-op", "outputPathTester", "/outputPathTester", "--outputPathTester" };
+	inline static const std::vector<std::string> OutputTEESimulatorConfigurationArguments{ "otc", "/otc", "-otc", "outputTEESimulatorConfiguration", "outputTEESimulatorConfiguration", "outputTEESimulatorConfiguration" };
+	inline static const std::vector<std::string> OutputTrickyStoreTargetArguments{ "ot", "/ot", "-ot", "outputTrickyStoreTarget", "/outputTrickyStoreTarget", "--outputTrickyStoreTarget" };
+	inline static const std::vector<std::string> VersionArguments{ "V", "/V", "-V", "version", "/version", "--version" };
 	inline static const std::regex Pattern = std::regex(REGEX_PATTERN);
 	inline static const std::vector<std::string> ApplicationPartitions{ "/data", "/product", "/system", "/system_ext", "/vendor" };
 	inline static const std::vector<std::string> ApplicationDirectoryNames{ "app", "app-private", "priv-app" };
@@ -97,16 +100,18 @@ private:
 	inline static const std::string ReportLink = "https://github.com/LRFP-Team/Bypasser/issues";
 	inline static const std::string TrickyStoreModulePropertyFilePath = "/data/adb/modules/tricky_store/module.prop";
 	
-	unsigned short flag = 0 /* 0b 0000 0000 0000 0000 */;
+	unsigned int flag = 0 /* 0b 0000 0000 0000 0000 0000 */;
 	std::string inputDatabaseFilePath = DefaultDatabaseFilePath;
+	std::string inputTEESimulatorConfigurationFilePath{};
 	LogLevel logLevel = DefaultLevel;
-	std::string outputHmaV92WhitelistFilePath{};
 	std::string outputHmaV92BlacklistFilePath{};
-	std::string outputHmaV93WhitelistFilePath{};
+	std::string outputHmaV92WhitelistFilePath{};
 	std::string outputHmaV93BlacklistFilePath{};
-	std::string outputHmaossV93WhitelistFilePath{};
+	std::string outputHmaV93WhitelistFilePath{};
 	std::string outputHmaossV93BlacklistFilePath{};
+	std::string outputHmaossV93WhitelistFilePath{};
 	std::string outputPathTesterFilePath{};
+	std::string outputTEESimulatorConfigurationFilePath{};
 	std::string outputTrickyStoreTargetFilePath{};
 	nlohmann::json j{};
 	
@@ -150,18 +155,20 @@ private:
 	{
 		std::cout << "This is a generator for the " << MODULE_NAME << " rooting-layer system module. " << std::endl << std::endl;
 		std::cout << "Options: " << std::endl;
-		std::cout << "\t" << vector2string(helpArguments) << "\t\tPrint the help information. " << std::endl;
-		std::cout << "\t" << vector2string(versionArguments) << "\t\tPrint the version information. " << std::endl;
-		std::cout << "\t" << vector2string(inputDatabaseArguments) << "<path>\t\tSpecify the input database JSON file path. The default value is \"" << DefaultDatabaseFilePath << "\". " << std::endl;
-		std::cout << "\t" << vector2string(logLevelArguments) << "<level>\t\tSpecify the log level (std::cerr) from " << logLevel2string(LogLevel::All) << " to " << logLevel2string(LogLevel::Off) << ". The default value is " << logLevel2string(DefaultLevel) << ". " << std::endl;
-		std::cout << "\t" << vector2string(outputHmaV92WhitelistArguments) << "<path>\t\tSpecify the output HMA v92 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << vector2string(outputHmaV92BlacklistArguments) << "<path>\t\tSpecify the output HMA v92 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << vector2string(outputHmaV93WhitelistArguments) << "<path>\t\tSpecify the output HMA v93 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << vector2string(outputHmaV93BlacklistArguments) << "<path>\t\tSpecify the output HMA v93 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << vector2string(outputHmaossV93WhitelistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 whitelist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << vector2string(outputHmaossV93BlacklistArguments) << "<path>\t\tSpecify the output HMA-OSS v93 blacklist configuration JSON file path. " << std::endl;
-		std::cout << "\t" << vector2string(outputPathTesterArguments) << "<path>\t\tSpecify the output path tester shell script file path. " << std::endl;
-		std::cout << "\t" << vector2string(outputTrickyStoreTargetArguments) << "<path>\t\tSpecify the output Tricky Store target text file path. " << std::endl << std::endl;
+		std::cout << "\t" << vector2string(HelpArguments) << "\t\tPrint the help information. " << std::endl;
+		std::cout << "\t" << vector2string(InputDatabaseArguments) << " <path>\t\tSpecify the input database JSON file path. The default value is \"" << DefaultDatabaseFilePath << "\". " << std::endl;
+		std::cout << "\t" << vector2string(InputTEESimulatorConfigurationArguments) << " <path>\t\tSpecify the input TEESimulator configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(LogLevelArguments) << " <level>\t\tSpecify the log level (std::cerr) from " << logLevel2string(LogLevel::All) << " to " << logLevel2string(LogLevel::Off) << ". The default value is " << logLevel2string(DefaultLevel) << ". " << std::endl;
+		std::cout << "\t" << vector2string(OutputHmaV92BlacklistArguments) << " <path>\t\tSpecify the output HMA v92 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(OutputHmaV92WhitelistArguments) << " <path>\t\tSpecify the output HMA v92 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(OutputHmaV93BlacklistArguments) << " <path>\t\tSpecify the output HMA v93 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(OutputHmaV93WhitelistArguments) << " <path>\t\tSpecify the output HMA v93 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(OutputHmaossV93BlacklistArguments) << " <path>\t\tSpecify the output HMA-OSS v93 blacklist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(OutputHmaossV93WhitelistArguments) << " <path>\t\tSpecify the output HMA-OSS v93 whitelist configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(OutputPathTesterArguments) << " <path>\t\tSpecify the output path tester shell script file path. " << std::endl;
+		std::cout << "\t" << vector2string(OutputTEESimulatorConfigurationArguments) << " <path>\t\tSpecify the output TEESimulator configuration JSON file path. " << std::endl;
+		std::cout << "\t" << vector2string(OutputTrickyStoreTargetArguments) << " <path>\t\tSpecify the output Tricky Store target text file path. " << std::endl;
+		std::cout << "\t" << vector2string(VersionArguments) << "\t\tPrint the version information. " << std::endl << std::endl;
 		std::cout << "Notes:" << std::endl;
 		std::cout << "\t1) All the arguments are optional and processed sequentially. If the same argument is provided multiple times, the last valid one will overwrite the previous ones. Unrecognized arguments, invalid argument values, or missing argument values will be skipped with a warning. " << std::endl;
 		std::cout << "\t2) If an input path is not specified, the program will use the corresponding default value. The program will return EOF (" << EOF << ") if the input database JSON file cannot be parsed. Parsing failures for other inputs will be skipped, and a warning will be issued. " << std::endl;
@@ -538,7 +545,7 @@ private:
 	}
 	bool checkInputFlags() const
 	{
-		return this->flag & 128/* 0b 0000 0000 1000 0000 */ && this->flag & 64/* 0b 0000 0000 0100 0000 */ && this->flag & 32/* 0b 0000 0000 0010 0000 */ && this->flag & 16/* 0b 0000 0000 0001 0000 */ && this->flag & 8/* 0b 0000 0000 0000 1000 */ && this->flag & 4/* 0b 0000 0000 0000 0100 */ && this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */;
+		return this->flag & 128/* 0b 0000 0000 0000 1000 0000 */ && this->flag & 64/* 0b 0000 0000 0000 0100 0000 */ && this->flag & 32/* 0b 0000 0000 0000 0010 0000 */ && this->flag & 16/* 0b 0000 0000 0000 0001 0000 */ && this->flag & 8/* 0b 0000 0000 0000 0000 1000 */ && this->flag & 4/* 0b 0000 0000 0000 0000 0100 */ && this->flag & 2/* 0b 0000 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0000 0001 */;
 	}
 	static bool handleDirectory(const std::string& filePath)
 	{
@@ -613,34 +620,34 @@ public:
 	{
 		
 	}
-	bool parseArguments(int argc, char* argv[], bool& exitFlag, const bool resetBeforeParsing) // 0b 0000 0000 0000 0000 | 0b 0000 0000 0000 0001 -> 0b 0000 0000 0000 0001
+	bool parseArguments(int argc, char* argv[], bool& exitFlag, const bool resetBeforeParsing) // 0b 0000 0000 0000 0000 0000 | 0b 0000 0000 0000 0000 0001 -> 0b 0000 0000 0000 0000 0001
 	{
-		this->flag = 0 /* 0b 0000 0000 0000 0000 */;
+		this->flag = 0 /* 0b 0000 0000 0000 0000 0000 */;
 		if (resetBeforeParsing)
 		{
 			this->inputDatabaseFilePath = DefaultDatabaseFilePath;
+			this->inputTEESimulatorConfigurationFilePath.clear();
 			this->logLevel = DefaultLevel;
-			this->outputHmaV92WhitelistFilePath.clear();
 			this->outputHmaV92BlacklistFilePath.clear();
-			this->outputHmaV93WhitelistFilePath.clear();
+			this->outputHmaV92WhitelistFilePath.clear();
 			this->outputHmaV93BlacklistFilePath.clear();
-			this->outputHmaossV93WhitelistFilePath.clear();
+			this->outputHmaV93WhitelistFilePath.clear();
 			this->outputHmaossV93BlacklistFilePath.clear();
+			this->outputHmaossV93WhitelistFilePath.clear();
 			this->outputPathTesterFilePath.clear();
+			this->outputTEESimulatorConfigurationFilePath.clear();
 			this->outputTrickyStoreTargetFilePath.clear();
 		}
 		bool versionFlag = false, missingArgument = false;
 		std::vector<size_t> invalidArgumentIndexes{};
 		for (int i = 1; i < argc; ++i)
-			if (std::find(helpArguments.cbegin(), helpArguments.cend(), argv[i]) != helpArguments.cend())
+			if (std::find(HelpArguments.cbegin(), HelpArguments.cend(), argv[i]) != HelpArguments.cend())
 			{
 				printHelp();
 				exitFlag = true;
 				return true;
 			}
-			else if (std::find(versionArguments.cbegin(), versionArguments.cend(), argv[i]) != versionArguments.cend())
-				versionFlag = true;
-			else if (std::find(inputDatabaseArguments.cbegin(), inputDatabaseArguments.cend(), argv[i]) != inputDatabaseArguments.cend())
+			else if (std::find(InputDatabaseArguments.cbegin(), InputDatabaseArguments.cend(), argv[i]) != InputDatabaseArguments.cend())
 				if (++i < argc)
 					this->inputDatabaseFilePath = argv[i];
 				else
@@ -648,7 +655,15 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(logLevelArguments.cbegin(), logLevelArguments.cend(), argv[i]) != logLevelArguments.cend())
+			else if (std::find(InputTEESimulatorConfigurationArguments.cbegin(), InputTEESimulatorConfigurationArguments.cend(), argv[i]) != InputTEESimulatorConfigurationArguments.cend())
+				if (++i < argc)
+					this->inputTEESimulatorConfigurationFilePath = argv[i];
+				else
+				{
+					missingArgument = true;
+					break;
+				}
+			else if (std::find(LogLevelArguments.cbegin(), LogLevelArguments.cend(), argv[i]) != LogLevelArguments.cend())
 				if (++i < argc)
 					switch (argv[i][0])
 					{
@@ -705,15 +720,7 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaV92WhitelistArguments.cbegin(), outputHmaV92WhitelistArguments.cend(), argv[i]) != outputHmaV92WhitelistArguments.cend())
-				if (++i < argc)
-					this->outputHmaV92WhitelistFilePath = argv[i];
-				else
-				{
-					missingArgument = true;
-					break;
-				}
-			else if (std::find(outputHmaV92BlacklistArguments.cbegin(), outputHmaV92BlacklistArguments.cend(), argv[i]) != outputHmaV92BlacklistArguments.cend())
+			else if (std::find(OutputHmaV92BlacklistArguments.cbegin(), OutputHmaV92BlacklistArguments.cend(), argv[i]) != OutputHmaV92BlacklistArguments.cend())
 				if (++i < argc)
 					this->outputHmaV92BlacklistFilePath = argv[i];
 				else
@@ -721,15 +728,15 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaV93WhitelistArguments.cbegin(), outputHmaV93WhitelistArguments.cend(), argv[i]) != outputHmaV93WhitelistArguments.cend())
+			else if (std::find(OutputHmaV92WhitelistArguments.cbegin(), OutputHmaV92WhitelistArguments.cend(), argv[i]) != OutputHmaV92WhitelistArguments.cend())
 				if (++i < argc)
-					this->outputHmaV93WhitelistFilePath = argv[i];
+					this->outputHmaV92WhitelistFilePath = argv[i];
 				else
 				{
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaV93BlacklistArguments.cbegin(), outputHmaV93BlacklistArguments.cend(), argv[i]) != outputHmaV93BlacklistArguments.cend())
+			else if (std::find(OutputHmaV93BlacklistArguments.cbegin(), OutputHmaV93BlacklistArguments.cend(), argv[i]) != OutputHmaV93BlacklistArguments.cend())
 				if (++i < argc)
 					this->outputHmaV93BlacklistFilePath = argv[i];
 				else
@@ -737,15 +744,15 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaossV93WhitelistArguments.cbegin(), outputHmaossV93WhitelistArguments.cend(), argv[i]) != outputHmaossV93WhitelistArguments.cend())
+			else if (std::find(OutputHmaV93WhitelistArguments.cbegin(), OutputHmaV93WhitelistArguments.cend(), argv[i]) != OutputHmaV93WhitelistArguments.cend())
 				if (++i < argc)
-					this->outputHmaossV93WhitelistFilePath = argv[i];
+					this->outputHmaV93WhitelistFilePath = argv[i];
 				else
 				{
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputHmaossV93BlacklistArguments.cbegin(), outputHmaossV93BlacklistArguments.cend(), argv[i]) != outputHmaossV93BlacklistArguments.cend())
+			else if (std::find(OutputHmaossV93BlacklistArguments.cbegin(), OutputHmaossV93BlacklistArguments.cend(), argv[i]) != OutputHmaossV93BlacklistArguments.cend())
 				if (++i < argc)
 					this->outputHmaossV93BlacklistFilePath = argv[i];
 				else
@@ -753,7 +760,15 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputPathTesterArguments.cbegin(), outputPathTesterArguments.cend(), argv[i]) != outputPathTesterArguments.cend())
+			else if (std::find(OutputHmaossV93WhitelistArguments.cbegin(), OutputHmaossV93WhitelistArguments.cend(), argv[i]) != OutputHmaossV93WhitelistArguments.cend())
+				if (++i < argc)
+					this->outputHmaossV93WhitelistFilePath = argv[i];
+				else
+				{
+					missingArgument = true;
+					break;
+				}
+			else if (std::find(OutputPathTesterArguments.cbegin(), OutputPathTesterArguments.cend(), argv[i]) != OutputPathTesterArguments.cend())
 				if (++i < argc)
 					this->outputPathTesterFilePath = argv[i];
 				else
@@ -761,7 +776,15 @@ public:
 					missingArgument = true;
 					break;
 				}
-			else if (std::find(outputTrickyStoreTargetArguments.cbegin(), outputTrickyStoreTargetArguments.cend(), argv[i]) != outputTrickyStoreTargetArguments.cend())
+			else if (std::find(OutputTEESimulatorConfigurationArguments.cbegin(), OutputTEESimulatorConfigurationArguments.cend(), argv[i]) != OutputTEESimulatorConfigurationArguments.cend())
+				if (++i < argc)
+					this->outputTEESimulatorConfigurationFilePath = argv[i];
+				else
+				{
+					missingArgument = true;
+					break;
+				}
+			else if (std::find(OutputTrickyStoreTargetArguments.cbegin(), OutputTrickyStoreTargetArguments.cend(), argv[i]) != OutputTrickyStoreTargetArguments.cend())
 				if (++i < argc)
 					this->outputTrickyStoreTargetFilePath = argv[i];
 				else
@@ -769,6 +792,8 @@ public:
 					missingArgument = true;
 					break;
 				}
+			else if (std::find(VersionArguments.cbegin(), VersionArguments.cend(), argv[i]) != VersionArguments.cend())
+				versionFlag = true;
 			else
 				invalidArgumentIndexes.push_back(i);
 		if (versionFlag)
@@ -801,17 +826,17 @@ public:
 				return false;
 			else
 			{
-				this->flag = 1/* 0b 0000 0000 0000 0001 */;
+				this->flag = 1/* 0b 0000 0000 0000 0000 0001 */;
 				return true;
 			}
 		}
 	}
-	bool parseArguments(int argc, char* argv[], bool& exitFlag) { return this->parseArguments(argc, argv, exitFlag, true); } // 0b 0000 0000 0000 0000 | 0b 0000 0000 0000 0001 -> 0b 0000 0000 0000 0001
-	bool parseJSON() // 0b 0000 0000 0000 0001 | 0b 0000 0000 0000 0010 -> 0b 0000 0000 0000 0011
+	bool parseArguments(int argc, char* argv[], bool& exitFlag) { return this->parseArguments(argc, argv, exitFlag, true); } // 0b 0000 0000 0000 0000 0000 | 0b 0000 0000 0000 0000 0001 -> 0b 0000 0000 0000 0000 0001
+	bool parseJSON() // 0b 0000 0000 0000 0000 0001 | 0b 0000 0000 0000 0000 0010 -> 0b 0000 0000 0000 0000 0011
 	{
-		if (this->flag & 1/* 0b 0000 0000 0000 0001 */)
+		if (this->flag & 1/* 0b 0000 0000 0000 0000 0001 */)
 		{
-			this->flag &= 1/* 0b 0000 0000 0000 0001 */;
+			this->flag &= 1/* 0b 0000 0000 0000 0000 0001 */;
 			try
 			{
 				std::ifstream inputDatabaseFile(this->inputDatabaseFilePath);
@@ -821,262 +846,266 @@ public:
 					{
 						this->j = nlohmann::json::parse(inputDatabaseFile);
 						
-						/* First-level */
-						const std::vector<std::string> keysToKeep{ "C", "D", "M", "N", "S", "T", "U", "V" };
-						size_t removedKeyCount = 0;
-						for (nlohmann::json::iterator entryIt = this->j.begin(); entryIt != this->j.end(); )
-							if (std::find(keysToKeep.cbegin(), keysToKeep.cend(), entryIt.key()) != keysToKeep.cend())
-								++entryIt;
+						if (this->j.is_object())
+						{/* First-level */
+							const std::vector<std::string> keysToKeep{ "C", "D", "M", "N", "S", "T", "U", "V" };
+							size_t removedKeyCount = 0;
+							for (nlohmann::json::iterator entryIt = this->j.begin(); entryIt != this->j.end(); )
+								if (std::find(keysToKeep.cbegin(), keysToKeep.cend(), entryIt.key()) != keysToKeep.cend())
+									++entryIt;
+								else
+								{
+									entryIt = this->j.erase(entryIt);
+									++removedKeyCount;
+								}
+							const std::string cppVersion = [] { const std::string v(CPP_VERSION); const size_t position = v.find('+'); return std::string::npos == position ? v + "+" : v.substr(0, position + 1); }();
+							if (this->j.contains("V") && this->j["V"].is_string() && this->j["V"].get<std::string>().substr(0, cppVersion.length()) == cppVersion)
+								if (this->j.contains("U") && this->j["U"].is_string() && REGEX_PATTERN == this->j["U"].get<std::string>())
+								{
+									if (1 == removedKeyCount)
+										this->print("A root key is invalid, which has been removed. ", LogLevel::Warning);
+									else if (removedKeyCount)
+										this->print(std::to_string(removedKeyCount) + " root keys are invalid, which have been removed. ", LogLevel::Warning);
+								}
+								else
+									this->print("This program expects the regex pattern \"" + std::string(REGEX_PATTERN) + "\" while the input database is not. ", LogLevel::Warning);
 							else
+								this->print("This program expects the version " + cppVersion + " while the input database is not, which may result in warnings. ", LogLevel::Warning);
+
+							/* Second-level */
+							removedKeyCount = 0;
+							if (this->j.contains("C") && this->j["C"].is_object())
 							{
-								entryIt = this->j.erase(entryIt);
-								++removedKeyCount;
-							}
-						const std::string cppVersion = [] { const std::string v(CPP_VERSION); const size_t position = v.find('+'); return std::string::npos == position ? v + "+" : v.substr(0, position + 1); }();
-						if (this->j.contains("V") && this->j["V"].is_string() && this->j["V"].get<std::string>().substr(0, cppVersion.length()) == cppVersion)
-							if (this->j.contains("U") && this->j["U"].is_string() && REGEX_PATTERN == this->j["U"].get<std::string>())
-							{
+								size_t removedValueCount = 0;
+								if (this->j["C"].contains("") && this->j["C"][""].is_array())
+									for (nlohmann::json::iterator arrayIt = this->j["C"][""].begin(); arrayIt != this->j["C"][""].end(); )
+										if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
+											++arrayIt;
+										else
+										{
+											arrayIt = this->j["C"][""].erase(arrayIt);
+											++removedValueCount;
+										}
+								else
+									this->j["C"][""] = nlohmann::json::array();
+								if (this->j["C"].contains("_") && this->j["C"]["_"].is_object())
+									for (nlohmann::json::iterator entryIt = this->j["C"]["_"].begin(); entryIt != this->j["C"]["_"].end(); )
+										if (entryIt.key().length() == 1 && 'A' <= entryIt.key()[0] && entryIt.key()[0] <= 'Z' && entryIt.value().is_array())
+										{
+											for (nlohmann::json::iterator arrayIt = entryIt.value().begin(); arrayIt != entryIt.value().end(); )
+												if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
+													++arrayIt;
+												else
+												{
+													arrayIt = entryIt.value().erase(arrayIt);
+													++removedValueCount;
+												}
+											++entryIt;
+										}
+										else
+										{
+											entryIt = this->j["C"]["_"].erase(entryIt);
+											++removedKeyCount;
+										}
+								else
+									this->j["C"]["_"] = nlohmann::json::object();
+								for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); )
+									if ("" == entryIt.key() || "_" == entryIt.key())
+										++entryIt;
+									else if ("*" == entryIt.key())
+									{
+										/* Compatible with $C^*$ */
+										for (const nlohmann::json& value : entryIt.value())
+											if (value.is_string() && std::regex_match(value.get<std::string>(), Pattern))
+												this->j["C"][""][entryIt.key()].push_back(value.get<std::string>());
+											else
+												++removedValueCount;
+										entryIt = this->j["C"].erase(entryIt);
+									}
+									else if (entryIt.key().length() == 1 && 'A' <= entryIt.key()[0] && entryIt.key()[0] <= 'Z' && entryIt.value().is_array())
+									{
+										/* Compatible with Version 3.6.x ($C_X$) */
+										if (!this->j["C"]["_"].contains(entryIt.key()))
+											this->j["C"]["_"][entryIt.key()] = nlohmann::json::array();
+										for (const nlohmann::json& value : entryIt.value())
+											if (value.is_string() && std::regex_match(value.get<std::string>(), Pattern))
+												this->j["C"]["_"][entryIt.key()].push_back(value.get<std::string>());
+											else
+												++removedValueCount;
+										entryIt = this->j["C"].erase(entryIt);
+									}
+									else if (std::regex_match(entryIt.key(), Pattern)/* && entryIt.value().is_null() */)
+									{
+										/* Compatible with Version 3.6.x ($C$) */
+										this->j["C"][""].push_back(entryIt.key());
+										entryIt = this->j["C"].erase(entryIt);
+									}
+									else
+									{
+										entryIt = this->j["C"].erase(entryIt);
+										++removedKeyCount;
+									}
+								std::sort(this->j["C"][""].begin(), this->j["C"][""].end());
+								this->j["C"][""].erase(std::unique(this->j["C"][""].begin(), this->j["C"][""].end()), this->j["C"][""].end());
+								for (nlohmann::json::iterator entryIt = this->j["C"]["_"].begin(); entryIt != this->j["C"]["_"].end(); )
+									if (this->j["C"]["_"][entryIt.key()].empty()) // different from Python
+										entryIt = this->j["C"]["_"].erase(entryIt);
+									else
+									{
+										std::sort(this->j["C"]["_"][entryIt.key()].begin(), this->j["C"]["_"][entryIt.key()].end());
+										this->j["C"]["_"][entryIt.key()].erase(std::unique(this->j["C"]["_"][entryIt.key()].begin(), this->j["C"]["_"][entryIt.key()].end()), this->j["C"]["_"][entryIt.key()].end());
+										++entryIt;
+									}
 								if (1 == removedKeyCount)
-									this->print("A root key is invalid, which has been removed. ", LogLevel::Warning);
+									this->print("A key in $C$ and its descendants is invalid, which has been removed. ", LogLevel::Warning);
 								else if (removedKeyCount)
-									this->print(std::to_string(removedKeyCount) + " root keys are invalid, which have been removed. ", LogLevel::Warning);
+									this->print(std::to_string(removedKeyCount) + " keys in $C$ and its descendants are invalid, which have been removed. ", LogLevel::Warning);
+								if (1 == removedValueCount)
+									this->print("A value in $C$ and its descendants is invalid, which has been removed. ", LogLevel::Warning);
+								else if (removedValueCount)
+									this->print(std::to_string(removedValueCount) + " values in $C$ and its descendants are invalid, which have been removed. ", LogLevel::Warning);
 							}
 							else
-								this->print("This program expects the regex pattern \"" + std::string(REGEX_PATTERN) + "\" while the input database is not. ", LogLevel::Warning);
-						else
-							this->print("This program expects the version " + cppVersion + " while the input database is not, which may result in warnings. ", LogLevel::Warning);
-						
-						/* Second-level */
-						removedKeyCount = 0;
-						if (this->j.contains("C") && this->j["C"].is_object())
-						{
-							size_t removedValueCount = 0;
-							if (this->j["C"].contains("") && this->j["C"][""].is_array())
-								for (nlohmann::json::iterator arrayIt = this->j["C"][""].begin(); arrayIt != this->j["C"][""].end(); )
+							{
+								this->j["C"] = nlohmann::json::object();
+								this->j["C"][""] = nlohmann::json::array();
+								this->j["C"]["_"] = nlohmann::json::object();
+								this->print("Initialized $C$ as an empty dictionary. ", LogLevel::Warning);
+							}
+							if (this->j.contains("D") && this->j["D"].is_array())
+							{
+								int removedValueCount = 0;
+								for (nlohmann::json::iterator arrayIt = this->j["D"].begin(); arrayIt != this->j["D"].end(); )
 									if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
 										++arrayIt;
 									else
 									{
-										arrayIt = this->j["C"][""].erase(arrayIt);
+										arrayIt = this->j["D"].erase(arrayIt);
 										++removedValueCount;
 									}
+								std::sort(this->j["D"].begin(), this->j["D"].end());
+								this->j["D"].erase(std::unique(this->j["D"].begin(), this->j["D"].end()), this->j["D"].end());
+								if (1 == removedValueCount)
+									this->print("A value in $D$ is invalid, which has been removed. ", LogLevel::Warning);
+								else if (removedValueCount)
+									this->print(std::to_string(removedValueCount) + " values in $D$ are invalid, which have been removed. ", LogLevel::Warning);
+							}
 							else
-								this->j["C"][""] = nlohmann::json::array();
-							if (this->j["C"].contains("_") && this->j["C"]["_"].is_object())
-								for (nlohmann::json::iterator entryIt = this->j["C"]["_"].begin(); entryIt != this->j["C"]["_"].end(); )
-									if (entryIt.key().length() == 1 && 'A' <= entryIt.key()[0] && entryIt.key()[0] <= 'Z' && entryIt.value().is_array())
+							{
+								this->j["D"] = nlohmann::json::array();
+								this->print("Initialized $D$ as an empty array. ", LogLevel::Warning);
+							}
+							if (this->j.contains("M") && this->j["M"].is_array())
+							{
+								int removedValueCount = 0;
+								for (nlohmann::json::iterator arrayIt = this->j["M"].begin(); arrayIt != this->j["M"].end(); )
+									if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
+										++arrayIt;
+									else
 									{
-										for (nlohmann::json::iterator arrayIt = entryIt.value().begin(); arrayIt != entryIt.value().end(); )
-											if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
-												++arrayIt;
+										arrayIt = this->j["M"].erase(arrayIt);
+										++removedValueCount;
+									}
+								std::sort(this->j["M"].begin(), this->j["M"].end());
+								this->j["M"].erase(std::unique(this->j["M"].begin(), this->j["M"].end()), this->j["M"].end());
+								if (1 == removedValueCount)
+									this->print("A value in $M$ is invalid, which has been removed. ", LogLevel::Warning);
+								else if (removedValueCount)
+									this->print(std::to_string(removedValueCount) + " values in $M$ are invalid, which have been removed. ", LogLevel::Warning);
+							}
+							else
+							{
+								this->j["M"] = nlohmann::json::array();
+								this->print("Initialized $M$ as an empty array. ", LogLevel::Warning);
+							}
+							removedKeyCount = 0;
+							if (this->j.contains("N") && this->j["N"].is_object())
+							{
+								for (nlohmann::json::iterator outerEntryIt = this->j["N"].begin(); outerEntryIt != this->j["N"].end(); )
+									if (std::regex_match(outerEntryIt.key(), Pattern) && outerEntryIt.value().is_object())
+									{
+										int removedEntryCount = 0;
+										for (nlohmann::json::iterator innerEntryIt = outerEntryIt.value().begin(); innerEntryIt != outerEntryIt.value().end(); )
+											if (std::regex_match(innerEntryIt.key(), Pattern) && innerEntryIt.value().is_boolean())
+												++innerEntryIt;
 											else
 											{
-												arrayIt = entryIt.value().erase(arrayIt);
-												++removedValueCount;
+												innerEntryIt = outerEntryIt.value().erase(innerEntryIt);
+												++removedEntryCount;
 											}
-										++entryIt;
+										if (1 == removedEntryCount)
+											this->print("An entry in " + outerEntryIt.key() + " of $N$ is invalid, which has been removed. ", LogLevel::Warning);
+										else if (removedEntryCount)
+											this->print(std::to_string(removedEntryCount) + " entries in " + outerEntryIt.key() + " of $N$ are invalid, which have been removed. ", LogLevel::Warning);
+										++outerEntryIt;
 									}
 									else
 									{
-										entryIt = this->j["C"]["_"].erase(entryIt);
+										outerEntryIt = this->j["N"].erase(outerEntryIt);
 										++removedKeyCount;
 									}
+								if (1 == removedKeyCount)
+									this->print("A key in $N$ is invalid, which has been removed. ", LogLevel::Warning);
+								else if (removedKeyCount)
+									this->print(std::to_string(removedKeyCount) + " keys in $N$ are invalid, which have been removed. ", LogLevel::Warning);
+							}
 							else
-								this->j["C"]["_"] = nlohmann::json::object();
-							for (nlohmann::json::iterator entryIt = this->j["C"].begin(); entryIt != this->j["C"].end(); )
-								if ("" == entryIt.key() || "_" == entryIt.key())
-									++entryIt;
-								else if ("*" == entryIt.key())
-								{
-									/* Compatible with $C^*$ */
-									for (const nlohmann::json& value : entryIt.value())
-										if (value.is_string() && std::regex_match(value.get<std::string>(), Pattern))
-											this->j["C"][""][entryIt.key()].push_back(value.get<std::string>());
-										else
-											++removedValueCount;
-									entryIt = this->j["C"].erase(entryIt);
-								}
-								else if (entryIt.key().length() == 1 && 'A' <= entryIt.key()[0] && entryIt.key()[0] <= 'Z' && entryIt.value().is_array())
-								{
-									/* Compatible with Version 3.6.x ($C_X$) */
-									if (!this->j["C"]["_"].contains(entryIt.key()))
-										this->j["C"]["_"][entryIt.key()] = nlohmann::json::array();
-									for (const nlohmann::json& value : entryIt.value())
-										if (value.is_string() && std::regex_match(value.get<std::string>(), Pattern))
-											this->j["C"]["_"][entryIt.key()].push_back(value.get<std::string>());
-										else
-											++removedValueCount;
-									entryIt = this->j["C"].erase(entryIt);
-								}
-								else if (std::regex_match(entryIt.key(), Pattern)/* && entryIt.value().is_null() */)
-								{
-									/* Compatible with Version 3.6.x ($C$) */
-									this->j["C"][""].push_back(entryIt.key());
-									entryIt = this->j["C"].erase(entryIt);
-								}
-								else
-								{
-									entryIt = this->j["C"].erase(entryIt);
-									++removedKeyCount;
-								}
-							std::sort(this->j["C"][""].begin(), this->j["C"][""].end());
-							this->j["C"][""].erase(std::unique(this->j["C"][""].begin(), this->j["C"][""].end()), this->j["C"][""].end());
-							for (nlohmann::json::iterator entryIt = this->j["C"]["_"].begin(); entryIt != this->j["C"]["_"].end(); )
-								if (this->j["C"]["_"][entryIt.key()].empty()) // different from Python
-									entryIt = this->j["C"]["_"].erase(entryIt);
-								else
-								{
-									std::sort(this->j["C"]["_"][entryIt.key()].begin(), this->j["C"]["_"][entryIt.key()].end());
-									this->j["C"]["_"][entryIt.key()].erase(std::unique(this->j["C"]["_"][entryIt.key()].begin(), this->j["C"]["_"][entryIt.key()].end()), this->j["C"]["_"][entryIt.key()].end());
-									++entryIt;
-								}
-							if (1 == removedKeyCount)
-								this->print("A key in $C$ and its descendants is invalid, which has been removed. ", LogLevel::Warning);
-							else if (removedKeyCount)
-								this->print(std::to_string(removedKeyCount) + " keys in $C$ and its descendants are invalid, which have been removed. ", LogLevel::Warning);
-							if (1 == removedValueCount)
-								this->print("A value in $C$ and its descendants is invalid, which has been removed. ", LogLevel::Warning);
-							else if (removedValueCount)
-								this->print(std::to_string(removedValueCount) + " values in $C$ and its descendants are invalid, which have been removed. ", LogLevel::Warning);
+							{
+								this->j["N"] = nlohmann::json::object();
+								this->print("Initialized $N$ as an empty dictionary. ", LogLevel::Warning);
+							}
+							if (this->j.contains("S") && this->j["S"].is_array())
+							{
+								int removedValueCount = 0;
+								for (nlohmann::json::iterator arrayIt = this->j["S"].begin(); arrayIt != this->j["S"].end(); )
+									if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
+										++arrayIt;
+									else
+									{
+										arrayIt = this->j["S"].erase(arrayIt);
+										++removedValueCount;
+									}
+								std::sort(this->j["S"].begin(), this->j["S"].end());
+								this->j["S"].erase(std::unique(this->j["S"].begin(), this->j["S"].end()), this->j["S"].end());
+								if (1 == removedValueCount)
+									this->print("A value in $S$ is invalid, which has been removed. ", LogLevel::Warning);
+								else if (removedValueCount)
+									this->print(std::to_string(removedValueCount) + " values in $S$ are invalid, which have been removed. ", LogLevel::Warning);
+							}
+							else
+							{
+								this->j["S"] = nlohmann::json::array();
+								this->print("Initialized $S$ as an empty array. ", LogLevel::Warning);
+							}
+							if (this->j.contains("T") && this->j["T"].is_object())
+							{
+								int removedEntryCount = 0;
+								for (nlohmann::json::iterator entryIt = this->j["T"].begin(); entryIt != this->j["T"].end(); )
+									if (std::regex_match(entryIt.key(), Pattern) && entryIt.value().is_boolean())
+										++entryIt;
+									else
+										entryIt = this->j["T"].erase(entryIt);
+								if (1 == removedEntryCount)
+									this->print("An entry in $T$ is invalid, which has been removed. ", LogLevel::Warning);
+								else if (removedEntryCount)
+									this->print(std::to_string(removedEntryCount) + " entries in $T$ are invalid, which have been removed. ", LogLevel::Warning);
+							}
+							else
+							{
+								this->j["T"] = nlohmann::json::object();
+								this->print("Initialized $T$ as an empty dictionary. ", LogLevel::Warning);
+							}
+							this->flag |= 2/* 0b 0000 0000 0000 0000 0010 */;
 						}
 						else
-						{
-							this->j["C"] = nlohmann::json::object();
-							this->j["C"][""] = nlohmann::json::array();
-							this->j["C"]["_"] = nlohmann::json::object();
-							this->print("Initialized $C$ as an empty dictionary. ", LogLevel::Warning);
-						}
-						if (this->j.contains("D") && this->j["D"].is_array())
-						{
-							int removedValueCount = 0;
-							for (nlohmann::json::iterator arrayIt = this->j["D"].begin(); arrayIt != this->j["D"].end(); )
-								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
-									++arrayIt;
-								else
-								{
-									arrayIt = this->j["D"].erase(arrayIt);
-									++removedValueCount;
-								}
-							std::sort(this->j["D"].begin(), this->j["D"].end());
-							this->j["D"].erase(std::unique(this->j["D"].begin(), this->j["D"].end()), this->j["D"].end());
-							if (1 == removedValueCount)
-								this->print("A value in $D$ is invalid, which has been removed. ", LogLevel::Warning);
-							else if (removedValueCount)
-								this->print(std::to_string(removedValueCount) + " values in $D$ are invalid, which have been removed. ", LogLevel::Warning);
-						}
-						else
-						{
-							this->j["D"] = nlohmann::json::array();
-							this->print("Initialized $D$ as an empty array. ", LogLevel::Warning);
-						}
-						if (this->j.contains("M") && this->j["M"].is_array())
-						{
-							int removedValueCount = 0;
-							for (nlohmann::json::iterator arrayIt = this->j["M"].begin(); arrayIt != this->j["M"].end(); )
-								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
-									++arrayIt;
-								else
-								{
-									arrayIt = this->j["M"].erase(arrayIt);
-									++removedValueCount;
-								}
-							std::sort(this->j["M"].begin(), this->j["M"].end());
-							this->j["M"].erase(std::unique(this->j["M"].begin(), this->j["M"].end()), this->j["M"].end());
-							if (1 == removedValueCount)
-								this->print("A value in $M$ is invalid, which has been removed. ", LogLevel::Warning);
-							else if (removedValueCount)
-								this->print(std::to_string(removedValueCount) + " values in $M$ are invalid, which have been removed. ", LogLevel::Warning);
-						}
-						else
-						{
-							this->j["M"] = nlohmann::json::array();
-							this->print("Initialized $M$ as an empty array. ", LogLevel::Warning);
-						}
-						removedKeyCount = 0;
-						if (this->j.contains("N") && this->j["N"].is_object())
-						{
-							for (nlohmann::json::iterator outerEntryIt = this->j["N"].begin(); outerEntryIt != this->j["N"].end(); )
-								if (std::regex_match(outerEntryIt.key(), Pattern) && outerEntryIt.value().is_object())
-								{
-									int removedEntryCount = 0;
-									for (nlohmann::json::iterator innerEntryIt = outerEntryIt.value().begin(); innerEntryIt != outerEntryIt.value().end(); )
-										if (std::regex_match(innerEntryIt.key(), Pattern) && innerEntryIt.value().is_boolean())
-											++innerEntryIt;
-										else
-										{
-											innerEntryIt = outerEntryIt.value().erase(innerEntryIt);
-											++removedEntryCount;
-										}
-									if (1 == removedEntryCount)
-										this->print("An entry in " + outerEntryIt.key() + " of $N$ is invalid, which has been removed. ", LogLevel::Warning);
-									else if (removedEntryCount)
-										this->print(std::to_string(removedEntryCount) + " entries in " + outerEntryIt.key() + " of $N$ are invalid, which have been removed. ", LogLevel::Warning);
-									++outerEntryIt;
-								}
-								else
-								{
-									outerEntryIt = this->j["N"].erase(outerEntryIt);
-									++removedKeyCount;
-								}
-							if (1 == removedKeyCount)
-								this->print("A key in $N$ is invalid, which has been removed. ", LogLevel::Warning);
-							else if (removedKeyCount)
-								this->print(std::to_string(removedKeyCount) + " keys in $N$ are invalid, which have been removed. ", LogLevel::Warning);
-						}
-						else
-						{
-							this->j["N"] = nlohmann::json::object();
-							this->print("Initialized $N$ as an empty dictionary. ", LogLevel::Warning);
-						}
-						if (this->j.contains("S") && this->j["S"].is_array())
-						{
-							int removedValueCount = 0;
-							for (nlohmann::json::iterator arrayIt = this->j["S"].begin(); arrayIt != this->j["S"].end(); )
-								if (arrayIt->is_string() && std::regex_match(arrayIt->get<std::string>(), Pattern))
-									++arrayIt;
-								else
-								{
-									arrayIt = this->j["S"].erase(arrayIt);
-									++removedValueCount;
-								}
-							std::sort(this->j["S"].begin(), this->j["S"].end());
-							this->j["S"].erase(std::unique(this->j["S"].begin(), this->j["S"].end()), this->j["S"].end());
-							if (1 == removedValueCount)
-								this->print("A value in $S$ is invalid, which has been removed. ", LogLevel::Warning);
-							else if (removedValueCount)
-								this->print(std::to_string(removedValueCount) + " values in $S$ are invalid, which have been removed. ", LogLevel::Warning);
-						}
-						else
-						{
-							this->j["S"] = nlohmann::json::array();
-							this->print("Initialized $S$ as an empty array. ", LogLevel::Warning);
-						}
-						if (this->j.contains("T") && this->j["T"].is_object())
-						{
-							int removedEntryCount = 0;
-							for (nlohmann::json::iterator entryIt = this->j["T"].begin(); entryIt != this->j["T"].end(); )
-								if (std::regex_match(entryIt.key(), Pattern) && entryIt.value().is_boolean())
-									++entryIt;
-								else
-									entryIt = this->j["T"].erase(entryIt);
-							if (1 == removedEntryCount)
-								this->print("An entry in $T$ is invalid, which has been removed. ", LogLevel::Warning);
-							else if (removedEntryCount)
-								this->print(std::to_string(removedEntryCount) + " entries in $T$ are invalid, which have been removed. ", LogLevel::Warning);
-						}
-						else
-						{
-							this->j["T"] = nlohmann::json::object();
-							this->print("Initialized $T$ as an empty dictionary. ", LogLevel::Warning);
-						}
-						this->flag |= 2/* 0b 0000 0000 0000 0010 */;
+							this->print("The input database JSON file did not contain a dictionary. ", LogLevel::Error);
 					}
 					catch (...)
 					{
 						this->print("Failed to parse the content read from the input database JSON file. ", LogLevel::Error);
 					}
 					inputDatabaseFile.close();
-					return this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */;
+					return this->flag & 2/* 0b 0000 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0000 0001 */;
 				}
 				else
 				{
@@ -1096,11 +1125,11 @@ public:
 			return false;
 		}
 	}
-	bool scanApplicationDirectories() // 0b 0000 0000 0000 0011 | 0b 0000 0000 1111 1100 -> 0b 0000 0000 1111 1111
+	bool scanApplicationDirectories() // 0b 0000 0000 0000 0000 0011 | 0b 0000 0000 0000 1111 1100 -> 0b 0000 0000 0000 1111 1111
 	{
-		if (this->flag & 2/* 0b 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0001 */)
+		if (this->flag & 2/* 0b 0000 0000 0000 0000 0010 */ && this->flag & 1/* 0b 0000 0000 0000 0000 0001 */)
 		{
-			this->flag &= 3/* 0b 0000 0000 0000 0011 */;
+			this->flag &= 3/* 0b 0000 0000 0000 0000 0011 */;
 			const size_t applicationPartitionCount = std::min(ApplicationPartitions.size(), static_cast<size_t>(6));
 			if (!(this->j["C"]["_"].contains("L") && this->j["C"]["_"]["L"].is_array()))
 				this->j["C"]["_"]["L"] = nlohmann::json::array();
@@ -1116,7 +1145,7 @@ public:
 						localFlag = false;
 				}
 				if (localFlag)
-					this->flag |= 1 << (i + 2)/* 0b 0000 0000 (?)??? ??00 */;
+					this->flag |= 1 << (i + 2)/* 0b 0000 0000 0000 (?)??? ??00 */;
 			}
 			if (unrecordedPluginCount || unrecordedNonPluginCount)
 				this->print("Found " + std::to_string(unrecordedPluginCount) + " unrecorded plugin(s) ($M$) and " + std::to_string(unrecordedNonPluginCount) + " unrecorded plain application(s) ($C$, $D$, or $M$). You are invited to report the generated configurations to " + ReportLink, LogLevel::Info);
@@ -1126,14 +1155,14 @@ public:
 			bool localFlag = applicationPartitionCount >= 1;
 			size_t index = 2;
 			for (; index < effectiveHighestBit; ++index)
-				if (!((this->flag >> index) & 1/* 0b 0000 0000 0000 0001 */))
+				if (!((this->flag >> index) & 1/* 0b 0000 0000 0000 0000 0001 */))
 				{
 					localFlag = false;
 					break;
 				}
 			if (localFlag)
 				for (; index < highestBit; ++index)
-					this->flag |= 1 << index/* 0b 0000 0000 ???? ??00 */;
+					this->flag |= 1 << index/* 0b 0000 0000 0000 ???? ??00 */;
 			return this->checkInputFlags();
 		}
 		else
@@ -1142,15 +1171,15 @@ public:
 			return false;
 		}
 	}
-	bool generateHMAConfigurations() // 0b ???? 0000 1111 1111 | 0b 0000 1111 0000 0000 -> 0b ???? 1111 1111 1111
+	bool generateHMAConfigurations() // 0b 00?? ???? 0000 1111 1111 | 0b 0000 0000 1111 0000 0000 -> 0b 00?? ???? 1111 1111 1111
 	{
 		if (this->checkInputFlags())
 		{
 			if (this->outputHmaV92WhitelistFilePath.empty() && this->outputHmaV92BlacklistFilePath.empty() && this->outputHmaV93WhitelistFilePath.empty() && this->outputHmaV93BlacklistFilePath.empty())
-				this->flag |= 3840/* 0b 0000 1111 0000 0000 */;
+				this->flag |= 3840/* 0b 0000 0000 1111 0000 0000 */;
 			else
 			{
-				this->flag &= 61695/* 0b 1111 0000 1111 1111 */;
+				this->flag &= 61695/* 0b 0000 1111 0000 1111 1111 */;
 				
 				/* hmaConfiguration */
 				nlohmann::ordered_json hmaConfiguration{};
@@ -1196,7 +1225,7 @@ public:
 				
 				/* hmaV92WhitelistConfiguration */
 				if (this->outputHmaV92WhitelistFilePath.empty() && this->outputHmaV93WhitelistFilePath.empty())
-					this->flag |= 1280/* 0b 0000 0101 0000 0000 */;
+					this->flag |= 1280/* 0b 0000 0000 0101 0000 0000 */;
 				else
 				{
 					nlohmann::ordered_json hmaV92WhitelistConfiguration(hmaConfiguration);
@@ -1280,11 +1309,11 @@ public:
 									}
 							}
 					if (this->outputHmaV92WhitelistFilePath.empty())
-						this->flag |= 256/* 0b 0000 0001 0000 0000 */;
+						this->flag |= 256/* 0b 0000 0000 0001 0000 0000 */;
 					else if ("." == this->outputHmaV92WhitelistFilePath)
 					{
 						std::cout << hmaV92WhitelistConfiguration.dump() << std::endl;
-						this->flag |= 256/* 0b 0000 0001 0000 0000 */;
+						this->flag |= 256/* 0b 0000 0000 0001 0000 0000 */;
 					}
 					else if (handleDirectory(this->outputHmaV92WhitelistFilePath))
 						try
@@ -1294,7 +1323,7 @@ public:
 							{
 								outputHmaV92WhitelistFile << hmaV92WhitelistConfiguration.dump();
 								outputHmaV92WhitelistFile.close();
-								this->flag |= 256/* 0b 0000 0001 0000 0000 */;
+								this->flag |= 256/* 0b 0000 0000 0001 0000 0000 */;
 							}
 							else
 								this->print("Failed to open the output HMA v92 whitelist configuration JSON file. ", LogLevel::Error);
@@ -1308,7 +1337,7 @@ public:
 					
 					/* hmaV93WhitelistConfiguration */
 					if (this->outputHmaV93WhitelistFilePath.empty())
-						this->flag |= 1024/* 0b 0000 0100 0000 0000 */;
+						this->flag |= 1024/* 0b 0000 0000 0100 0000 0000 */;
 					else
 					{
 						nlohmann::ordered_json hmaV93WhitelistConfiguration(hmaV92WhitelistConfiguration);
@@ -1325,7 +1354,7 @@ public:
 						if ("." == this->outputHmaV93WhitelistFilePath)
 						{
 							std::cout << hmaV93WhitelistConfiguration.dump() << std::endl;
-							this->flag |= 1024/* 0b 0000 0100 0000 0000 */;
+							this->flag |= 1024/* 0b 0000 0000 0100 0000 0000 */;
 						}
 						else if (handleDirectory(this->outputHmaV93WhitelistFilePath))
 							try
@@ -1335,7 +1364,7 @@ public:
 								{
 									outputHmaV93WhitelistFile << hmaV93WhitelistConfiguration.dump();
 									outputHmaV93WhitelistFile.close();
-									this->flag |= 1024/* 0b 0000 0100 0000 0000 */;
+									this->flag |= 1024/* 0b 0000 0000 0100 0000 0000 */;
 								}
 								else
 									this->print("Failed to open the output HMA v93 whitelist configuration JSON file. ", LogLevel::Error);
@@ -1351,7 +1380,7 @@ public:
 				
 				/* hmaV92BlacklistConfiguration */
 				if (this->outputHmaV92BlacklistFilePath.empty() && this->outputHmaV93BlacklistFilePath.empty())
-					this->flag |= 2560/* 0b 0000 1010 0000 0000 */;
+					this->flag |= 2560/* 0b 0000 0000 1010 0000 0000 */;
 				else
 				{
 					nlohmann::ordered_json hmaV92BlacklistConfiguration(hmaConfiguration);
@@ -1440,11 +1469,11 @@ public:
 								}
 							}
 					if (this->outputHmaV92BlacklistFilePath.empty())
-						this->flag |= 512/* 0b 0000 0010 0000 0000 */;
+						this->flag |= 512/* 0b 0000 0000 0010 0000 0000 */;
 					else if ("." == this->outputHmaV92BlacklistFilePath)
 					{
 						std::cout << hmaV92BlacklistConfiguration.dump() << std::endl;
-						this->flag |= 512/* 0b 0000 0010 0000 0000 */;
+						this->flag |= 512/* 0b 0000 0000 0010 0000 0000 */;
 					}
 					else if (handleDirectory(this->outputHmaV92BlacklistFilePath))
 						try
@@ -1454,7 +1483,7 @@ public:
 							{
 								outputHmaV92BlacklistFile << hmaV92BlacklistConfiguration.dump();
 								outputHmaV92BlacklistFile.close();
-								this->flag |= 512/* 0b 0000 0010 0000 0000 */;
+								this->flag |= 512/* 0b 0000 0000 0010 0000 0000 */;
 							}
 							else
 								this->print("Failed to open the output HMA v92 blacklist configuration JSON file. ", LogLevel::Error);
@@ -1468,7 +1497,7 @@ public:
 					
 					/* hmaV93BlacklistConfiguration */
 					if (this->outputHmaV93BlacklistFilePath.empty())
-						this->flag |= 2048/* 0b 0000 1000 0000 0000 */;
+						this->flag |= 2048/* 0b 0000 0000 1000 0000 0000 */;
 					else
 					{
 						nlohmann::ordered_json hmaV93BlacklistConfiguration(hmaV92BlacklistConfiguration);
@@ -1485,7 +1514,7 @@ public:
 						if ("." == this->outputHmaV93BlacklistFilePath)
 						{
 							std::cout << hmaV93BlacklistConfiguration.dump() << std::endl;
-							this->flag |= 2048/* 0b 0000 1000 0000 0000 */;
+							this->flag |= 2048/* 0b 0000 0000 1000 0000 0000 */;
 						}
 						else if (handleDirectory(this->outputHmaV93BlacklistFilePath))
 							try
@@ -1495,7 +1524,7 @@ public:
 								{
 									outputHmaV93BlacklistFile << hmaV93BlacklistConfiguration.dump();
 									outputHmaV93BlacklistFile.close();
-									this->flag |= 2048/* 0b 0000 1000 0000 0000 */;
+									this->flag |= 2048/* 0b 0000 0000 1000 0000 0000 */;
 								}
 								else
 									this->print("Failed to open the output HMA v93 blacklist configuration JSON file. ", LogLevel::Error);
@@ -1509,7 +1538,7 @@ public:
 					}
 				}
 			}
-			return this->flag & 2048/* 0b 0000 1000 0000 0000 */ && this->flag & 1024/* 0b 0000 0100 0000 0000 */ && this->flag & 512/* 0b 0000 0010 0000 0000 */ && this->flag & 256/* 0b 0000 0001 0000 0000 */ && this->checkInputFlags();
+			return this->flag & 2048/* 0b 0000 0000 1000 0000 0000 */ && this->flag & 1024/* 0b 0000 0000 0100 0000 0000 */ && this->flag & 512/* 0b 0000 0000 0010 0000 0000 */ && this->flag & 256/* 0b 0000 0000 0001 0000 0000 */ && this->checkInputFlags();
 		}
 		else
 		{
@@ -1517,15 +1546,15 @@ public:
 			return false;
 		}
 	}
-	bool generateHMAOSSConfigurations() // 0b ??00 ???? 1111 1111 | 0b 0011 0000 0000 0000 -> 0b ??11 ???? 1111 1111
+	bool generateHMAOSSConfigurations() // 0b 00?? ??00 ???? 1111 1111 | 0b 0000 0011 0000 0000 0000 -> 0b 00?? ??11 ???? 1111 1111
 	{
 		if (this->checkInputFlags())
 		{
 			if (this->outputHmaossV93WhitelistFilePath.empty() && this->outputHmaossV93BlacklistFilePath.empty())
-				this->flag |= 12288/* 0b 0011 0000 0000 0000 */;
+				this->flag |= 12288/* 0b 0000 0011 0000 0000 0000 */;
 			else
 			{
-				this->flag &= 53247/* 0b 1100 1111 1111 1111 */;
+				this->flag &= 53247/* 0b 0000 1100 1111 1111 1111 */;
 				
 				/* hmaossConfiguration */
 				nlohmann::ordered_json hmaossConfiguration{};
@@ -1577,7 +1606,7 @@ public:
 				
 				/* hmaossV93WhitelistConfiguration */
 				if (this->outputHmaossV93WhitelistFilePath.empty())
-					this->flag |= 4096/* 0b 0001 0000 0000 0000 */;
+					this->flag |= 4096/* 0b 0000 0001 0000 0000 0000 */;
 				else
 				{
 					nlohmann::ordered_json hmaossV93WhitelistConfiguration(hmaossConfiguration);
@@ -1667,7 +1696,7 @@ public:
 					if ("." == this->outputHmaossV93WhitelistFilePath)
 					{
 						std::cout << hmaossV93WhitelistConfiguration.dump() << std::endl;
-						this->flag |= 4096/* 0b 0001 0000 0000 0000 */;
+						this->flag |= 4096/* 0b 0000 0001 0000 0000 0000 */;
 					}
 					else if (handleDirectory(this->outputHmaossV93WhitelistFilePath))
 						try
@@ -1677,7 +1706,7 @@ public:
 							{
 								outputHmaossV93WhitelistFile << hmaossV93WhitelistConfiguration.dump();
 								outputHmaossV93WhitelistFile.close();
-								this->flag |= 4096/* 0b 0001 0000 0000 0000 */;
+								this->flag |= 4096/* 0b 0000 0001 0000 0000 0000 */;
 							}
 							else
 								this->print("Failed to open the output whitelist v93 configuration JSON file. ", LogLevel::Error);
@@ -1692,7 +1721,7 @@ public:
 				
 				/* hmaossV93BlacklistConfiguration */
 				if (this->outputHmaossV93BlacklistFilePath.empty())
-					this->flag |= 8192/* 0b 0010 0000 0000 0000 */;
+					this->flag |= 8192/* 0b 0000 0010 0000 0000 0000 */;
 				else
 				{
 					nlohmann::ordered_json hmaossV93BlacklistConfiguration(hmaossConfiguration);
@@ -1783,7 +1812,7 @@ public:
 					if ("." == this->outputHmaossV93BlacklistFilePath)
 					{
 						std::cout << hmaossV93BlacklistConfiguration.dump() << std::endl;
-						this->flag |= 8192/* 0b 0010 0000 0000 0000 */;
+						this->flag |= 8192/* 0b 0000 0010 0000 0000 0000 */;
 					}
 					else if (handleDirectory(this->outputHmaossV93BlacklistFilePath))
 						try
@@ -1793,7 +1822,7 @@ public:
 							{
 								outputHmaossV93BlacklistFile << hmaossV93BlacklistConfiguration.dump();
 								outputHmaossV93BlacklistFile.close();
-								this->flag |= 8192/* 0b 0010 0000 0000 0000 */;
+								this->flag |= 8192/* 0b 0000 0010 0000 0000 0000 */;
 							}
 							else
 								this->print("Failed to open the output blacklist configuration JSON file. ", LogLevel::Error);
@@ -1806,7 +1835,7 @@ public:
 						this->print("Failed to handle the parent directory for the output blacklist configuration JSON file. ", LogLevel::Error);
 				}
 			}
-			return this->flag & 8192/* 0b 0010 0000 0000 0000 */ && this->flag & 4096 /* 0b 0001 0000 0000 0000 */ && this->checkInputFlags();
+			return this->flag & 8192/* 0b 0000 0010 0000 0000 0000 */ && this->flag & 4096 /* 0b 0000 0001 0000 0000 0000 */ && this->checkInputFlags();
 		}
 		else
 		{
@@ -1814,15 +1843,15 @@ public:
 			return false;
 		}
 	}
-	bool generatePathTester() // 0b ?0?? ???? 1111 1111 | 0b 0100 0000 0000 0000 -> 0b ?1?? ???? 1111 1111
+	bool generatePathTester() // 0b 00?? ?0?? ???? 1111 1111 | 0b 0000 0100 0000 0000 0000 -> 0b 00?? ?1?? ???? 1111 1111
 	{
 		if (this->checkInputFlags())
 		{
 			if (this->outputPathTesterFilePath.empty())
-				this->flag |= 16384 /* 0b 0100 0000 0000 0000 */;
+				this->flag |= 16384 /* 0b 0000 0100 0000 0000 0000 */;
 			else
 			{
-				this->flag &= 49151/* 0b 1011 1111 1111 1111 */;
+				this->flag &= 49151/* 0b 0000 1011 1111 1111 1111 */;
 				std::string shellScript = "#!/system/bin/sh\n"
 				"readonly EXIT_SUCCESS=0\n"
 				"readonly EXIT_FAILURE=1\n\n"
@@ -1885,7 +1914,7 @@ public:
 				if ("." == this->outputPathTesterFilePath)
 				{
 					std::cout << shellScript << std::endl;
-					this->flag |= 16384 /* 0b 0100 0000 0000 0000 */;
+					this->flag |= 16384 /* 0b 0000 0100 0000 0000 0000 */;
 				}
 				else if (handleDirectory(this->outputPathTesterFilePath))
 					try
@@ -1895,7 +1924,7 @@ public:
 						{
 							outputPathTesterFile << shellScript;
 							outputPathTesterFile.close();
-							this->flag |= 16384 /* 0b 0100 0000 0000 0000 */;
+							this->flag |= 16384 /* 0b 0000 0100 0000 0000 0000 */;
 						}
 						else
 							this->print("Failed to open the output path tester script file. ", LogLevel::Error);
@@ -1907,7 +1936,7 @@ public:
 				else
 					this->print("Failed to handle the parent directory for the output path tester script file. ", LogLevel::Error);
 			}
-			return this->flag & 16384 /* 0b 0100 0000 0000 0000 */ && this->checkInputFlags();
+			return this->flag & 16384 /* 0b 0000 0100 0000 0000 0000 */ && this->checkInputFlags();
 		}
 		else
 		{
@@ -1915,15 +1944,15 @@ public:
 			return false;
 		}
 	}
-	bool generateTrickyStoreTarget() // 0b 0??? ???? 1111 1111 | 0b 1000 0000 0000 0000 -> 0b 1??? ???? 1111 1111
+	bool generateTrickyStoreTarget() // 0b 00?? 0??? ???? 1111 1111 | 0b 0000 1000 0000 0000 0000 -> 0b 00?? 1??? ???? 1111 1111
 	{
 		if (this->checkInputFlags())
 		{
 			if (this->outputTrickyStoreTargetFilePath.empty())
-				this->flag |= 32768/* 0b 1000 0000 0000 0000 */;
+				this->flag |= 32768/* 0b 0000 1000 0000 0000 0000 */;
 			else
 			{
-				this->flag &= 32767/* 0b 0111 1111 1111 1111 */;
+				this->flag &= 32767/* 0b 0000 0111 1111 1111 1111 */;
 				std::vector<std::string> targetPackageNames{};
 				for (const nlohmann::json& value : this->j["C"][""])
 					targetPackageNames.push_back(value.get<std::string>());
@@ -1958,7 +1987,7 @@ public:
 				{
 					for (const std::string& packageName : targetPackageNames)
 						std::cout << packageName << std::endl;
-					this->flag |= 32768/* 0b 1000 0000 0000 0000 */;
+					this->flag |= 32768/* 0b 0000 1000 0000 0000 0000 */;
 				}
 				else if (handleDirectory(this->outputTrickyStoreTargetFilePath))
 					try
@@ -1969,7 +1998,7 @@ public:
 							for (const std::string& packageName : targetPackageNames)
 								outputTrickyStoreTargetFile << packageName << std::endl;
 							outputTrickyStoreTargetFile.close();
-							this->flag |= 32768/* 0b 1000 0000 0000 0000 */;
+							this->flag |= 32768/* 0b 0000 1000 0000 0000 0000 */;
 						}
 						else
 							this->print("Failed to open the output Tricky Store target text file. ", LogLevel::Error);
@@ -1981,7 +2010,7 @@ public:
 				else
 					this->print("Failed to handle the parent directory for the output Tricky Store target text file. ", LogLevel::Error);
 			}
-			return this->flag & 32768/* 0b 1000 0000 0000 0000 */ && this->checkInputFlags();
+			return this->flag & 32768/* 0b 0000 1000 0000 0000 0000 */ && this->checkInputFlags();
 		}
 		else
 		{
@@ -1989,7 +2018,120 @@ public:
 			return false;
 		}
 	}
-	unsigned short getFlag() const
+	bool generateTEESimulatorConfiguration() // 0b 0000 ???? ???? 1111 1111 | 0b 0011 0000 0000 0000 0000 -> 0b 0011 ???? ???? 1111 1111
+	{
+		if (this->checkInputFlags())
+		{
+			if (this->outputTEESimulatorConfigurationFilePath.empty())
+				this->flag |= 196608/* 0b 0011 0000 0000 0000 0000 */;
+			else
+			{
+				this->flag &= 65535/* 0b 0000 1111 1111 1111 1111 */;
+				std::vector<std::string> targetPackageNames{};
+				for (const nlohmann::json& value : this->j["C"][""])
+					targetPackageNames.push_back(value.get<std::string>());
+				for (nlohmann::json::const_iterator entryIt = this->j["C"]["_"].cbegin(); entryIt != this->j["C"]["_"].cend(); ++entryIt)
+					for (const nlohmann::json& value : entryIt.value())
+						targetPackageNames.push_back(value.get<std::string>());
+				for (const nlohmann::json& value : this->j["D"])
+					targetPackageNames.push_back(value.get<std::string>());
+				for (const nlohmann::json& value : this->j["M"])
+					targetPackageNames.push_back(value.get<std::string>());
+				for (const nlohmann::json& value : this->j["S"])
+					targetPackageNames.push_back(value.get<std::string>());
+				for (nlohmann::json::const_iterator entryIt = this->j["T"].cbegin(); entryIt != this->j["T"].cend(); ++entryIt)
+					if (entryIt.value().get<bool>())
+						targetPackageNames.push_back(entryIt.key());
+				std::sort(targetPackageNames.begin(), targetPackageNames.end());
+				targetPackageNames.erase(std::unique(targetPackageNames.begin(), targetPackageNames.end()), targetPackageNames.end());
+				for (nlohmann::json::const_iterator entryIt = this->j["T"].cbegin(); entryIt != this->j["T"].cend(); ++entryIt)
+					if (!entryIt.value().get<bool>())
+					{
+						const std::vector<std::string>::iterator position = std::find(targetPackageNames.begin(), targetPackageNames.end(), entryIt.key());
+						if (targetPackageNames.end() != position)
+							targetPackageNames.erase(position);
+					}
+				nlohmann::json TEESimulatorConfiguration = nlohmann::json::object();
+				if (this->inputTEESimulatorConfigurationFilePath.empty() || "." == this->inputTEESimulatorConfigurationFilePath)
+					this->flag |= 65536 /* 0b 0001 0000 0000 0000 0000 */;
+				else
+					try
+					{
+						std::ifstream inputTEESimulatorConfigurationFile(this->inputTEESimulatorConfigurationFilePath);
+						if (inputTEESimulatorConfigurationFile.is_open())
+						{
+							TEESimulatorConfiguration = nlohmann::json::parse(inputTEESimulatorConfigurationFile);
+							inputTEESimulatorConfigurationFile.close();
+							if (TEESimulatorConfiguration.is_object() && TEESimulatorConfiguration.contains("profiles") && TEESimulatorConfiguration["profiles"].is_object())
+								this->flag |= 65536 /* 0b 0001 0000 0000 0000 0000 */;
+							else
+							{
+								TEESimulatorConfiguration = nlohmann::json::object();
+								this->print("The input TEESimulator configuration file did not contain a dictionary with the key \"profiles\". ", LogLevel::Error);
+							}
+						}
+						else
+							this->print("Failed to open the input TEESimulator configuration JSON file. ", LogLevel::Error);
+					}
+					catch (...)
+					{
+						this->print("Failed to parse the input TEESimulator configuration JSON file. ", LogLevel::Error);
+					}
+				if (!TEESimulatorConfiguration.contains("profiles"))
+					TEESimulatorConfiguration["profiles"] = nlohmann::json::object();
+				TEESimulatorConfiguration["profiles"][MODULE_ID] = nlohmann::json::object();
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["keybox"] = "keybox.xml";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["mode"] = "patch";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["patchLevel"] = nlohmann::json::object();
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["patchLevel"]["system"] = "today";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["patchLevel"]["vendor"] = "YYYY-MM-05";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["patchLevel"]["boot"] = "YYYY-MM-05";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["osVersion"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["brand"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["device"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["product"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["manufacturer"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["model"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["serial"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["imei"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["meid"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["imei2"] = "";
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["apps"] = targetPackageNames;
+				TEESimulatorConfiguration["profiles"][MODULE_ID]["autoIncludeNewApps"] = true;
+				if ("." == this->outputTEESimulatorConfigurationFilePath)
+				{
+					std::cout << TEESimulatorConfiguration.dump() << std::endl;
+					this->flag |= 131072/* 0b 0010 0000 0000 0000 0000 */;
+				}
+				else if (handleDirectory(this->outputTEESimulatorConfigurationFilePath))
+					try
+					{
+						std::ofstream outputTEESimulatorConfigurationFile(this->outputTEESimulatorConfigurationFilePath);
+						if (outputTEESimulatorConfigurationFile.is_open())
+						{
+							outputTEESimulatorConfigurationFile << TEESimulatorConfiguration.dump(2);
+							outputTEESimulatorConfigurationFile.close();
+							this->flag |= 131072/* 0b 0010 0000 0000 0000 0000 */;
+						}
+						else
+							this->print("Failed to open the output TEESimulator configuration JSON file. ", LogLevel::Error);
+					}
+					catch (...)
+					{
+						this->print("Failed to generate the output TEESimulator configuration JSON file. ", LogLevel::Error);
+					}
+				else
+					this->print("Failed to handle the parent directory for the TEESimulator configuration JSON file. ", LogLevel::Error);
+			}
+			return this->flag & 131072/* 0b 0010 0000 0000 0000 0000 */ && this->flag & 65536/* 0b 0001 0000 0000 0000 0000 */ && this->checkInputFlags();
+		}
+		else
+		{
+			this->print("Please parse the input database JSON file and conduct the local scanning before generating the TEESimulator configuration JSON file. ", LogLevel::Error);
+			return false;
+		}
+	}
+	unsigned int getFlag() const
 	{
 		return this->flag;
 	}
@@ -2010,6 +2152,7 @@ int main(int argc, char* argv[])
 		generationFlag = generator.generateHMAOSSConfigurations() && generationFlag;
 		generationFlag = generator.generatePathTester() && generationFlag;
 		generationFlag = generator.generateTrickyStoreTarget() && generationFlag;
+		generationFlag = generator.generateTEESimulatorConfiguration() && generationFlag;
 		return generationFlag ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 	else
