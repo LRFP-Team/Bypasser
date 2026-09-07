@@ -1854,7 +1854,7 @@ public:
 				this->flag &= 49151/* 0b 0000 1011 1111 1111 1111 */;
 				std::string shellScript = "#!/system/bin/sh\n"
 				"readonly EXIT_SUCCESS=0\n"
-				"readonly EXIT_FAILURE=1\n\n"
+				"readonly EXIT_FAILURE=1\n"
 				"readonly EOF=-1\n\n"
 				"errorLevel=${EXIT_SUCCESS}\n"
 				"if echo \"${EXTERNAL_STORAGE}\" | grep -qE \"^(/[A-Za-z0-9_-]+)+$\";\n"
@@ -1871,7 +1871,7 @@ public:
 				"\techo \"You are running this script as root. Please run it as a regular user.\"\n"
 				"\texit ${errorLevel}\n"
 				"else\n"
-				"\techo -e \"The execution of the path tester has begun. \"\n"
+				"\techo \"The execution of the path tester has begun. \"\n"
 				"fi\n\n";
 				shellScript += "readonly D=" + this->array2string(this->j["D"], "\"", " ", "\"") + "\n";
 				shellScript += "for d in ${D};\n"
@@ -1886,7 +1886,9 @@ public:
 				"\t\tfi\n"
 				"\tdone\n"
 				"done\n\n";
-				shellScript += "readonly M=" + this->array2string(this->j["M"], "\"", " ", "\"") + "\n";
+				shellScript += "M=" + this->array2string(this->j["M"], "\"", " ", "\"") + "\n";
+				shellScript += "hostPackageName=\"$(pm list packages --uid $(id -u) | sed -n \'s/^package:\\([^ ]*\\).*/\\1/p\')\"\n";
+				shellScript += "M=$(echo \"${M}\" | sed -E \"s/(^| )$hostPackageName( |$)/ /g\" | sed \'s/^ *//;s/ *$//\')\n";
 				shellScript += "for m in ${M};\n"
 				"do\n"
 				"\tfor directory in ${directories};\n"

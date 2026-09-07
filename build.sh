@@ -64,11 +64,11 @@ readonly shellAFilePath="${srcDirectoryPath}/${shellAFileName}"
 readonly shellBFileName="actionB.sh"
 readonly shellBFilePath="${srcDirectoryPath}/${shellBFileName}"
 
-if [[ -z "$(find . -name "*.sh" -exec bash -n {} \; 2>&1)" ]];
+if [[ -z "$(find . -name "*.sh" -exec sh -n {} \; 2>&1)" ]];
 then
-	echo "All the scripts successfully passed the local shell syntax check (bash). "
+	echo "All the scripts successfully passed the local shell syntax check (sh). "
 else
-	echo "Some of the scripts failed to pass the local shell syntax check (bash). "
+	echo "Some of the scripts failed to pass the local shell syntax check (sh). "
 	exit 13
 fi
 if [[

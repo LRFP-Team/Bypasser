@@ -631,18 +631,18 @@ class RegularUpdater:
 				length, successCount = len(str(totalCount)), 0
 				for i, filePath in enumerate(filePaths, start = 1):
 					try:
-						result = run(("bash", "-n", filePath), capture_output = True, text = True, timeout = self.__executionTimeout)
+						result = run(("sh", "-n", filePath), capture_output = True, text = True, timeout = self.__executionTimeout)
 						if EXIT_SUCCESS == result.returncode:
 							successCount += 1
-							print("[{{0:0>{0}}}] {{1}} -> Passed (bash)".format(length).format(i, repr(filePath)))
+							print("[{{0:0>{0}}}] {{1}} -> Passed (sh)".format(length).format(i, repr(filePath)))
 						else:
-							print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), result))
+							print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), result))
 					except TimeoutExpired as e:
-						print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), {
+						print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), {
 							"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
 						}))
 					except BaseException as e:
-						print("[{{0:0>{0}}}] {{1}} -> Failed (bash) -> {{2}}".format(length).format(i, repr(filePath), repr(e)))
+						print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), repr(e)))
 				try:
 					with open(self.__actionAFilePath, "rb") as f:
 						contentA = f.read()

@@ -10,6 +10,7 @@ readonly VK_DOWN=40
 readonly moduleName="Bypasser"
 readonly moduleId="bypasser"
 readonly defaultTimeout=5
+readonly tmpDirectoryPath="/data/local/tmp"
 readonly outerSymbolCount=200
 readonly innerSymbolCount=100
 readonly startTime=$(date +%s%N)
@@ -167,14 +168,34 @@ gapTime=0
 
 function getTheKeyPressed
 {
+	local timing namedPipeFilePath namedPipeFileName childProcessID pressString pressCode
 	if echo "$1" | grep -qE '^[1-9][0-9]*$';
 	then
-		timeout=$1
+		timing=$1
 	else
-		timeout=${defaultTimeout}
+		timing=${defaultTimeout}
 	fi
-	read -r -t ${timeout} pressString < <(getevent -ql)
+	
+	# read -r -t ${timing} pressString < <(getevent -ql) #
+	case "$2" in
+		"${tmpDirectoryPath}/"*[!\/]*)
+			namedPipeFilePath=$2
+			;;
+		*)
+			namedPipeFileName="${moduleID}$(date +%Y%m%d%H%M%S%N).$$"
+			namedPipeFilePath="${tmpDirectoryPath}/${namedPipeFileName}"
+			;;
+	esac
+	mkfifo "${namedPipeFilePath}" 2>/dev/null || { echo "Failed to create the named pipe file \"${namedPipeFilePath}\". "; return ${EOF}; }
+	getevent -ql > "${namedPipeFilePath}" &
+	childProcessID=$!
+	read -r -t ${timing} pressString < "${namedPipeFilePath}"
 	pressCode=$?
+	kill ${childProcessID} 2>/dev/null
+	wait ${childProcessID} 2>/dev/null
+	rm -f "${namedPipeFilePath}"
+	# pressCode=$? #
+	
 	if [[ ${EXIT_SUCCESS} == ${pressCode} ]];
 	then
 		if [[ "${pressString}" == *KEY_VOLUMEUP* ]];
@@ -199,7 +220,7 @@ function getTheKeyPressed
 			return ${EXIT_FAILURE}
 		fi
 	else
-		echo "Users did not respond within ${timeout} second(s). "
+		echo "Users did not respond within ${timing} second(s). "
 		return ${EOF}
 	fi
 }
