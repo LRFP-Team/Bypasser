@@ -97,17 +97,18 @@ then
 	if [[ "${KSU}" == "true" ]];
 	then
 		echo "KSU (${KSU_VER_CODE}): Please "
-		echo "- deploy the latest ReSukiSU from the \`\`Actions\`\` tab of its GitHub repository with only applications requiring root privileges configured and granted in the ReSukiSU Manager, "
+		echo "- deploy the latest ReSukiSU with only applications requiring root privileges configured and granted in the ReSukiSU Manager, "
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
-		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
+		echo "- install the latest LSPosed module as a system module with logging disabled and the narrowest scope configured for each plugin, "
+		echo "- install the latest HMA-OSS module as a system module with the correct configurations, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
 		echo "- install the latest TEESimulator module as a system module with the correct configurations, "
-		echo "- install the latest Audit Patch module as a system module, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
-			echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
+			echo "- install the latest Audit Patch module as a system module, and"
+			echo "- activate the latest FuseFixer plugin. "
 		else
-			echo "- activate the latest HMA-OSS plugin with the correct configurations. "
+			echo "- install the latest Audit Patch module as a system module. "
 		fi
 		if [[ -d "${apatchFolder}" ]];
 		then
@@ -120,18 +121,23 @@ then
 	elif [[ "${APATCH}" == "true" ]];
 	then
 		echo "Apatch (${APATCH_VER_CODE}): Please "
-		echo "- deploy the latest Apatch from the \`\`Actions\`\` tab of its GitHub repository with only applications requiring root privileges configured and granted in the Apatch Manager, "
-		echo "- embed the latest Cherish Peekaboo as a kernel module, "
+		echo "- deploy the latest Apatch with only applications requiring root privileges configured and granted in the Apatch Manager, "
+		echo "- embed the latest NoHello as a kernel module, "
+		if [[ ${androidVersion} -le 12 ]];
+		then
+			echo "- embed the latest Cherish Peekaboo as a kernel module, "
+		fi
 		echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
-		echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with logging disabled and the narrowest scope configured for each plugin, "
+		echo "- install the latest LSPosed module as a system module with logging disabled and the narrowest scope configured for each plugin, "
+		echo "- install the latest HMA-OSS module as a system module with the correct configurations, "
 		echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
 		echo "- install the latest TEESimulator module as a system module with the correct configurations, "
-		echo "- install the latest Audit Patch module as a system module, and"
 		if [[ ${androidVersion} -ge 12 ]];
 		then
-			echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
+			echo "- install the latest Audit Patch module as a system module, and"
+			echo "- activate the latest FuseFixer plugin. "
 		else
-			echo "- activate the latest HMA-OSS plugin with the correct configurations. "
+			echo "- install the latest Audit Patch module as a system module. "
 		fi
 		if [[ -d "${magiskFolder}" ]];
 		then
@@ -152,30 +158,31 @@ then
 		fi
 		if [[ -n "${MAGISK_VER_CODE}" ]];
 		then
-			if [[ ${MAGISK_VER} == *-kitsune || ${MAGISK_VER} == *-delta ]];
+			if [[ "${MAGISK_VER}" == *-kitsune || "${MAGISK_VER}" == *-delta ]];
 			then
 				echo "Magisk Delta (${MAGISK_VER_CODE}): Please "
 				echo "- deploy the latest Magisk Delta with the built-in Zygisk enabled, the whitelist mode enabled, and only applications requiring root privileges configured and granted in the Magisk Delta Manager, "
-				echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository as a system module with the narrowest scope configured for each plugin, "
-				echo "- install the latest Play Integrity Fix (PIF) module, "
-				echo "- install the latest TEESimulator module with the correct configurations, "
-				echo "- install the latest Audit Patch module, "
-				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
+				echo "- install the latest LSPosed module as a system module with logging disabled and the narrowest scope configured for each plugin, "
+				echo "- install the latest HMA-OSS module as a system module with the correct configurations, "
+				echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
+				echo "- install the latest TEESimulator module as a system module with the correct configurations, "
+				echo "- install the latest Audit Patch module as a system module, "
 				if [[ ${androidVersion} -ge 12 ]];
 				then
-					echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
+					echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and"
+					echo "- activate the latest FuseFixer plugin. "
 				else
-					echo "- activate the latest HMA-OSS plugin with the correct configurations. "
+					echo "- install the latest bindhosts or the built-in Systemless hosts module (optional). "
 				fi
 				echo "Please consider switching to the latest Magisk Alpha if possible. "
 			else
-				if [[ ${MAGISK_VER} == *-alpha ]];
+				if [[ "${MAGISK_VER}" == *-alpha ]];
 				then
 					echo -n "Magisk Alpha "
-				elif [[ ${MAGISK_VER} == *-beta ]];
+				elif [[ "${MAGISK_VER}" == *-beta ]];
 				then
 					echo -n "Magisk Beta "
-				elif [[ ${MAGISK_VER} == *-canary ]];
+				elif [[ "${MAGISK_VER}" == *-canary ]];
 				then
 					echo -n "Magisk Canary "
 				else
@@ -184,17 +191,18 @@ then
 				echo "(${MAGISK_VER_CODE}): Please "
 				echo "- deploy the latest Magisk Alpha with the built-in Zygisk and denylist disabled, "
 				echo "- execute applications requiring root privileges with root privileges granted, "
-				echo "- install the latest Zygisk Next module with Denylist Policy set to Unmount Only, "
-				echo "- install the latest \`\`Jing Matrix\`\` branch of the LSPosed module from the \`\`Actions\`\` tab of its GitHub repository with logging disabled and the narrowest scope configured for each plugin, "
-				echo "- install the latest Play Integrity Fix (PIF) module, "
-				echo "- install the latest TEESimulator module with the correct configurations, "
-				echo "- install the latest Audit Patch module, "
-				echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and "
+				echo "- install the latest Zygisk Next module as a system module with Denylist Policy set to Unmount Only, "
+				echo "- install the latest LSPosed module as a system module with logging disabled and the narrowest scope configured for each plugin, "
+				echo "- install the latest HMA-OSS module as a system module with the correct configurations, "
+				echo "- install the latest Play Integrity Fix (PIF) module as a system module, "
+				echo "- install the latest TEESimulator module as a system module with the correct configurations, "
+				echo "- install the latest Audit Patch module as a system module, "
 				if [[ ${androidVersion} -ge 12 ]];
 				then
-					echo "- activate the latest HMA-OSS plugin with the correct configurations and the latest FuseFixer plugin. "
+					echo "- install the latest bindhosts or the built-in Systemless hosts module (optional), and"
+					echo "- activate the latest FuseFixer plugin. "
 				else
-					echo "- activate the latest HMA-OSS plugin with the correct configurations. "
+					echo "- install the latest bindhosts or the built-in Systemless hosts module (optional). "
 				fi
 			fi
 			if [[ ${MAGISK_VER_CODE} -lt ${magiskVulnerabilityVersion} ]];

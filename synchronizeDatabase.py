@@ -638,9 +638,9 @@ class RegularUpdater:
 							)
 							if EXIT_SUCCESS == result.returncode:
 								successCount += 1
-								print("[{{0:0>{0}}}] {{1}} -> Passed (sh)".format(length).format(i, repr(filePath)))
+								print("[{{0:0>{0}}}] {{1}} -> Passed (sh/bash)".format(length).format(i, repr(filePath)))
 							else:
-								print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), result))
+								print("[{{0:0>{0}}}] {{1}} -> Failed (sh/bash) -> {{2}}".format(length).format(i, repr(filePath), result))
 						except TimeoutExpired as e:
 							print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), {
 								"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
