@@ -288,6 +288,26 @@
 			</table>
 			<div id="databaseStatus" class="content status statusHidden informationColor"></div>
 		</div>
+		<div id="generatorContainer" class="container">
+			Generator
+			<div id="generatorSlot" class="content loadingColor">Please wait while loading the architecture. </div>
+			<table id="generatorButtons" class="content informationColor">
+				<tr>
+					<td>
+						<select id="generatorSelection">
+							<option value="arm64-v8a">generate_arm64-v8a</option>
+							<option value="armeabi-v7a">generate_armeabi-v7a</option>
+							<option value="x86">generate_x86</option>
+							<option value="x86_64">generate_x86_64</option>
+						</select>
+					</td>
+					<td>
+						<button id="generatorFetcher" onclick="fetchGenerator();">Fetch</button>
+					</td>
+				</tr>
+			</table>
+			<div id="generatorStatus" class="content status statusHidden informationColor"></div>
+		</div>
 		<div id="aboutContainer" class="container">
 			About
 			<div id="aboutLRFP" class="content informationColor"><a href="https://github.com/LRFP-Team/LRFP" target="blank">https://github.com/LRFP-Team/LRFP</a></div>
@@ -363,7 +383,7 @@
 						const actionSlotElement = document.getElementById("actionSlot");
 						actionSlotElement.innerHTML = "<b>Fatal</b>: Cannot fetch or parse the action slot. ";
 						actionSlotElement.className = "content fatalColor";
-						console.error("Fatal: Failed to fetch or parse the action slot due to the following error. \n", error);
+						console.error("Fatal: Failed to fetch or parse the action slot due to the following exception. \n", error);
 					})
 					 .finally(() => {
 						isOperatingActionSlot = false;
@@ -403,7 +423,7 @@
 						{
 							actionStatusElement.innerHTML = `<b>Error</b>: Failed to swap the action slot to ${targetValue}. `
 							actionStatusElement.className = "content status statusShown errorColor";
-							console.error(`Error: Failed to update the action slot to ${targetValue} due to the following error. `, stdout);
+							console.error(`Error: Failed to update the action slot to ${targetValue} due to the following exception. `, stdout);
 							setTimeout(() => {
 								actionStatusElement.className = "content status statusHidden informationColor";
 								actionStatusElement.innerHTML = "";
@@ -712,7 +732,7 @@
 						const databaseElement = document.getElementById("databaseTree");
 						databaseElement.innerHTML = "<b>Fatal</b>: Cannot fetch or parse the database. ";
 						databaseElement.className = "content fatalColor";
-						console.error("Fatal: Failed to load the database due to the following error. \n", error);
+						console.error("Fatal: Failed to load the database due to the following exception. \n", error);
 					})
 					 .finally(() => {
 						isOperatingDatabase = false;
@@ -816,6 +836,141 @@
 				}
 			}
 			
+			async function displayArchitecture()
+			{
+				const generatorSlotElement = document.getElementById("generatorSlot");
+				if ("function" === typeof execute)
+				{
+					try
+					{
+						const rawDeviceArchitecture = await execute("getprop ro.product.cpu.abi");
+						const deviceArchitecture = "string" === typeof rawDeviceArchitecture ? rawDeviceArchitecture.trim() : "";
+						if (supportedArchitectures.includes(deviceArchitecture))
+						{
+							generatorSlotElement.innerHTML = `The architecture of this device is <b>${deviceArchitecture}</b>. `;
+							generatorSlotElement.className = "content informationColor";
+							console.log(`Info: The architecture of this device is ${deviceArchitecture}. `);
+							const generatorSelectionElement = document.getElementById("generatorSelection");
+							generatorSelectionElement.value = "generate_" + deviceArchitecture;
+							console.debug(`Debug: The generator selection element has been set to ${generatorSelectionElement.value}. `);
+						}
+						else
+						{
+							generatorSlotElement.innerHTML = "Warning: The architecture of this device cannot be recognized. ";
+							generatorSlotElement.className = "content warningColor";
+							console.warn("Warning: The architecture of this device cannot be recognized. ");
+						}
+					}
+					catch (exception)
+					{
+						generatorSlotElement.innerHTML = "Warning: Failed to get the architecture of this device due to unknown exceptions. ";
+						generatorSlotElement.className = "content warningColor";
+						console.warn("Warning: Failed to get the architecture of this device due to the following exception. \n", exception);
+					}
+				}
+				else
+				{
+					generatorSlotElement.innerHTML = "Warning: Failed to get the architecture of this device due to the undefined shell execution function. ";
+					generatorSlotElement.className = "content warningColor";
+					console.warn("Warning: Failed to get the architecture of this device due to the undefined shell execution function. ");
+				}
+			}
+			async function fetchGenerator()
+			{
+				if (isOperatingGenerator)
+				{
+					console.debug("Debug: ``fetchGenerator: true === isOperatingGenerator;``");
+					return;
+				}
+				isOperatingGenerator = true;
+				console.debug("Debug: ``fetchGenerator: isOperatingGenerator = true;``");
+				const generatorStatusElement = document.getElementById("generatorStatus");
+				generatorStatusElement.innerHTML = `Please wait while fetching the \`\`${generatorFileName}\`\`. `;
+				generatorStatusElement.className = "content status statusShown loadingColor";
+				console.log(`Info: Please wait while fetching the \`\`${generatorFileName}\`\`. `);
+				const rawSelectedGeneratorArchitecture = document.getElementById("generatorSelection").value;
+				const selectedGeneratorArchitecture = "string" === typeof rawSelectedGeneratorArchitecture ? rawSelectedGeneratorArchitecture.trim() : "";
+				if (!supportedArchitectures.includes(selectedGeneratorArchitecture))
+				{
+					generatorStatusElement.innerHTML = "Error: An invalid generator architecture is selected. ";
+					generatorStatusElement.className = "content status statusShown errorColor";
+					console.error("Error: An invalid generator architecture is selected. ");
+					setTimeout(() => {
+						generatorStatusElement.className = "content status statusHidden informationColor";
+						generatorStatusElement.innerHTML = "";
+						console.debug("Debug: Successfully hid the generator status. ");
+						isOperatingGenerator = false;
+						console.debug("Debug: ``fetchGenerator: isOperatingGenerator = false;``");
+					}, defaultDisplayTime);
+					return;
+				}
+				const generatorFileName = `generate_${selectedGeneratorArchitecture}`;
+				const remoteGeneratorDigestURL = `${remoteGeneratorsURL}/${generatorFileName}.sha512`;
+				const remoteGeneratorContentURL = `${remoteGeneratorsURL}/${generatorFileName}`;
+				const localGeneratorFilePath = `${generatorDirectoryPath}/${generatorFileName}`;
+				const localGeneratorTemporaryFilePath = `${localGeneratorFilePath}.tmp`;
+				
+				try
+				{
+					/* Fetch the generator digest */
+					let generatorDigestResponse = null;
+					try
+					{
+						generatorDigestResponse = await fetch(remoteGeneratorDigestURL);
+					}
+					catch (e) {}
+					if (null === generatorDigestResponse)
+						throw new Error(`Error: Failed to fetch the \`\`${generatorFileName}\`\` due to unreachable networks to GitHub when fetching the generator digest. `);
+					else if (!generatorDigestResponse.ok)
+						throw new Error(
+							`Error: Failed to fetch the \`\`${generatorFileName}\`\` due to the HTTP ${generatorDigestResponse.status} signal when fetching the generator digest. `
+						);
+					const expectedGeneratorDigest = (await generatorDigestResponse.text()).trim().toLowerCase();
+					
+					/* Write to the local generator via the shell execution */
+					if ("function" !== typeof execute)
+						throw new Error(`Fatal: Failed to fetch the \`\`${generatorFileName}\`\` due to the undefined shell execution function. `);
+					const stdout = await execute(
+						`rm -f "${localGeneratorTemporaryFilePath}" && mkdir -p "${generatorDirectoryPath}" && curl -sSfL --connect-timeout 10 -m 50 "${remoteGeneratorContentURL}" -o "${localGeneratorTemporaryFilePath}" && chmod 755 "${localGeneratorTemporaryFilePath}" && test "$(sha512sum "${localGeneratorTemporaryFilePath}" | cut -d " " -f1)" = "${expectedGeneratorDigest}" && mv -f "${localGeneratorTemporaryFilePath}" "${localGeneratorFilePath}" && echo -n "Success"`
+					);
+					if ("Success" !== stdout)
+						throw new Error(`Error: Failed to fetch the \`\`${generatorFileName}\`\` due to failures in writing or verifying. `);
+					
+					/* Release the success signal */
+					generatorStatusElement.innerHTML = `Successfully fetched the \`\`${generatorFileName}\`\` from GitHub. `;
+					generatorStatusElement.className = "content status statusShown informationColor";
+					console.log(`Info: Successfully fetched the \`\`${generatorFileName}\`\` from GitHub. `);
+					setTimeout(() => {
+						generatorStatusElement.className = "content status statusHidden informationColor";
+						generatorStatusElement.innerHTML = "";
+						console.debug("Debug: Successfully hid the generator status. ");
+						isOperatingGenerator = false;
+						console.debug("Debug: ``fetchGenerator: isOperatingGenerator = false;``");
+					}, defaultDisplayTime);
+				}
+				catch (exception)
+				{
+					let formattedMessage = `<b>Fatal</b>: Failed to fetch the \`\`${generatorFileName}\`\` due to unknown exceptions. `;
+					if ("string" === typeof exception.message && exception.message.includes(":"))
+					{
+						const colonIndex = exception.message.indexOf(":");
+						const beforeColon = exception.message.substring(0, colonIndex);
+						const afterColon = exception.message.substring(colonIndex);
+						formattedMessage = `<b>${beforeColon}</b>${afterColon}`;
+					}
+					generatorStatusElement.innerHTML = formattedMessage;
+					generatorStatusElement.className = "content status statusShown fatalColor";
+					console.error(exception.message);
+					setTimeout(() => {
+						generatorStatusElement.className = "content status statusHidden informationColor";
+						generatorStatusElement.innerHTML = "";
+						console.debug("Debug: Successfully hid the generator status. ");
+						isOperatingGenerator = false;
+						console.debug("Debug: ``fetchGenerator: isOperatingGenerator = false;``");
+					}, defaultDisplayTime);
+				}
+			}
+			
 			const moduleId = "bypasser";
 			const moduleDirectoryPath = `/data/adb/modules/${moduleId}`;
 			const webrootDirectoryPath = `${moduleDirectoryPath}/webroot`;
@@ -823,15 +978,21 @@
 			const actionSlotFilePath = `${webrootDirectoryPath}/${actionSlotFileName}`;
 			const databaseFileName = "database.json";
 			const databaseFilePath = `${webrootDirectoryPath}/${databaseFileName}`;
+			const generatorDirectoryName = "generators";
+			const generatorDirectoryPath = `${moduleDirectoryPath}/${generatorDirectoryName}`;
 			const remoteModuleURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src";
 			const remoteWebrootURL=`${remoteModuleURL}/webroot`;
 			const defaultDisplayTime = 5000; /* millisecond(s) */
+			const supportedArchitectures = ["arm64-v8a", "armeabi-v7a", "x86", "x86_64"];
+			const remoteGeneratorsURL=`${remoteModuleURL}/generators`;
 			
 			const execute = locateExecutionFunction();
 			let isOperatingActionSlot = false;
 			let isOperatingDatabase = false;
+			let isOperatingGenerator = false;
 			displayActionSlot();
 			displayDatabase();
+			displayArchitecture();
 		</script>
 	</body>
 </html>

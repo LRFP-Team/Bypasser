@@ -1039,6 +1039,8 @@
 		"io.github.kvmy666.autoexpand",
 		"io.github.kwensiu.dpis",
 		"io.github.lamprose.mi_ultra",
+		"io.github.ldxm666.mapadkiller",
+		"io.github.li_yifei.chromeautofillbridge",
 		"io.github.lilymilongc.asteria",
 		"io.github.linx3141.timmonet",
 		"io.github.liuran001.fakebluetoothconnect",
@@ -1392,5 +1394,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.6+HKT20260908172909355492069"
+	"V": "3.8.5.6+HKT20260908224354564645565"
 }
