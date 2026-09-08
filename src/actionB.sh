@@ -1225,7 +1225,7 @@ echo ""
 readonly variableFileName="variables.log"
 readonly variableFilePath="${generationOutputDirectoryPath}/${variableFileName}"
 readonly endTime=$(date +%s%N)
-readonly timeDelta=$((endTime - startTime - gapTime))
+readonly timeDelta=$(awk "BEGIN {print ${endTime} - ${startTime} - ${gapTime}}")
 
 mkdir -p "${generationOutputDirectoryPath}"
 set > "${variableFilePath}"

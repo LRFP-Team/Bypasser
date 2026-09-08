@@ -1089,6 +1089,7 @@
 		"io.github.twyora.douyinenhancer",
 		"io.github.vvb2060.callrecording",
 		"io.github.vvb2060.magisk",
+		"io.github.winkmoon.qqaireplyassist",
 		"io.github.wlmosv_png.tgautosign",
 		"io.github.wzhy.xaudiocapture",
 		"io.github.xalsace.qqbypass",
@@ -1394,5 +1395,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.6+HKT20260908224354564645565"
+	"V": "3.8.5.6+HKT20260909022523186624427"
 }

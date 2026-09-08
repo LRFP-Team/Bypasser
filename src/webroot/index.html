@@ -851,8 +851,8 @@
 							generatorSlotElement.className = "content informationColor";
 							console.log(`Info: The architecture of this device is ${deviceArchitecture}. `);
 							const generatorSelectionElement = document.getElementById("generatorSelection");
-							generatorSelectionElement.value = "generate_" + deviceArchitecture;
-							console.debug(`Debug: The generator selection element has been set to ${generatorSelectionElement.value}. `);
+							generatorSelectionElement.value = deviceArchitecture;
+							console.debug(`Debug: The generator selection element has been set to generator_${generatorSelectionElement.value}. `);
 						}
 						else
 						{
@@ -884,12 +884,9 @@
 				}
 				isOperatingGenerator = true;
 				console.debug("Debug: ``fetchGenerator: isOperatingGenerator = true;``");
-				const generatorStatusElement = document.getElementById("generatorStatus");
-				generatorStatusElement.innerHTML = `Please wait while fetching the \`\`${generatorFileName}\`\`. `;
-				generatorStatusElement.className = "content status statusShown loadingColor";
-				console.log(`Info: Please wait while fetching the \`\`${generatorFileName}\`\`. `);
 				const rawSelectedGeneratorArchitecture = document.getElementById("generatorSelection").value;
 				const selectedGeneratorArchitecture = "string" === typeof rawSelectedGeneratorArchitecture ? rawSelectedGeneratorArchitecture.trim() : "";
+				const generatorStatusElement = document.getElementById("generatorStatus");
 				if (!supportedArchitectures.includes(selectedGeneratorArchitecture))
 				{
 					generatorStatusElement.innerHTML = "Error: An invalid generator architecture is selected. ";
@@ -909,6 +906,9 @@
 				const remoteGeneratorContentURL = `${remoteGeneratorsURL}/${generatorFileName}`;
 				const localGeneratorFilePath = `${generatorDirectoryPath}/${generatorFileName}`;
 				const localGeneratorTemporaryFilePath = `${localGeneratorFilePath}.tmp`;
+				generatorStatusElement.innerHTML = `Please wait while fetching the \`\`${generatorFileName}\`\`. `;
+				generatorStatusElement.className = "content status statusShown loadingColor";
+				console.log(`Info: Please wait while fetching the \`\`${generatorFileName}\`\`. `);
 				
 				try
 				{
