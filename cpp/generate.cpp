@@ -873,7 +873,7 @@ public:
 									this->print("This program expects the regex pattern \"" + std::string(REGEX_PATTERN) + "\" while the input database is not. ", LogLevel::Warning);
 							else
 								this->print("This program expects the version " + cppVersion + " while the input database is not, which may result in warnings. ", LogLevel::Warning);
-
+							
 							/* Second-level */
 							removedKeyCount = 0;
 							if (this->j.contains("C") && this->j["C"].is_object())

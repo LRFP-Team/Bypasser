@@ -5,236 +5,236 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Bypasser</title>
 		<style>
-		/** CSS attribute order: 
-		 * font-family -> font-size -> font-weight -> text-decoration -> color -> background-color -> display -> flex-direction -> gap -> align-items
-		 * -> width -> height -> margin -> margin-top -> margin-left -> margin-right -> margin-bottom -> padding -> padding-top -> padding-left -> padding-right -> padding-bottom
-		 * -> border -> border-top -> border-left -> border-right -> border-bottom -> border-collapse -> border-spacing -> border-radius -> text-align -> vertical-align
-		 * -> caption-side -> white-space -> overflow-x -> outline -> -webkit-tap-highlight-color -> opacity -> visibility -> cursor -> pointer-events -> transform -> transition
-		 */
-		
-		body {
-			font-family: sans-serif;
-			font-size: 18px;
-			font-weight: bold;
-			color: #FFFFFF;
-			background-color: black;
-			display: flex;
-			flex-direction: column;
-			gap: 15px;
-			padding-top: calc(var(--window-inset-top, 0px) + 20px);
-			padding-bottom: var(--window-inset-bottom, 0px);
-		}
-		.container {
-			font-size: 16px;
-			color: #EEEEEE;
-			background-color: rgba(85, 85, 85, 0.5);
-			display: flex;
-			flex-direction: column;
-			gap: 1px;
-			align-items: flex-start;
-			padding: 10px;
-			border-radius: 15px;
-		}
-		.content {
-			font-size: 16px;
-			font-weight: normal;
-			margin-left: 20px;
-		}
-		
-		.fatalColor {
-			color: red;
-		}
-		.errorColor {
-			color: yellow;
-		}
-		.warningColor {
-			color: orange;
-		}
-		.loadingColor {
-			color: #3377FF; /* blue; */
-		}
-		.informationColor {
-			color: #00FF00; /* green; */
-		}
-		
-		table {
-			border-spacing: 0;
-		}
-		table tr:first-child td {
-			padding-top: 0;
-		}
-		table tr:last-child td {
-			padding-bottom: 0;
-		}
-		table td {
-			text-align: center;
-			vertical-align: middle;
-			padding: 2px 7px;
-		}
-		table td:first-child {
-			padding-left: 0;
-		}
-		table td:last-child {
-			padding-right: 0;
-		}
-		
-		button {
-			font-family: inherit;
-			font-size: 14px;
-			color: #00FF00;
-			background-color: #222222;
-			padding: 5px 15px 4px 15px;
-			border: 1px solid #00FF00;
-			border-radius: 5px;
-			cursor: pointer;
-			transition: all 0.2s;
-		}
-		button:hover {
-			color: #222222;
-			background-color: #00FF00;
-		}
-		button:active {
-			transform: scale(0.9);
-		}
-		
-		select {
-			font-family: inherit;
-			font-size: 15px;
-			color: #00FF00;
-			background-color: transparent;
-			width: 100%;
-			padding: 5px 0 0 0;
-			border: none;
-			border-bottom: 1px solid #00FF00;
-			outline: none;
-			cursor: pointer;
-			transition: border-color 0.2s, transform 0.2s;
-		}
-		select:hover {
-			border-bottom-color: #00CC00;
-		}
-		select option {
-			font-family: inherit;
-			font-size: 15px;
-			color: #00FF00;
-			background-color: #222222;
-			outline: none;
-			-webkit-tap-highlight-color: transparent;
-		}
-		
-		.status {
-			border-radius: 5px;
-			transition: 
-				opacity 0.3s ease, 
-				transform 0.4s cubic-bezier(0.3, 1.5, 0.7, 1);
-		}
-		.statusHidden {
-			height: 0px;
-			opacity: 0;
-			visibility: hidden;
-			pointer-events: none;
-			transform: scale(0.9) translate3d(0, -10px, 0); 
-			transition: 
-				opacity 0.3s ease, 
-				transform 0.3s ease, 
-				max-height 0.4s ease, 
-				visibility 0.3s;
-		}
-		.statusShown {
-			opacity: 1;
-			visibility: visible;
-			pointer-events: auto;
-			transform: scale(1) translate3d(0, 0, 0);
-		}
-		
-		.databaseViewer {
-			/* background-color: rgba(102, 102, 102, 0.6); */
-			width: 100%;
-			padding: 5px 0;
-			border-radius: 10px;
-			overflow-x: hidden;
-		}
-		summary {
-			color: #00FF00;
-			width: calc(100% - (var(--depth, 0) + 1) * 20px);
-			margin-left: calc(var(--depth, 0) * 20px);
-			margin-bottom: 2px;
-			white-space: nowrap;
-			overflow-x: auto;
-			outline: none;
-			-webkit-tap-highlight-color: transparent;
-			cursor: pointer;
-			transition: background-color 0.2s ease;
-		}
-		summary:hover {
-			background-color: rgba(0, 255, 0, 0.1);
-		}
-		summary:active {
-			background-color: rgba(0, 255, 0, 0.3);
-			transition: background-color 0.1s ease;
-		}
-		details {
-			width: 100%;
-		}
-		details[open] > summary {
-			margin-bottom: 1px;
-		}
-		
-		.leafNode {
-			color: #DDDDDD;
-			width: calc(100% - (var(--depth, 0) + 1) * 20px);
-			margin-left: calc(var(--depth, 0) * 20px);
-			white-space: nowrap;
-			overflow-x: auto;
-		}
-		.leafNode:hover {
-			background-color: rgba(255, 255, 255, 0.1);
-		}
-		.leafNode:active {
-			background-color: rgba(255, 255, 255, 0.3);
-			transition: background-color 0.1s ease;
-		}
-		
-		.stringColor {
-			color: chocolate;
-		}
-		.charColor, 
-		.characterColor, 
-		.byteColor {
-			font-weight: bold;
-			color: #00FF00;
-		}
-		.intColor, 
-		.longColor, 
-		.floatColor, 
-		.doubleColor, 
-		.numberColor, 
-		.bigintColor {
-			color: orange;
-		}
-		.booleanColor, 
-		.nullColor, 
-		.undefinedColor {
-			color: #3377FF; /* blue */
-		}
-		
-		a:link {
-			color: #00DD00;
-			text-decoration: none;
-		}
-		a:visited {
-			color: #00CC00;
-			text-decoration: none;
-		}
-		a:hover {
-			color: #00EE00;
-			text-decoration: underline;
-		}
-		a:active {
-			color: #00FF00;
-			text-decoration: underline;
-		}
-</style>
+			/** CSS attribute order: 
+			 * font-family -> font-size -> font-weight -> text-decoration -> color -> background-color -> display -> flex-direction -> gap -> align-items
+			 * -> width -> height -> margin -> margin-top -> margin-left -> margin-right -> margin-bottom -> padding -> padding-top -> padding-left -> padding-right -> padding-bottom
+			 * -> border -> border-top -> border-left -> border-right -> border-bottom -> border-collapse -> border-spacing -> border-radius -> text-align -> vertical-align
+			 * -> caption-side -> white-space -> overflow-x -> outline -> -webkit-tap-highlight-color -> opacity -> visibility -> cursor -> pointer-events -> transform -> transition
+			 */
+			
+			body {
+				font-family: sans-serif;
+				font-size: 18px;
+				font-weight: bold;
+				color: #FFFFFF;
+				background-color: black;
+				display: flex;
+				flex-direction: column;
+				gap: 15px;
+				padding-top: calc(var(--window-inset-top, 0px) + 20px);
+				padding-bottom: var(--window-inset-bottom, 0px);
+			}
+			.container {
+				font-size: 16px;
+				color: #EEEEEE;
+				background-color: rgba(85, 85, 85, 0.5);
+				display: flex;
+				flex-direction: column;
+				gap: 1px;
+				align-items: flex-start;
+				padding: 10px;
+				border-radius: 15px;
+			}
+			.content {
+				font-size: 16px;
+				font-weight: normal;
+				margin-left: 20px;
+			}
+			
+			.fatalColor {
+				color: red;
+			}
+			.errorColor {
+				color: yellow;
+			}
+			.warningColor {
+				color: orange;
+			}
+			.loadingColor {
+				color: #3377FF; /* blue; */
+			}
+			.informationColor {
+				color: #00FF00; /* green; */
+			}
+			
+			table {
+				border-spacing: 0;
+			}
+			table tr:first-child td {
+				padding-top: 0;
+			}
+			table tr:last-child td {
+				padding-bottom: 0;
+			}
+			table td {
+				text-align: center;
+				vertical-align: middle;
+				padding: 2px 7px;
+			}
+			table td:first-child {
+				padding-left: 0;
+			}
+			table td:last-child {
+				padding-right: 0;
+			}
+			
+			button {
+				font-family: inherit;
+				font-size: 14px;
+				color: #00FF00;
+				background-color: #222222;
+				padding: 5px 15px 4px 15px;
+				border: 1px solid #00FF00;
+				border-radius: 5px;
+				cursor: pointer;
+				transition: all 0.2s;
+			}
+			button:hover {
+				color: #222222;
+				background-color: #00FF00;
+			}
+			button:active {
+				transform: scale(0.9);
+			}
+			
+			select {
+				font-family: inherit;
+				font-size: 15px;
+				color: #00FF00;
+				background-color: transparent;
+				width: 100%;
+				padding: 5px 0 0 0;
+				border: none;
+				border-bottom: 1px solid #00FF00;
+				outline: none;
+				cursor: pointer;
+				transition: border-color 0.2s, transform 0.2s;
+			}
+			select:hover {
+				border-bottom-color: #00CC00;
+			}
+			select option {
+				font-family: inherit;
+				font-size: 15px;
+				color: #00FF00;
+				background-color: #222222;
+				outline: none;
+				-webkit-tap-highlight-color: transparent;
+			}
+			
+			.status {
+				border-radius: 5px;
+				transition: 
+					opacity 0.3s ease, 
+					transform 0.4s cubic-bezier(0.3, 1.5, 0.7, 1);
+			}
+			.statusHidden {
+				height: 0px;
+				opacity: 0;
+				visibility: hidden;
+				pointer-events: none;
+				transform: scale(0.9) translate3d(0, -10px, 0); 
+				transition: 
+					opacity 0.3s ease, 
+					transform 0.3s ease, 
+					max-height 0.4s ease, 
+					visibility 0.3s;
+			}
+			.statusShown {
+				opacity: 1;
+				visibility: visible;
+				pointer-events: auto;
+				transform: scale(1) translate3d(0, 0, 0);
+			}
+			
+			.databaseViewer {
+				/* background-color: rgba(102, 102, 102, 0.6); */
+				width: 100%;
+				padding: 5px 0;
+				border-radius: 10px;
+				overflow-x: hidden;
+			}
+			summary {
+				color: #00FF00;
+				width: calc(100% - (var(--depth, 0) + 1) * 20px);
+				margin-left: calc(var(--depth, 0) * 20px);
+				margin-bottom: 2px;
+				white-space: nowrap;
+				overflow-x: auto;
+				outline: none;
+				-webkit-tap-highlight-color: transparent;
+				cursor: pointer;
+				transition: background-color 0.2s ease;
+			}
+			summary:hover {
+				background-color: rgba(0, 255, 0, 0.1);
+			}
+			summary:active {
+				background-color: rgba(0, 255, 0, 0.3);
+				transition: background-color 0.1s ease;
+			}
+			details {
+				width: 100%;
+			}
+			details[open] > summary {
+				margin-bottom: 1px;
+			}
+			
+			.leafNode {
+				color: #DDDDDD;
+				width: calc(100% - (var(--depth, 0) + 1) * 20px);
+				margin-left: calc(var(--depth, 0) * 20px);
+				white-space: nowrap;
+				overflow-x: auto;
+			}
+			.leafNode:hover {
+				background-color: rgba(255, 255, 255, 0.1);
+			}
+			.leafNode:active {
+				background-color: rgba(255, 255, 255, 0.3);
+				transition: background-color 0.1s ease;
+			}
+			
+			.stringColor {
+				color: chocolate;
+			}
+			.charColor, 
+			.characterColor, 
+			.byteColor {
+				font-weight: bold;
+				color: #00FF00;
+			}
+			.intColor, 
+			.longColor, 
+			.floatColor, 
+			.doubleColor, 
+			.numberColor, 
+			.bigintColor {
+				color: orange;
+			}
+			.booleanColor, 
+			.nullColor, 
+			.undefinedColor {
+				color: #3377FF; /* blue */
+			}
+			
+			a:link {
+				color: #00DD00;
+				text-decoration: none;
+			}
+			a:visited {
+				color: #00CC00;
+				text-decoration: none;
+			}
+			a:hover {
+				color: #00EE00;
+				text-decoration: underline;
+			}
+			a:active {
+				color: #00FF00;
+				text-decoration: underline;
+			}
+		</style>
 	</head>
 	<body>
 		<script type="text/javascript" src="main.js" color="255,255,255" opacity=0.8></script>

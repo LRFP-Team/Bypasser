@@ -243,6 +243,7 @@ readonly cppBinaryDigestURL="https://raw.githubusercontent.com/LRFP-Team/Bypasse
 readonly cppBinaryDirectoryPath="generators"
 readonly cppBinaryFilePath="${cppBinaryDirectoryPath}/${cppBinaryFileName}"
 readonly downloadTimeout=50
+readonly progressBarWidth=50
 readonly cppBinaryURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/generators/${cppBinaryFileName}"
 readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip.sha512"
 readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip"
@@ -353,7 +354,7 @@ then
 		if [[ ${EXIT_SUCCESS} -eq ${abortFlag} ]];
 		then
 			echo "Trying to download the latest generator within ${downloadTimeout} seconds. "
-			curl -fL --progress-bar --connect-timeout ${curlTimeout} -m ${downloadTimeout} "${cppBinaryURL}" -o "${cppBinaryFilePath}"
+			COLUMNS=${progressBarWidth} curl -fL --progress-bar --connect-timeout ${curlTimeout} -m ${downloadTimeout} "${cppBinaryURL}" -o "${cppBinaryFilePath}"
 			if [[ "$(sha512sum "${cppBinaryFilePath}" | cut -d " " -f1)" == "${cppBinaryDigest}" ]];
 			then
 				echo "Successfully updated and verified the generator. "
