@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <vector>
 #include <regex>
+#include <android/api-level.h>
 #include "nlohmann/json.hpp" // https://github.com/nlohmann/json
 inline constexpr const char* MODULE_NAME = "Bypasser";
 inline constexpr const char* CPP_VERSION = "3.8.5.6+HKT20260901000000000000000";
@@ -98,6 +99,7 @@ private:
 	inline static const std::vector<std::string> ApplicationDirectoryNames{ "app", "app-private", "priv-app" };
 	inline static const std::string HexadecimalCharacterSet = "0123456789ABCDEF";
 	inline static const std::string ReportLink = "https://github.com/LRFP-Team/Bypasser/issues";
+	inline static const int Android12APILevel = 31;
 	inline static const std::string TrickyStoreModulePropertyFilePath = "/data/adb/modules/tricky_store/module.prop";
 	
 	unsigned int flag = 0 /* 0b 0000 0000 0000 0000 0000 */;
@@ -1222,6 +1224,7 @@ public:
 				hmaConfiguration["templates"]["BlacklistM"]["appList"] = nlohmann::ordered_json::array();
 				for (const nlohmann::json& value : this->j["M"])
 					hmaConfiguration["templates"]["BlacklistM"]["appList"].push_back(value.get<std::string>());
+				const bool processingN = android_get_device_api_level() >= Android12APILevel;
 				
 				/* hmaV92WhitelistConfiguration */
 				if (this->outputHmaV92WhitelistFilePath.empty() && this->outputHmaV93WhitelistFilePath.empty())
@@ -1267,47 +1270,48 @@ public:
 						hmaV92WhitelistConfiguration["scope"][packageName]["extraAppList"] = nlohmann::ordered_json::array();
 						hmaV92WhitelistConfiguration["scope"][packageName]["extraAppList"].push_back(packageName);
 					}
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
-						if (hmaV92WhitelistConfiguration["scope"].contains(outerEntryIt.key()))
-							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
-							{
-								if (innerEntryIt.value().get<bool>()) // add to the ``extraAppList`` if it is not in any of the templates applied
+					if (processingN)
+						for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
+							if (hmaV92WhitelistConfiguration["scope"].contains(outerEntryIt.key()))
+								for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
 								{
-									bool addingFlag = !hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].contains(innerEntryIt.key());
-									if (addingFlag)
-										for (const nlohmann::ordered_json& value : hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"])
-										{
-											const std::string templateName = value.get<std::string>();
-											if (hmaV92WhitelistConfiguration["templates"].contains(templateName) && hmaV92WhitelistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92WhitelistConfiguration["templates"][templateName].contains("appList") && hmaV92WhitelistConfiguration["templates"][templateName]["appList"].contains(innerEntryIt.key()))
-											{
-												addingFlag = false;
-												break;
-											}
-										}
-									if (addingFlag)
-										hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
-								}
-								else // Search for all the whitelist-type template where the package name is located from the applied template list and unzip the templates to "extraAppList" without the package name
-									for (nlohmann::ordered_json::iterator templateArrayIt = hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].begin(); templateArrayIt != hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].end(); )
+									if (innerEntryIt.value().get<bool>()) // add to the ``extraAppList`` if it is not in any of the templates applied
 									{
-										const std::string templateName = templateArrayIt.value().get<std::string>();
-										if (hmaV92WhitelistConfiguration["templates"].contains(templateName) && hmaV92WhitelistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].is_boolean() && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92WhitelistConfiguration["templates"][templateName].contains("appList") && hmaV92WhitelistConfiguration["templates"][templateName]["appList"].is_array() && std::find(hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cbegin(), hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cend(), innerEntryIt.key()) != hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cend())
-										{
-											for (const nlohmann::ordered_json& value : hmaV92WhitelistConfiguration["templates"][templateName]["appList"])
+										bool addingFlag = !hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].contains(innerEntryIt.key());
+										if (addingFlag)
+											for (const nlohmann::ordered_json& value : hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"])
 											{
-												const std::string packageName = value.get<std::string>();
-												if (!hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].contains(packageName))
-													hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(packageName);
+												const std::string templateName = value.get<std::string>();
+												if (hmaV92WhitelistConfiguration["templates"].contains(templateName) && hmaV92WhitelistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92WhitelistConfiguration["templates"][templateName].contains("appList") && hmaV92WhitelistConfiguration["templates"][templateName]["appList"].contains(innerEntryIt.key()))
+												{
+													addingFlag = false;
+													break;
+												}
 											}
-											templateArrayIt = hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].erase(templateArrayIt);
-										}
-										else
-											++templateArrayIt;
-										std::sort(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
-										if (std::find(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cbegin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend(), innerEntryIt.key()) != hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend())
-											hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].erase(std::remove(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end(), innerEntryIt.key()), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
+										if (addingFlag)
+											hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
 									}
-							}
+									else // Search for all the whitelist-type template where the package name is located from the applied template list and unzip the templates to "extraAppList" without the package name
+										for (nlohmann::ordered_json::iterator templateArrayIt = hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].begin(); templateArrayIt != hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].end(); )
+										{
+											const std::string templateName = templateArrayIt.value().get<std::string>();
+											if (hmaV92WhitelistConfiguration["templates"].contains(templateName) && hmaV92WhitelistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].is_boolean() && hmaV92WhitelistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92WhitelistConfiguration["templates"][templateName].contains("appList") && hmaV92WhitelistConfiguration["templates"][templateName]["appList"].is_array() && std::find(hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cbegin(), hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cend(), innerEntryIt.key()) != hmaV92WhitelistConfiguration["templates"][templateName]["appList"].cend())
+											{
+												for (const nlohmann::ordered_json& value : hmaV92WhitelistConfiguration["templates"][templateName]["appList"])
+												{
+													const std::string packageName = value.get<std::string>();
+													if (!hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].contains(packageName))
+														hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(packageName);
+												}
+												templateArrayIt = hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].erase(templateArrayIt);
+											}
+											else
+												++templateArrayIt;
+											std::sort(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
+											if (std::find(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cbegin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend(), innerEntryIt.key()) != hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend())
+												hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].erase(std::remove(hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end(), innerEntryIt.key()), hmaV92WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
+										}
+								}
 					if (this->outputHmaV92WhitelistFilePath.empty())
 						this->flag |= 256/* 0b 0000 0000 0001 0000 0000 */;
 					else if ("." == this->outputHmaV92WhitelistFilePath)
@@ -1427,47 +1431,48 @@ public:
 								hmaV92BlacklistConfiguration["scope"][outerPackageName]["extraAppList"].push_back(innerPackageName);
 						}
 					}
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
-						if (hmaV92BlacklistConfiguration["scope"].contains(outerEntryIt.key()))
-							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
-							{
-								if (innerEntryIt.value().get<bool>()) // Search for all the blacklist-type templates where the package name is located from the applied template list and unzip the templates to "extraAppList" without the package name
-									for (nlohmann::ordered_json::iterator templateArrayIt = hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].begin(); templateArrayIt != hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].end(); )
-									{
-										const std::string templateName = templateArrayIt.value().get<std::string>();
-										if (hmaV92BlacklistConfiguration["templates"].contains(templateName) && hmaV92BlacklistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].is_boolean() && !hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92BlacklistConfiguration["templates"][templateName].contains("appList") && hmaV92BlacklistConfiguration["templates"][templateName]["appList"].is_array() && std::find(hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cbegin(), hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cend(), innerEntryIt.key()) != hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cend())
-										{
-											for (const nlohmann::ordered_json& value : hmaV92BlacklistConfiguration["templates"][templateName]["appList"])
-											{
-												const std::string packageName = value.get<std::string>();
-												if (!hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].contains(packageName))
-													hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(packageName);
-											}
-											templateArrayIt = hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].erase(templateArrayIt);
-										}
-										else
-											++templateArrayIt;
-										std::sort(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
-										if (std::find(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cbegin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend(), innerEntryIt.key()) != hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend())
-											hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].erase(std::remove(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end(), innerEntryIt.key()), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
-									}
-								else // add to the ``extraAppList`` if it is not in any of the templates applied
+					if (processingN)
+						for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
+							if (hmaV92BlacklistConfiguration["scope"].contains(outerEntryIt.key()))
+								for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
 								{
-									bool addingFlag = !hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].contains(innerEntryIt.key());
-									if (addingFlag)
-										for (const nlohmann::ordered_json& value : hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"])
+									if (innerEntryIt.value().get<bool>()) // Search for all the blacklist-type templates where the package name is located from the applied template list and unzip the templates to "extraAppList" without the package name
+										for (nlohmann::ordered_json::iterator templateArrayIt = hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].begin(); templateArrayIt != hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].end(); )
 										{
-											const std::string templateName = value.get<std::string>();
-											if (hmaV92BlacklistConfiguration["templates"].contains(templateName) && hmaV92BlacklistConfiguration["templates"][templateName].contains("isWhitelist") && !hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92BlacklistConfiguration["templates"][templateName].contains("appList") && hmaV92BlacklistConfiguration["templates"][templateName]["appList"].contains(innerEntryIt.key()))
+											const std::string templateName = templateArrayIt.value().get<std::string>();
+											if (hmaV92BlacklistConfiguration["templates"].contains(templateName) && hmaV92BlacklistConfiguration["templates"][templateName].contains("isWhitelist") && hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].is_boolean() && !hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92BlacklistConfiguration["templates"][templateName].contains("appList") && hmaV92BlacklistConfiguration["templates"][templateName]["appList"].is_array() && std::find(hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cbegin(), hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cend(), innerEntryIt.key()) != hmaV92BlacklistConfiguration["templates"][templateName]["appList"].cend())
 											{
-												addingFlag = false;
-												break;
+												for (const nlohmann::ordered_json& value : hmaV92BlacklistConfiguration["templates"][templateName]["appList"])
+												{
+													const std::string packageName = value.get<std::string>();
+													if (!hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].contains(packageName))
+														hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(packageName);
+												}
+												templateArrayIt = hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"].erase(templateArrayIt);
 											}
+											else
+												++templateArrayIt;
+											std::sort(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
+											if (std::find(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cbegin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend(), innerEntryIt.key()) != hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].cend())
+												hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].erase(std::remove(hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end(), innerEntryIt.key()), hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
 										}
-									if (addingFlag)
-										hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
+									else // add to the ``extraAppList`` if it is not in any of the templates applied
+									{
+										bool addingFlag = !hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].contains(innerEntryIt.key());
+										if (addingFlag)
+											for (const nlohmann::ordered_json& value : hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["applyTemplates"])
+											{
+												const std::string templateName = value.get<std::string>();
+												if (hmaV92BlacklistConfiguration["templates"].contains(templateName) && hmaV92BlacklistConfiguration["templates"][templateName].contains("isWhitelist") && !hmaV92BlacklistConfiguration["templates"][templateName]["isWhitelist"].get<bool>() && hmaV92BlacklistConfiguration["templates"][templateName].contains("appList") && hmaV92BlacklistConfiguration["templates"][templateName]["appList"].contains(innerEntryIt.key()))
+												{
+													addingFlag = false;
+													break;
+												}
+											}
+										if (addingFlag)
+											hmaV92BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
+									}
 								}
-							}
 					if (this->outputHmaV92BlacklistFilePath.empty())
 						this->flag |= 512/* 0b 0000 0000 0010 0000 0000 */;
 					else if ("." == this->outputHmaV92BlacklistFilePath)
@@ -1603,6 +1608,7 @@ public:
 				hmaossConfiguration["templates"]["BlacklistM"]["appList"] = nlohmann::ordered_json::array();
 				for (const nlohmann::json& value : this->j["M"])
 					hmaossConfiguration["templates"]["BlacklistM"]["appList"].push_back(value.get<std::string>());
+				const bool processingN = android_get_device_api_level() >= Android12APILevel;
 				
 				/* hmaossV93WhitelistConfiguration */
 				if (this->outputHmaossV93WhitelistFilePath.empty())
@@ -1678,21 +1684,22 @@ public:
 						hmaossV93WhitelistConfiguration["scope"][packageName]["extraAppList"].push_back(packageName);
 						hmaossV93WhitelistConfiguration["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
 					}
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
-						if (hmaossV93WhitelistConfiguration["scope"].contains(outerEntryIt.key()))
-							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
-							{
-								if (innerEntryIt.value().get<bool>())
+					if (processingN)
+						for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
+							if (hmaossV93WhitelistConfiguration["scope"].contains(outerEntryIt.key()))
+								for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
 								{
-									hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
-									std::sort(hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
+									if (innerEntryIt.value().get<bool>())
+									{
+										hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
+										std::sort(hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
+									}
+									else
+									{
+										hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].push_back(innerEntryIt.key());
+										std::sort(hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].begin(), hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].end());
+									}
 								}
-								else
-								{
-									hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].push_back(innerEntryIt.key());
-									std::sort(hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].begin(), hmaossV93WhitelistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].end());
-								}
-							}
 					if ("." == this->outputHmaossV93WhitelistFilePath)
 					{
 						std::cout << hmaossV93WhitelistConfiguration.dump() << std::endl;
@@ -1794,21 +1801,22 @@ public:
 						hmaossV93BlacklistConfiguration["scope"][packageName]["extraOppositeAppList"] = nlohmann::ordered_json::array();
 						hmaossV93BlacklistConfiguration["scope"][packageName]["extraOppositeAppList"].push_back(packageName);
 					}
-					for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
-						if (hmaossV93BlacklistConfiguration["scope"].contains(outerEntryIt.key()))
-							for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
-							{
-								if (innerEntryIt.value().get<bool>())
+					if (processingN)
+						for (nlohmann::json::const_iterator outerEntryIt = this->j["N"].cbegin(); outerEntryIt != this->j["N"].cend(); ++outerEntryIt)
+							if (hmaossV93BlacklistConfiguration["scope"].contains(outerEntryIt.key()))
+								for (nlohmann::json::const_iterator innerEntryIt = outerEntryIt.value().cbegin(); innerEntryIt != outerEntryIt.value().cend(); ++innerEntryIt)
 								{
-									hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].push_back(innerEntryIt.key());
-									std::sort(hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].begin(), hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].end()); 
+									if (innerEntryIt.value().get<bool>())
+									{
+										hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].push_back(innerEntryIt.key());
+										std::sort(hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].begin(), hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraOppositeAppList"].end()); 
+									}
+									else
+									{
+										hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
+										std::sort(hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
+									}
 								}
-								else
-								{
-									hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].push_back(innerEntryIt.key());
-									std::sort(hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].begin(), hmaossV93BlacklistConfiguration["scope"][outerEntryIt.key()]["extraAppList"].end());
-								}
-							}
 					if ("." == this->outputHmaossV93BlacklistFilePath)
 					{
 						std::cout << hmaossV93BlacklistConfiguration.dump() << std::endl;

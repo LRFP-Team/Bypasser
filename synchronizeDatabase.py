@@ -1,4 +1,5 @@
-import os
+from os import chdir, chmod, makedirs, name, remove, system, walk
+from os.path import abspath, basename, dirname, isdir, isfile, join, relpath, splitext
 from sys import exit
 from codecs import lookup
 from collections import OrderedDict
@@ -11,7 +12,7 @@ from subprocess import TimeoutExpired, run
 from time import time_ns
 from zipfile import ZipFile, ZipInfo
 try:
-	os.chdir(os.path.abspath(os.path.dirname(__file__)))
+	chdir(abspath(dirname(__file__)))
 except:
 	pass
 EXIT_SUCCESS = 0
@@ -350,12 +351,12 @@ class RegularUpdater:
 				self.__executionTimeout = RegularUpdater.__DefaultExecutionTimeout
 			
 			# Initialization #
-			self.__webrootDirectoryPath = os.path.join(self.__srcDirectoryPath, self.__webrootName)
-			self.__databaseFilePath = os.path.join(self.__webrootDirectoryPath, self.__databaseFileName)
-			self.__cppBinaryDirectroyPath = os.path.join(self.__srcDirectoryPath, self.__cppBinaryDirectoryName)
-			self.__webrootFilePath = os.path.join(self.__srcDirectoryPath, self.__webrootName + ".zip")
-			self.__actionAFilePath = os.path.join(self.__srcDirectoryPath, self.__actionAFileName)
-			self.__actionBFilePath = os.path.join(self.__srcDirectoryPath, self.__actionBFileName)
+			self.__webrootDirectoryPath = join(self.__srcDirectoryPath, self.__webrootName)
+			self.__databaseFilePath = join(self.__webrootDirectoryPath, self.__databaseFileName)
+			self.__cppBinaryDirectroyPath = join(self.__srcDirectoryPath, self.__cppBinaryDirectoryName)
+			self.__webrootFilePath = join(self.__srcDirectoryPath, self.__webrootName + ".zip")
+			self.__actionAFilePath = join(self.__srcDirectoryPath, self.__actionAFileName)
+			self.__actionBFilePath = join(self.__srcDirectoryPath, self.__actionBFileName)
 			
 			# Main #
 			self.__databaseManager = DatabaseManager(databaseFilePath = self.__databaseFilePath, connectionTimeout = self.__connectionTimeout)
@@ -397,29 +398,29 @@ class RegularUpdater:
 			return False
 		baseExceptions = []
 		try:
-			os.chmod(".", 0o755)
-			for root, folderNames, fileNames in os.walk("."):
+			chmod(".", 0o755)
+			for root, folderNames, fileNames in walk("."):
 				for folderName in folderNames:
-					folderPath = os.path.join(root, folderName)
+					folderPath = join(root, folderName)
 					try:
-						os.chmod(folderPath, 0o755)
+						chmod(folderPath, 0o755)
 					except BaseException as innerBaseException:
 						baseExceptions.append((folderPath, 0o755, innerBaseException))
 				for fileName in fileNames:
-					filePath = os.path.join(root, fileName)
-					if "LICENSE" == fileName or os.path.splitext(fileName)[1] == ".sha512":
+					filePath = join(root, fileName)
+					if "LICENSE" == fileName or splitext(fileName)[1] == ".sha512":
 						try:
-							os.chmod(filePath, 0o444)
+							chmod(filePath, 0o444)
 						except BaseException as innerBaseException:
 							baseExceptions.append((filePath, 0o444, innerBaseException))
 					elif "build.sh" == fileName:
 						try:
-							os.chmod(filePath, 0o744)
+							chmod(filePath, 0o744)
 						except BaseException as innerBaseException:
 							baseExceptions.append((filePath, 0o744, innerBaseException))
 					else:
 						try:
-							os.chmod(filePath, 0o644)
+							chmod(filePath, 0o644)
 						except BaseException as innerBaseException:
 							baseExceptions.append((filePath, 0o644, innerBaseException))
 		except BaseException as outerBaseException:
@@ -534,9 +535,9 @@ class RegularUpdater:
 			for entryABI in tripleABI:
 				keyABI, valueABI, _ = entryABI
 				try:
-					cppBinaryFilePath = os.path.join(self.__cppBinaryDirectroyPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
+					cppBinaryFilePath = join(self.__cppBinaryDirectroyPath, "{0}_{1}".format(cppSourceMainFileName, valueABI))
 					entryABI[2] = cppBinaryFilePath
-					if not os.path.isfile(cppBinaryFilePath):
+					if not isfile(cppBinaryFilePath):
 						localFlag = False
 				except:
 					localFlag = False
@@ -552,14 +553,14 @@ class RegularUpdater:
 				choice = True
 			if choice:
 				try:
-					os.makedirs(self.__cppBinaryDirectroyPath, exist_ok = True)
+					makedirs(self.__cppBinaryDirectroyPath, exist_ok = True)
 					localFlag = True
 					print("Successfully prepared the directory {0}. ".format(repr(self.__cppBinaryDirectroyPath)))
 				except BaseException as e:
 					localFlag = False
 					print("Failed to prepare the directory {0} due to {1}. ".format(repr(self.__cppBinaryDirectroyPath), repr(e)))
 				if localFlag:
-					cppSourceFilePath = os.path.join(cppSourceDirectoryPath, cppSourceMainFileName + ".cpp")
+					cppSourceFilePath = join(cppSourceDirectoryPath, cppSourceMainFileName + ".cpp")
 					for keyABI, valueABI, cppBinaryFilePath in tripleABI:
 						try:
 							result = run((
@@ -592,14 +593,14 @@ class RegularUpdater:
 	def compress(self:object, extensionsExcluded:tuple|list|set) -> bool: # 0b00?11011 | 0b00011100 -> 0b00?11111
 		if self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 2 & 0b111 >= 6 and isinstance(extensionsExcluded, (tuple, list, set)):
 			self.__flag = self.__flag & 0b00100011 | 0b00011000
-			if os.path.isdir(self.__webrootDirectoryPath):
+			if isdir(self.__webrootDirectoryPath):
 				try:
 					with ZipFile(self.__webrootFilePath, "w") as zipf:
-						for root, _, fileNames in os.walk(self.__webrootDirectoryPath):
+						for root, _, fileNames in walk(self.__webrootDirectoryPath):
 							for fileName in fileNames:
-								if os.path.splitext(fileName)[1] not in extensionsExcluded:
-									filePath = os.path.join(root, fileName)
-									relativePath = os.path.relpath(filePath, self.__webrootDirectoryPath)
+								if splitext(fileName)[1] not in extensionsExcluded:
+									filePath = join(root, fileName)
+									relativePath = relpath(filePath, self.__webrootDirectoryPath)
 									zipInfo = ZipInfo(relativePath)
 									zipInfo.external_attr = 0o644 << 16
 									with open(filePath, "rb") as f:
@@ -617,50 +618,55 @@ class RegularUpdater:
 	def checkShell(self:object) -> bool: # 0b000???11 | 0b00100000 -> 0b001???11
 		if self.__flag & 0b00000010 and self.__flag & 0b00000001:
 			self.__flag &= 0b00011111
-			filePaths = []
-			try:
-				for root, _, fileNames in os.walk(self.__srcDirectoryPath):
-					for fileName in fileNames:
-						if os.path.splitext(fileName)[1] == ".sh":
-							filePaths.append(os.path.join(root, fileName))
-			except BaseException as e:
-				print("Failed to walk {0} due to {1}. ".format(repr(self.__srcDirectoryPath), repr(e)))
-			filePaths.sort()
-			totalCount = len(filePaths)
-			if totalCount:
-				length, successCount = len(str(totalCount)), 0
-				for i, filePath in enumerate(filePaths, start = 1):
-					try:
-						result = run(("sh", "-n", filePath), capture_output = True, text = True, timeout = self.__executionTimeout)
-						if EXIT_SUCCESS == result.returncode:
-							successCount += 1
-							print("[{{0:0>{0}}}] {{1}} -> Passed (sh)".format(length).format(i, repr(filePath)))
-						else:
-							print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), result))
-					except TimeoutExpired as e:
-						print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), {
-							"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
-						}))
-					except BaseException as e:
-						print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), repr(e)))
+			if "posix" == name:
+				filePaths = []
 				try:
-					with open(self.__actionAFilePath, "rb") as f:
-						contentA = f.read()
-					with open(self.__actionBFilePath, "rb") as f:
-						contentB = f.read()
-					if contentA.replace(b"readonly currentAB=\"A\"", b"readonly currentAB=\"B\"").replace(b"readonly targetAB=\"B\"", b"readonly targetAB=\"A\"") == contentB:
-						print("Successfully verified the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
-						if successCount == totalCount:
-							self.__flag |= 0b00100000
-							return True					
-					else:
-						localFlag = False
-						print("Failed to verify the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
+					for root, _, fileNames in walk(self.__srcDirectoryPath):
+						for fileName in fileNames:
+							if splitext(fileName)[1] == ".sh":
+								filePaths.append(join(root, fileName))
 				except BaseException as e:
-					localFlag = False
-					print("Failed to verify the differences between {0} and {1} due to {2}".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath), repr(e)))
+					print("Failed to walk {0} due to {1}. ".format(repr(self.__srcDirectoryPath), repr(e)))
+				filePaths.sort()
+				totalCount = len(filePaths)
+				if totalCount:
+					length, successCount = len(str(totalCount)), 0
+					for i, filePath in enumerate(filePaths, start = 1):
+						try:
+							result = run(
+								("bash" if "build.sh" == basename(filePath) else "sh", "-n", filePath), capture_output = True, text = True, timeout = self.__executionTimeout
+							)
+							if EXIT_SUCCESS == result.returncode:
+								successCount += 1
+								print("[{{0:0>{0}}}] {{1}} -> Passed (sh)".format(length).format(i, repr(filePath)))
+							else:
+								print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), result))
+						except TimeoutExpired as e:
+							print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), {
+								"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
+							}))
+						except BaseException as e:
+							print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), repr(e)))
+					try:
+						with open(self.__actionAFilePath, "rb") as f:
+							contentA = f.read()
+						with open(self.__actionBFilePath, "rb") as f:
+							contentB = f.read()
+						if contentA.replace(b"readonly currentAB=\"A\"", b"readonly currentAB=\"B\"").replace(b"readonly targetAB=\"B\"", b"readonly targetAB=\"A\"") == contentB:
+							print("Successfully verified the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
+							if successCount == totalCount:
+								self.__flag |= 0b00100000
+								return True					
+						else:
+							localFlag = False
+							print("Failed to verify the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
+					except BaseException as e:
+						localFlag = False
+						print("Failed to verify the differences between {0} and {1} due to {2}".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath), repr(e)))
+				else:
+					print("The source folder path {0} does not contain any shell scripts. ".format(repr(self.__srcDirectoryPath)))
 			else:
-				print("The source folder path {0} does not contain any shell scripts. ".format(repr(self.__srcDirectoryPath)))
+				print("Skipped checking shell scripts since this is not a Unix-like platform. ")
 		else:
 			print("Please initialize the updater before checking differences. ")
 		return False
@@ -669,12 +675,12 @@ class RegularUpdater:
 			self.__flag &= 0b00111111
 			filePaths = []
 			try:
-				for root, _, fileNames in os.walk(self.__srcDirectoryPath):
+				for root, _, fileNames in walk(self.__srcDirectoryPath):
 					for fileName in fileNames:
-						filePath = os.path.join(root, fileName)
-						if os.path.splitext(fileName)[1] == ".sha512":
+						filePath = join(root, fileName)
+						if splitext(fileName)[1] == ".sha512":
 							try:
-								os.remove(filePath)
+								remove(filePath)
 							except:
 								pass
 						else:
@@ -688,14 +694,14 @@ class RegularUpdater:
 				print("Generating SHA-512 value files for {0} item(s). ".format(totalCount))
 				for i, filePath in enumerate(filePaths, start = 1):
 					try:
-						if os.path.join(self.__srcDirectoryPath, self.__webrootName + ".zip") == filePath:
+						if join(self.__srcDirectoryPath, self.__webrootName + ".zip") == filePath:
 							digests = []
-							for root, _, fileNames in os.walk(os.path.join(self.__srcDirectoryPath, self.__webrootName)):
+							for root, _, fileNames in walk(join(self.__srcDirectoryPath, self.__webrootName)):
 								for fileName in fileNames:
-									if os.path.splitext(fileName)[1].lower() not in (".prop", ".sha512"):
-										fileP = os.path.join(root, fileName)
+									if splitext(fileName)[1].lower() not in (".prop", ".sha512"):
+										fileP = join(root, fileName)
 										with open(fileP, "rb") as f:
-											digests.append(sha512(f.read()).hexdigest() + "  " + os.path.relpath(fileP, self.__srcDirectoryPath))
+											digests.append(sha512(f.read()).hexdigest() + "  " + relpath(fileP, self.__srcDirectoryPath))
 							digests.sort()
 							digest = "\n".join(digests)
 						else:
@@ -726,7 +732,7 @@ class RegularUpdater:
 			and self.__flag & 0b00000010 and self.__flag & 0b00000001 and self.__flag >> 6 >= 2
 		):
 			self.__flag = self.__flag & 0b00111111 | 0b10000000
-			if "posix" == os.name:
+			if "posix" == name:
 				try:
 					if pushConfirmed is True:
 						choice = True
@@ -736,18 +742,16 @@ class RegularUpdater:
 					choice = False
 			else:
 				choice = False
-				print("Skipped pushing since this is not a Linux platform. ")
+				print("Skipped pushing since this is not a Unix-like platform. ")
 			if choice:
 				commitMessage = "Regular Update (HKT {0})".format(datetime.now().strftime("%Y%m%d%H%M%S%f"))
 				print("The commit message is \"{0}\". ".format(commitMessage))
 				commandlines = ("git add .", "git commit -m \"{0}\"".format(commitMessage), "git push")
 				for commandline in commandlines:
-					if os.system(commandline) != EXIT_SUCCESS:
+					if system(commandline) != EXIT_SUCCESS:
 						return False
 				self.__flag |= 0b11000000
-				return True
-			else:
-				return True
+			return True
 		else:
 			print("Please set permissions again before pushing. ")
 			return False

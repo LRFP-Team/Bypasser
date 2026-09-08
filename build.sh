@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Module (11--12) #
 readonly EXIT_SUCCESS=0
 readonly EXIT_FAILURE=1
@@ -64,27 +64,28 @@ readonly shellAFilePath="${srcDirectoryPath}/${shellAFileName}"
 readonly shellBFileName="actionB.sh"
 readonly shellBFilePath="${srcDirectoryPath}/${shellBFileName}"
 
-if [[ -z "$(find . -name "*.sh" -exec sh -n {} \; 2>&1)" ]];
+if [[ -z "$(find . -name "*.sh" ! -name "build.sh" -exec sh -n {} \; 2>&1)" ]];
 then
 	echo "All the scripts successfully passed the local shell syntax check (sh). "
 else
 	echo "Some of the scripts failed to pass the local shell syntax check (sh). "
 	exit 13
 fi
-if [[
-	"$(grep -F "${currentPattern}" "${shellAFilePath}" | head -n 1)" == "${currentPattern}\"A\""
-	&& "$(grep -F "${targetPattern}" "${shellAFilePath}" | head -n 1)" == "${targetPattern}\"B\""
-	&& "$(grep -F "${currentPattern}" "${shellBFilePath}" | head -n 1)" == "${currentPattern}\"B\""
-	&& "$(grep -F "${targetPattern}" "${shellBFilePath}" | head -n 1)" == "${targetPattern}\"A\""
-]];
+shellABFlag=${EXIT_SUCCESS}
+[[ "$(grep -F "${currentPattern}" "${shellAFilePath}" | head -n 1)" == "${currentPattern}\"A\"" ]] || shellABFlag=${EXIT_FAILURE}
+[[ "$(grep -F "${targetPattern}" "${shellAFilePath}" | head -n 1)" == "${targetPattern}\"B\"" ]] || shellABFlag=${EXIT_FAILURE}
+[[ "$(grep -F "${currentPattern}" "${shellBFilePath}" | head -n 1)" == "${currentPattern}\"B\"" ]] || shellABFlag=${EXIT_FAILURE}
+[[ "$(grep -F "${targetPattern}" "${shellBFilePath}" | head -n 1)" == "${targetPattern}\"A\"" ]] || shellABFlag=${EXIT_FAILURE}
+if [[ ${EXIT_SUCCESS} -eq ${shellABFlag} ]];
 then
 	echo "Successfully verified the A/B architecture in \"${shellAFilePath}\" and \"${shellBFilePath}\". "
 else
 	echo "Failed to verify the A/B architecture in \"${shellAFilePath}\" and \"${shellBFilePath}\". "
 	exit 14
 fi
-if diff <(sed "0,/${currentPattern}/{//d;}; 0,/${targetPattern}/{//d;}" "${shellAFilePath}") \
-	<(sed "0,/${currentPattern}/{//d;}; 0,/${targetPattern}/{//d;}" "${shellBFilePath}") > /dev/null;
+hashA="$(sed "0,/${currentPattern}/{//d;}; 0,/${targetPattern}/{//d;}" "${shellAFilePath}" | sha512sum | cut -d' ' -f1)"
+hashB="$(sed "0,/${currentPattern}/{//d;}; 0,/${targetPattern}/{//d;}" "${shellBFilePath}" | sha512sum | cut -d' ' -f1)"
+if [[ "${hashA}" == "${hashB}" ]];
 then
 	echo "Successfully verified the differences between \"${shellAFilePath}\" and \"${shellBFilePath}\". "
 else

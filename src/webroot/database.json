@@ -999,6 +999,7 @@
 		"io.github.cloudburst.messengerex",
 		"io.github.codecodegogogo.newmipushenhance",
 		"io.github.cpatcher",
+		"io.github.crankshift.faspoof",
 		"io.github.dixtdf.key.forward",
 		"io.github.dixtdf.oplus.display",
 		"io.github.dopee.douyinfilter",
@@ -1391,5 +1392,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.6+HKT20260908031459545516008"
+	"V": "3.8.5.6+HKT20260908155016255058324"
 }
