@@ -2,13 +2,13 @@
 
 This is a developing rooting-layer system module for systematically bypassing environment detection related to LRFP for Android devices, where the abbreviation "LRFP" stands for Low-level, Rooting, Frameworks, and Plugins. 
 
-This module will only take effect when users install it or click the ``action`` button. The current supported features are as follows. 
+This module will only take effect when users install it or click the ``action`` button. The currently supported features are as follows. 
 
 - Welcome (0b00000X): Perform built-in configurations for this module. 
-- Update (0b0000X0): Perform regular dynamic updates for ``actionA.sh``/``actionB.sh``, the specified generator, and the web UI. Networks to GitHub are required. 
+- Update (0b0000X0): Perform regular dynamic updates for ``actionA.sh``/``actionB.sh``, the specified generator, and the web UI. Network access to GitHub is required. 
 - Zygisk Traces (0b000X00): Deploy correct configurations for different Zygisk solutions according to the Zygisk implementation, Shamiko, NoHello, and Zygisk Assistant modules used. 
-- HMA Configurations (0b00X000): Generate relevant configurations for HMA and its variants based on the cloud database (along with the web UI updating) and local packages (if enabled). Users are required to manually import the configurations via HMA or one of its variants. 
-- Tricky Store Configurations (0b0X0000): Generate Tricky Store configurations directly based on the cloud database. The configurations will be written directly to the Tricky Store configuration directory. 
+- HMA Configurations (0b00X000): Generate relevant configurations for HMA and its variants based on the cloud database and local packages. Remove old configuration directories of HMA and its variants if the action is confirmed by users. Users are required to manually import the configurations via HMA or one of its variants. 
+- Tricky Store Configurations (0b0X0000): Generate configurations for Tricky Store and its variants, including TEESimulator 4.x that uses a JSON file, based on the cloud database. The configurations will be written directly to the corresponding files. 
 - Shell (0bX00000): Perform some shell commands. Please check ``actionA.sh`` for details. 
   - Disable sensitive applications automatically installed by Google. 
   - Handle sensitive policies and properties. 
@@ -19,7 +19,7 @@ This module will only take effect when users install it or click the ``action`` 
   - Patch ``/etc/compatconfig/services-platform-compat-config.xml``. 
   - Enable the feature of hiding desktop icons on devices running Android 10 or above. 
 
-Please kindly be aware that this module will only optimize the rooting and injection environments based on the current environments. 
+Please be aware that this module will only optimize the rooting and injection environments based on the current environments. 
 This module will not include, install, enable, disable, or uninstall any other modules or plugins. 
 It is highly recommended to handle the environments according to [https://github.com/LRFP-Team/LRFP/tree/main/Bypassers](https://github.com/LRFP-Team/LRFP/tree/main/Bypassers) before using this module. 
 For users using KernelSU or one of its variants, patching ``/etc/compatconfig/services-platform-compat-config.xml`` will only take effect if a metamodule is installed. 
@@ -42,7 +42,7 @@ Submit modifications via a pull request (PR) if you wish to.
 
 Regarding the C++ compilation, [Android C++ compilers](https://github.com/android/ndk/wiki) (that are adapted to your Android device) should be used to compile. 
 For additional compilation warnings and information, please consider ``g++`` with ``-Wall -Wextra -Wpedantic`` or Visual Studio with ``/W4``. However, the binaries produced may not run on Android devices. 
-Anyway, no matter what the compiler is, please ensure using C++17 (e.g., ``-std=c++17``) or later during the compilation, as the code depends on the ``filesystem`` library and the ``inline`` feature. 
+Anyway, no matter what the compiler is, please ensure that C++17 (e.g., ``-std=c++17``) or later is used during the compilation, as the code depends on the ``filesystem`` library and the ``inline`` feature. 
 
 ## Acknowledgement
 

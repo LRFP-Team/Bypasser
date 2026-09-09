@@ -70,7 +70,7 @@
 - Adjusted logic of the ``action`` for Zygisk traces. 
 - Changed the location of the action configuration file. 
 - Enhanced the robustness of the ``action.sh``. 
-- Users using earlier versions must flash this version of the module to make the dynamic updating for ``action.sh`` and web UI available. 
+- **Users using earlier versions must flash this version of the module to make the dynamic updating for ``action.sh`` and web UI available. **
 
 ---
 
@@ -84,7 +84,7 @@
 ## Bypasser_v2025022023
 
 - Further adapted the ``action.sh`` to Apatch. 
-- Users using earlier versions must update ``action.sh`` by flashing this version of the module to make the dynamic updating for ``action.sh`` available. 
+- **Users using earlier versions must update ``action.sh`` by flashing this version of the module to make the dynamic updating for ``action.sh`` available. **
 
 ---
 
@@ -130,7 +130,7 @@
 - Optimized the exit codes of ``action.sh``. 
 - Made the local application scanning optional. 
 - Adjusted the format of the function declaration in all the scripts. 
-- Users using earlier versions must update ``action.sh`` by flashing this version of the module to make the dynamic updating for ``action.sh`` available. 
+- **Users using earlier versions must update ``action.sh`` by flashing this version of the module to make the dynamic updating for ``action.sh`` available. **
 
 ---
 

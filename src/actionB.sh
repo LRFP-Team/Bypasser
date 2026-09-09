@@ -5,13 +5,13 @@ readonly EXIT_FAILURE=1
 readonly EOF=255
 readonly moduleName="Bypasser"
 readonly actionDirectoryPath="$(dirname "$0")"
-readonly moduleId="bypasser"
+readonly moduleID="bypasser"
 readonly adbFolder="../.."
 readonly apatchFolder="${adbFolder}/ap"
 readonly magiskFolder="${adbFolder}/magisk"
 readonly ksuFolder="${adbFolder}/ksu"
 readonly magiskVulnerabilityVersion=27007
-readonly startTime=$(date +%s%N)
+readonly startTime=$(date '+%s.%N')
 exitCode=${EXIT_SUCCESS}
 
 function clearCaches
@@ -53,7 +53,7 @@ else
 	echo "Failed to clear caches. "
 fi
 chmod 755 "${actionDirectoryPath}" && cd "${actionDirectoryPath}"
-if [[ $? -eq ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleId}" ]];
+if [[ $? -eq ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleID}" ]];
 then
 	echo "The current working directory is \"$(pwd)\". "
 	setPermissions
@@ -728,7 +728,7 @@ readonly hmaossV93BlacklistConfigurationFileName=".hmaossV93BlacklistConfigurati
 readonly hmaossV93BlacklistConfigurationFilePath="${generationOutputDirectoryPath}/${hmaossV93BlacklistConfigurationFileName}"
 readonly pathTesterFileName=".pathTester.sh"
 readonly pathTesterFilePath="${generationOutputDirectoryPath}/${pathTesterFileName}"
-readonly defaultTimeout=5
+readonly defaultReadTimeout=5
 readonly tmpDirectoryPath="/data/local/tmp"
 readonly VK_UP=38
 readonly VK_DOWN=40
@@ -740,15 +740,15 @@ gapTime=0
 
 function getTheKeyPressed
 {
-	local timing namedPipeFilePath namedPipeFileName childProcessID pressString pressCode
+	local readTimeout namedPipeFilePath namedPipeFileName childProcessID pressString pressCode
 	if echo "$1" | grep -qE '^[1-9][0-9]*$';
 	then
-		timing=$1
+		readTimeout=$1
 	else
-		timing=${defaultTimeout}
+		readTimeout=${defaultReadTimeout}
 	fi
 	
-	# read -r -t ${timing} pressString < <(getevent -ql) #
+	# read -r -t ${readTimeout} pressString < <(getevent -ql) #
 	case "$2" in
 		"${tmpDirectoryPath}/"*[!\/]*)
 			namedPipeFilePath=$2
@@ -761,7 +761,7 @@ function getTheKeyPressed
 	mkfifo "${namedPipeFilePath}" 2>/dev/null || { echo "Failed to create the named pipe file \"${namedPipeFilePath}\". "; return ${EOF}; }
 	getevent -ql > "${namedPipeFilePath}" &
 	childProcessID=$!
-	read -r -t ${timing} pressString < "${namedPipeFilePath}"
+	read -r -t ${readTimeout} pressString < "${namedPipeFilePath}"
 	pressCode=$?
 	kill ${childProcessID} 2>/dev/null
 	wait ${childProcessID} 2>/dev/null
@@ -792,9 +792,127 @@ function getTheKeyPressed
 			return ${EXIT_FAILURE}
 		fi
 	else
-		echo "Users did not respond within ${timing} second(s). "
+		echo "Users did not respond within ${readTimeout} second(s). "
 		return ${EOF}
 	fi
+}
+
+function computeTimeDelta
+{
+	local endTimeString endTimeInteger endTimeDecimal startTimeString startTimeInteger startTimeDecimal returnCode lowerIntegerBorrowFlag timeDeltaDecimal endTimeIntegerLength endTimeIntegerOffset endTimeIntegerLowerDigits endTimeIntegerHigherDigits startTimeIntegerLength startTimeIntegerOffset startTimeIntegerLowerDigits startTimeIntegerHigherDigits higherIntegerBorrowFlag timeDeltaIntegerLowerDigits timeDeltaIntegerHigherDigits timeDeltaInteger
+	endTimeString="$1"
+	endTimeInteger="$(echo "${endTimeString%%.*}" | sed 's/^0*//')"
+	if [[ -z "${endTimeInteger}" ]];
+	then
+		endTimeInteger=0
+	fi
+	endTimeDecimal="$(echo "${endTimeString#*.}" | grep -E '^[0-9]{1,9}')"
+	startTimeString="$2"
+	startTimeInteger="$(echo "${startTimeString%%.*}" | sed 's/^0*//')"
+	if [[ -z "${startTimeInteger}" ]];
+	then
+		startTimeInteger=0
+	fi
+	startTimeDecimal="$(echo "${startTimeString#*.}" | grep -E '^[0-9]{1,9}')"
+	returnCode=0
+	lowerIntegerBorrowFlag="false"
+	if echo "${startTimeDecimal}" | grep -qE '^[0-9]{1,9}$' && echo "${endTimeDecimal}" | grep -qE '^[0-9]{1,9}$';
+	then
+		endTimeDecimal=$(printf "%-9s" "${endTimeDecimal}" | tr ' ' '0' | sed 's/^0*//')
+		[[ -z "${endTimeDecimal}" ]] && endTimeDecimal=0
+		startTimeDecimal="$(printf "%-9s" "${startTimeDecimal}" | tr ' ' '0' | sed 's/^0*//')"
+		[[ -z "${startTimeDecimal}" ]] && startTimeDecimal=0
+		if [[ ${endTimeDecimal} -ge ${startTimeDecimal} ]];
+		then
+			timeDeltaDecimal=$((${endTimeDecimal} - ${startTimeDecimal}))
+		else
+			lowerIntegerBorrowFlag="true"
+			timeDeltaDecimal=$((1000000000 + ${endTimeDecimal} - ${startTimeDecimal})) # [1-9]{0,9} + 1000000000 <= 1999999999 < 2147483648 = 2 ** 31
+		fi
+	else
+		timeDeltaDecimal=0
+		returnCode=$((returnCode | 1))
+	fi
+	if echo "${startTimeInteger}" | grep -qE '^([1-9][0-9]*|0)$' && echo "${endTimeInteger}" | grep -qE '^([1-9][0-9]*|0)$';
+	then
+		endTimeIntegerLength=$(echo -n "${endTimeInteger}" | wc -c)
+		if [[ ${endTimeIntegerLength} -ge 19 ]];
+		then
+			returnCode=$((returnCode | 4))
+			echo 0
+			return ${returnCode}
+		elif [[ ${endTimeIntegerLength} -ge 10 ]];
+		then
+			endTimeIntegerOffset=$((${endTimeIntegerLength} - 8))
+			endTimeIntegerLowerDigits="$(expr substr "${endTimeInteger}" ${endTimeIntegerOffset} 9)"
+			endTimeIntegerOffset=$((${endTimeIntegerOffset} - 1))
+			endTimeIntegerHigherDigits="$(expr substr "${endTimeInteger}" 1 ${endTimeIntegerOffset})"
+		else
+			endTimeIntegerLowerDigits="${endTimeInteger}"
+			endTimeIntegerHigherDigits=0
+		fi
+		startTimeIntegerLength=$(echo -n "${startTimeInteger}" | wc -c)
+		if [[ ${startTimeIntegerLength} -ge 19 ]];
+		then
+			returnCode=$((returnCode | 4))
+			echo 0
+			return ${returnCode}
+		elif [[ ${startTimeIntegerLength} -ge 10 ]];
+		then
+			startTimeIntegerOffset=$((${startTimeIntegerLength} - 8))
+			startTimeIntegerLowerDigits="$(expr substr "${startTimeInteger}" ${startTimeIntegerOffset} 9)"
+			startTimeIntegerOffset=$((${startTimeIntegerOffset} - 1))
+			startTimeIntegerHigherDigits="$(expr substr "${startTimeInteger}" 1 ${startTimeIntegerOffset})"
+		else
+			startTimeIntegerLowerDigits="${startTimeInteger}"
+			startTimeIntegerHigherDigits=0
+		fi
+		higherIntegerBorrowFlag="false"
+		if [[ "true" == "${lowerIntegerBorrowFlag}" ]];
+		then
+			if [[ ${endTimeIntegerLowerDigits} -ge $((${startTimeIntegerLowerDigits} + 1)) ]];
+			then
+				timeDeltaIntegerLowerDigits=$((${endTimeIntegerLowerDigits} - ${startTimeIntegerLowerDigits} - 1))
+			else
+				higherIntegerBorrowFlag="true"
+				timeDeltaIntegerLowerDigits=$((1000000000 + ${endTimeIntegerLowerDigits} - ${startTimeIntegerLowerDigits} - 1))
+			fi
+		else
+			if [[ ${endTimeIntegerLowerDigits} -ge ${startTimeIntegerLowerDigits} ]];
+			then
+				timeDeltaIntegerLowerDigits=$((${endTimeIntegerLowerDigits} - ${startTimeIntegerLowerDigits}))
+			else
+				higherIntegerBorrowFlag="true"
+				timeDeltaIntegerLowerDigits=$((1000000000 + ${endTimeIntegerLowerDigits} - ${startTimeIntegerLowerDigits}))
+			fi
+		fi
+		if [[ "true" == "${higherIntegerBorrowFlag}" ]];
+		then
+			timeDeltaIntegerHigherDigits=$((${endTimeIntegerHigherDigits} - ${startTimeIntegerHigherDigits} - 1))
+		else
+			timeDeltaIntegerHigherDigits=$((${endTimeIntegerHigherDigits} - ${startTimeIntegerHigherDigits}))
+		fi
+		if [[ ${timeDeltaIntegerHigherDigits} -lt 0 ]];
+		then
+			returnCode=$((returnCode | 8))
+			echo 0
+			return ${returnCode}
+		fi
+		timeDeltaInteger=${timeDeltaIntegerHigherDigits}$(printf "%09d" ${timeDeltaIntegerLowerDigits})
+		timeDeltaInteger=$(echo "$timeDeltaInteger" | sed 's/^0*//')
+		[[ -z "$timeDeltaInteger" ]] && timeDeltaInteger=0
+	else
+		returnCode=$((returnCode | 2))
+		echo 0
+		return ${returnCode}
+	fi
+	if [[ ${timeDeltaDecimal} -eq 0 ]];
+	then
+		echo ${timeDeltaInteger}
+	else
+		echo ${timeDeltaInteger}.${timeDeltaDecimal}
+	fi
+	return ${returnCode}
 }
 
 if [[ -d "${trickyStoreConfigurationDirectoryPath}" ]];
@@ -894,12 +1012,12 @@ if [[ $# -ge 1 ]];
 then
 	keyCode="$1"
 else
-	echo "Please press the [+] or [-] key in ${defaultTimeout} seconds if you want to perform the local scanning (\`\`/data\`\`). Otherwise, you may touch the screen to skip the timing. "
-	startGapTime=$(date +%s%N)
+	echo "Please press the [+] or [-] key in ${defaultReadTimeout} seconds if you want to perform the local scanning (\`\`/data\`\`). Otherwise, you may touch the screen to skip the timing. "
+	startGapTime=$(date '+%s.%N')
 	getTheKeyPressed
 	keyCode=$?
-	endGapTime=$(date +%s%N)
-	gapTime=$((endGapTime - startGapTime))
+	endGapTime=$(date '+%s.%N')
+	gapTime="$(computeTimeDelta "${endGapTime}" "${startGapTime}")"
 fi
 if [[ ${VK_UP} -eq ${keyCode} || ${VK_DOWN} -eq ${keyCode} ]];
 then
@@ -1224,8 +1342,8 @@ echo ""
 # Exit #
 readonly variableFileName="variables.log"
 readonly variableFilePath="${generationOutputDirectoryPath}/${variableFileName}"
-readonly endTime=$(date +%s%N)
-readonly timeDelta=$(awk "BEGIN {print ${endTime} - ${startTime} - ${gapTime}}")
+readonly endTime="$(date '+%s.%N')"
+readonly timeDelta="$(computeTimeDelta "$(computeTimeDelta "${endTime}" "${startTime}")" "${gapTime}")"
 
 mkdir -p "${generationOutputDirectoryPath}"
 set > "${variableFilePath}"
@@ -1248,5 +1366,5 @@ else
 	exitCode=$((exitCode | ${EXIT_FAILURE}))
 	echo "Failed to clear caches. "
 fi
-echo "Finished executing the \`\`action.sh\`\` in $((timeDelta / 1000000000)).$((timeDelta % 1000000000)) second(s) (${exitCode}). "
+echo "Finished executing the \`\`action.sh\`\` in ${timeDelta} second(s) (${exitCode}). "
 exit ${exitCode}

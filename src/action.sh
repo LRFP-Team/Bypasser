@@ -13,7 +13,7 @@ readonly webrootName="webroot"
 readonly webrootFolderPath="${webrootName}"
 readonly actionPropFileName="action.prop"
 readonly actionPropFilePath="${webrootFolderPath}/${actionPropFileName}"
-readonly defaultTimeout=5
+readonly defaultReadTimeout=5
 readonly tmpDirectoryPath="/data/local/tmp"
 
 function clearCaches
@@ -46,15 +46,15 @@ function setPermissions
 
 function getTheKeyPressed
 {
-	local timing namedPipeFilePath namedPipeFileName childProcessID pressString pressCode
+	local readTimeout namedPipeFilePath namedPipeFileName childProcessID pressString pressCode
 	if echo "$1" | grep -qE '^[1-9][0-9]*$';
 	then
-		timing=$1
+		readTimeout=$1
 	else
-		timing=${defaultTimeout}
+		readTimeout=${defaultReadTimeout}
 	fi
 	
-	# read -r -t ${timing} pressString < <(getevent -ql) #
+	# read -r -t ${readTimeout} pressString < <(getevent -ql) #
 	case "$2" in
 		"${tmpDirectoryPath}/"*[!\/]*)
 			namedPipeFilePath=$2
@@ -67,7 +67,7 @@ function getTheKeyPressed
 	mkfifo "${namedPipeFilePath}" 2>/dev/null || { echo "Failed to create the named pipe file \"${namedPipeFilePath}\". "; return ${EOF}; }
 	getevent -ql > "${namedPipeFilePath}" &
 	childProcessID=$!
-	read -r -t ${timing} pressString < "${namedPipeFilePath}"
+	read -r -t ${readTimeout} pressString < "${namedPipeFilePath}"
 	pressCode=$?
 	kill ${childProcessID} 2>/dev/null
 	wait ${childProcessID} 2>/dev/null
@@ -98,7 +98,7 @@ function getTheKeyPressed
 			return ${EXIT_FAILURE}
 		fi
 	else
-		echo "Users did not respond within ${timing} second(s). "
+		echo "Users did not respond within ${readTimeout} second(s). "
 		return ${EOF}
 	fi
 }

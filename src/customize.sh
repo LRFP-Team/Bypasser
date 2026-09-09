@@ -9,7 +9,7 @@ readonly VK_UP=38
 readonly VK_DOWN=40
 readonly moduleName="Bypasser"
 readonly moduleId="bypasser"
-readonly defaultTimeout=5
+readonly defaultReadTimeout=5
 readonly tmpDirectoryPath="/data/local/tmp"
 readonly outerSymbolCount=200
 readonly innerSymbolCount=100
@@ -168,15 +168,15 @@ gapTime=0
 
 function getTheKeyPressed
 {
-	local timing namedPipeFilePath namedPipeFileName childProcessID pressString pressCode
+	local readTimeout namedPipeFilePath namedPipeFileName childProcessID pressString pressCode
 	if echo "$1" | grep -qE '^[1-9][0-9]*$';
 	then
-		timing=$1
+		readTimeout=$1
 	else
-		timing=${defaultTimeout}
+		readTimeout=${defaultReadTimeout}
 	fi
 	
-	# read -r -t ${timing} pressString < <(getevent -ql) #
+	# read -r -t ${readTimeout} pressString < <(getevent -ql) #
 	case "$2" in
 		"${tmpDirectoryPath}/"*[!\/]*)
 			namedPipeFilePath=$2
@@ -189,7 +189,7 @@ function getTheKeyPressed
 	mkfifo "${namedPipeFilePath}" 2>/dev/null || { echo "Failed to create the named pipe file \"${namedPipeFilePath}\". "; return ${EOF}; }
 	getevent -ql > "${namedPipeFilePath}" &
 	childProcessID=$!
-	read -r -t ${timing} pressString < "${namedPipeFilePath}"
+	read -r -t ${readTimeout} pressString < "${namedPipeFilePath}"
 	pressCode=$?
 	kill ${childProcessID} 2>/dev/null
 	wait ${childProcessID} 2>/dev/null
@@ -220,7 +220,7 @@ function getTheKeyPressed
 			return ${EXIT_FAILURE}
 		fi
 	else
-		echo "Users did not respond within ${timing} second(s). "
+		echo "Users did not respond within ${readTimeout} second(s). "
 		return ${EOF}
 	fi
 }
@@ -239,7 +239,7 @@ then
 else
 	abort "Error: The \`\`"${actionFilePath}"\`\` was missing. "
 fi
-ui_print "Please press the [+] or [-] key in ${defaultTimeout} seconds if you want to perform the local scanning (\`\`/data\`\`). Otherwise, you may touch the screen to skip the timing. "
+ui_print "Please press the [+] or [-] key in ${defaultReadTimeout} seconds if you want to perform the local scanning (\`\`/data\`\`). Otherwise, you may touch the screen to skip the timing. "
 startGapTime=$(date +%s%N)
 keyMessage="$(getTheKeyPressed)"
 keyCode=$?
