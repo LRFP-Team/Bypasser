@@ -4,7 +4,7 @@ readonly EXIT_SUCCESS=0
 readonly EXIT_FAILURE=1
 readonly EOF=255
 readonly moduleName="Bypasser"
-readonly moduleId="bypasser"
+readonly moduleID="bypasser"
 readonly moduleVersion="$(date +%Y%m%d%H)"
 readonly moduleDirectoryPath="$(dirname "$0")"
 
@@ -188,7 +188,7 @@ readonly webrootDirectoryPath="${srcDirectoryPath}/${webrootName}"
 readonly webrootFilePath="${srcDirectoryPath}/${webrootName}.zip"
 readonly propFileName="module.prop"
 readonly propFilePath="${srcDirectoryPath}/${propFileName}"
-readonly propContent="id=${moduleId}\n\
+readonly propContent="id=${moduleID}\n\
 name=${moduleName}\n\
 version=v${moduleVersion}\n\
 versionCode=${moduleVersion}\n\

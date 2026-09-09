@@ -7,7 +7,7 @@ readonly VK_SCREEN=20
 readonly VK_UP=38
 readonly VK_DOWN=40
 readonly moduleName="Bypasser"
-readonly moduleId="bypasser"
+readonly moduleID="bypasser"
 readonly actionFolderPath="$(dirname "$0")"
 readonly webrootName="webroot"
 readonly webrootFolderPath="${webrootName}"
@@ -106,7 +106,7 @@ function getTheKeyPressed
 exitCode=${EXIT_SUCCESS}
 clearCaches > /dev/null 2>&1
 chmod 755 "${actionFolderPath}" 2>/dev/null && cd "${actionFolderPath}" 2>/dev/null
-if [[ $? == ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleId}" ]];
+if [[ $? == ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleID}" ]];
 then
 	setPermissions > /dev/null 2>&1
 	if [[ ! -f "${actionPropFilePath}" ]];

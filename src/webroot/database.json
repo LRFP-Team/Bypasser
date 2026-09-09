@@ -1061,6 +1061,10 @@
 		"io.github.miner7222.gap",
 		"io.github.mirukurusan.wificountrycode",
 		"io.github.moranyue.nodhcphostname",
+		"io.github.mrxsin.gmailhideads",
+		"io.github.mrxsin.syncthingliveupdate",
+		"io.github.mrxsin.threadshideads",
+		"io.github.mrxsin.twitterhideads",
 		"io.github.nexalloy",
 		"io.github.nitsuya.aa.display",
 		"io.github.nitsuya.donottryaccessibility",
@@ -1397,5 +1401,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.6+HKT20260909194609191095223"
+	"V": "3.8.5.6+HKT20260910000703832510165"
 }

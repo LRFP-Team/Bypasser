@@ -8,7 +8,7 @@ readonly VK_SCREEN=20
 readonly VK_UP=38
 readonly VK_DOWN=40
 readonly moduleName="Bypasser"
-readonly moduleId="bypasser"
+readonly moduleID="bypasser"
 readonly defaultReadTimeout=5
 readonly tmpDirectoryPath="/data/local/tmp"
 readonly outerSymbolCount=200
@@ -55,7 +55,7 @@ else
 	ui_print "Warning: Failed to clear caches. "
 fi
 chmod 755 "${MODPATH}" && cd "${MODPATH}"
-if [[ $? -eq ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleId}" ]];
+if [[ $? -eq ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleID}" ]];
 then
 	ui_print "The current working directory is \"$(pwd)\". "
 else

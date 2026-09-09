@@ -30,6 +30,7 @@
 - Renamed ``Update.json`` to ``update.json`` as most rooting-layer system modules do. 
 - Enabled brief workflows in GitHub Actions. 
 - Happy CNY! 
+- **Users using earlier versions must flash this version of the module to make the module update available in the root manager.** 
 
 ---
 
@@ -52,7 +53,7 @@
 
 ## Bypasser_v2025052822
 
-- Stored the classification cache files locally to avoid no network connection. 
+- Stored the classification cache files locally to avoid issues when there is no network connection. 
 - Supported showing the classifications in the web UI. 
 - Made the prompts in the web UI colorful. 
 
@@ -70,7 +71,7 @@
 - Adjusted logic of the ``action`` for Zygisk traces. 
 - Changed the location of the action configuration file. 
 - Enhanced the robustness of the ``action.sh``. 
-- **Users using earlier versions must flash this version of the module to make the dynamic updating for ``action.sh`` and web UI available. **
+- **Users using earlier versions must flash this version of the module to make the dynamic updating for ``action.sh`` and web UI available.** 
 
 ---
 
@@ -84,7 +85,7 @@
 ## Bypasser_v2025022023
 
 - Further adapted the ``action.sh`` to Apatch. 
-- **Users using earlier versions must update ``action.sh`` by flashing this version of the module to make the dynamic updating for ``action.sh`` available. **
+- **Users using earlier versions must update ``action.sh`` by flashing this version of the module to make the dynamic updating of ``action.sh`` available.** 
 
 ---
 
@@ -105,7 +106,7 @@
 
 ## Bypasser_v2025021723
 
-- Implemented the web UI though there is nothing to display at this time. 
+- Implemented the web UI, though there is nothing to display at this time. 
 - Added configuration codes for Zygisk Next. 
 - Adapted to the shell interpreter of Apatch better. 
 
@@ -114,8 +115,8 @@
 ## Bypasser_v2025012617
 
 - Performed local shell syntax checks in the builder and the installer. 
-- Supported asking users for the local scanning willingness before executing the ``action.sh`` in Magisk installer. 
-- Implmeneted better time consumption computation. 
+- Supported asking users for willingness to perform local scanning before executing the ``action.sh`` in the installer of the root manager. 
+- Implemented better time consumption computation. 
 - Adjusted the exit codes of the scripts. 
 
 ---
@@ -130,7 +131,7 @@
 - Optimized the exit codes of ``action.sh``. 
 - Made the local application scanning optional. 
 - Adjusted the format of the function declaration in all the scripts. 
-- **Users using earlier versions must update ``action.sh`` by flashing this version of the module to make the dynamic updating for ``action.sh`` available. **
+- **Users using earlier versions must update ``action.sh`` by flashing this version of the module to make the dynamic updating of ``action.sh`` available.** 
 
 ---
 
@@ -165,7 +166,7 @@
 ## Bypasser_v2025010922
 
 - Established the repository architecture and made it ready as a template. 
-- Supported updating via the Magisk Manager. 
+- Supported updating via the root manager. 
 
 ---
 

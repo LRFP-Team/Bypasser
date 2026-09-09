@@ -90,7 +90,7 @@ if [[ "true" == "${BOOTMODE}" || -n "${bootMode}" ]];
 then
 	if [[ -n "${bootMode}" ]];
 	then
-		echo "Booted: The device is working in the ${bootMode} mode. "
+		echo "Booted: The device is working in ${bootMode} mode. "
 	else
 		echo "Booted: The device is working in an unknown mode. "
 	fi
@@ -222,7 +222,7 @@ then
 		fi
 	fi
 else
-	echo "Unbooted: The device is not working in the boot mode. "
+	echo "Unbooted: The device is not working in boot mode. "
 fi
 echo ""
 
@@ -243,7 +243,7 @@ readonly cppBinaryDigestURL="https://raw.githubusercontent.com/LRFP-Team/Bypasse
 readonly cppBinaryDirectoryPath="generators"
 readonly cppBinaryFilePath="${cppBinaryDirectoryPath}/${cppBinaryFileName}"
 readonly downloadTimeout=50
-readonly progressBarWidth=50
+readonly progressBarWidth=40
 readonly cppBinaryURL="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/generators/${cppBinaryFileName}"
 readonly webrootDigestUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip.sha512"
 readonly webrootUrl="https://raw.githubusercontent.com/LRFP-Team/Bypasser/main/src/${webrootName}.zip"
@@ -799,21 +799,23 @@ function getTheKeyPressed
 
 function computeTimeDelta
 {
-	local endTimeString endTimeInteger endTimeDecimal startTimeString startTimeInteger startTimeDecimal returnCode lowerIntegerBorrowFlag timeDeltaDecimal endTimeIntegerLength endTimeIntegerOffset endTimeIntegerLowerDigits endTimeIntegerHigherDigits startTimeIntegerLength startTimeIntegerOffset startTimeIntegerLowerDigits startTimeIntegerHigherDigits higherIntegerBorrowFlag timeDeltaIntegerLowerDigits timeDeltaIntegerHigherDigits timeDeltaInteger
+	local endTimeString endTimeInteger endTimeDecimal startTimeString startTimeInteger startTimeDecimal returnCode lowerIntegerBorrowFlag timeDeltaDecimal endTimeIntegerLength endTimeIntegerLowerDigits endTimeIntegerHigherDigits startTimeIntegerLength startTimeIntegerLowerDigits startTimeIntegerHigherDigits higherIntegerBorrowFlag timeDeltaIntegerLowerDigits timeDeltaIntegerHigherDigits timeDeltaInteger
 	endTimeString="$1"
 	endTimeInteger="$(echo "${endTimeString%%.*}" | sed 's/^0*//')"
 	if [[ -z "${endTimeInteger}" ]];
 	then
 		endTimeInteger=0
 	fi
-	endTimeDecimal="$(echo "${endTimeString#*.}" | grep -E '^[0-9]{1,9}')"
+	endTimeDecimal="$(echo "${endTimeString}" | sed -n -E 's/^[^.]*\.([0-9]{1,9}).*/\1/p')"
+	[[ -z "${endTimeDecimal}" ]] && endTimeDecimal=0
 	startTimeString="$2"
 	startTimeInteger="$(echo "${startTimeString%%.*}" | sed 's/^0*//')"
 	if [[ -z "${startTimeInteger}" ]];
 	then
 		startTimeInteger=0
 	fi
-	startTimeDecimal="$(echo "${startTimeString#*.}" | grep -E '^[0-9]{1,9}')"
+	startTimeDecimal="$(echo "${startTimeString}" | sed -n -E 's/^[^.]*\.([0-9]{1,9}).*/\1/p')"
+	[[ -z "${startTimeDecimal}" ]] && startTimeDecimal=0
 	returnCode=0
 	lowerIntegerBorrowFlag="false"
 	if echo "${startTimeDecimal}" | grep -qE '^[0-9]{1,9}$' && echo "${endTimeDecimal}" | grep -qE '^[0-9]{1,9}$';
@@ -843,10 +845,10 @@ function computeTimeDelta
 			return ${returnCode}
 		elif [[ ${endTimeIntegerLength} -ge 10 ]];
 		then
-			endTimeIntegerOffset=$((${endTimeIntegerLength} - 8))
-			endTimeIntegerLowerDigits="$(expr substr "${endTimeInteger}" ${endTimeIntegerOffset} 9)"
-			endTimeIntegerOffset=$((${endTimeIntegerOffset} - 1))
-			endTimeIntegerHigherDigits="$(expr substr "${endTimeInteger}" 1 ${endTimeIntegerOffset})"
+			endTimeIntegerLowerDigits="$(echo -n "${endTimeInteger}" | sed 's/^.*\(.\{9\}\)$/\1/' | sed 's/^0*//')"
+			[[ -z "${endTimeIntegerLowerDigits}" ]] && endTimeIntegerLowerDigits=0
+			endTimeIntegerHigherDigits="$(echo -n "${endTimeInteger}" | sed 's/.\{9\}$//')"
+			[[ -z "${endTimeIntegerHigherDigits}" ]] && endTimeIntegerHigherDigits=0
 		else
 			endTimeIntegerLowerDigits="${endTimeInteger}"
 			endTimeIntegerHigherDigits=0
@@ -859,10 +861,10 @@ function computeTimeDelta
 			return ${returnCode}
 		elif [[ ${startTimeIntegerLength} -ge 10 ]];
 		then
-			startTimeIntegerOffset=$((${startTimeIntegerLength} - 8))
-			startTimeIntegerLowerDigits="$(expr substr "${startTimeInteger}" ${startTimeIntegerOffset} 9)"
-			startTimeIntegerOffset=$((${startTimeIntegerOffset} - 1))
-			startTimeIntegerHigherDigits="$(expr substr "${startTimeInteger}" 1 ${startTimeIntegerOffset})"
+			startTimeIntegerLowerDigits="$(echo -n "${startTimeInteger}" | sed 's/^.*\(.\{9\}\)$/\1/' | sed 's/^0*//')"
+			[[ -z "${startTimeIntegerLowerDigits}" ]] && startTimeIntegerLowerDigits=0
+			startTimeIntegerHigherDigits="$(echo -n "${startTimeInteger}" | sed 's/.\{9\}$//')"
+			[[ -z "${startTimeIntegerHigherDigits}" ]] && startTimeIntegerHigherDigits=0
 		else
 			startTimeIntegerLowerDigits="${startTimeInteger}"
 			startTimeIntegerHigherDigits=0
@@ -910,7 +912,7 @@ function computeTimeDelta
 	then
 		echo ${timeDeltaInteger}
 	else
-		echo ${timeDeltaInteger}.${timeDeltaDecimal}
+		echo ${timeDeltaInteger}.$(printf "%09d" ${timeDeltaDecimal})
 	fi
 	return ${returnCode}
 }
@@ -1130,7 +1132,7 @@ unset trickyStoreTargetContent
 if [[ -f "${teesimConfigurationFilePath}" ]];
 then
 	echo "The TEESimulator configuration file was found at \"${teesimConfigurationFilePath}\". "
-	if [[ ${EXIT_SUCCESS} -eq ${generationFlag} && $(stat -c %Y "${teesimConfigurationFilePath}") -gt ${startTime} ]];
+	if [[ ${EXIT_SUCCESS} -eq ${generationFlag} && $(stat -c %Y "${teesimConfigurationFilePath}") -gt ${startTime%%.*} ]];
 	then
 		echo "Successfully modified \"${teesimConfigurationFilePath}\". "
 	else
@@ -1206,26 +1208,38 @@ do
 		resetprop "${propertyKey}" "${propertyValue}"
 		if [[ $? -eq ${EXIT_SUCCESS} && "$(getprop "${propertyKey}")" == "${propertyValue}" ]];
 		then
-			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be and successfully set to \"${propertyValue}\". "
+			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be and successfully be set to \"${propertyValue}\". "
 		else
-			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be but failed to set to \"${propertyValue}\". "
 			exitCode=$((exitCode | 32))
+			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be but failed to be set to \"${propertyValue}\". "
 		fi
 	fi
 done
-propertyToExistFlag=${EXIT_SUCCESS}
+if [[ ${androidVersion} -ge 12 ]] && ! getprop "remote_provisioning.hostname" | grep -qE '^([0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?\.)+[A-Za-z]{2,}$';
+then
+	resetprop "remote_provisioning.hostname" "remoteprovisioning.googleapis.com"
+	if [[ $? -eq ${EXIT_SUCCESS} && "$(getprop "remote_provisioning.hostname")" == "remoteprovisioning.googleapis.com" ]];
+	then
+		echo "- Successfully set \"remote_provisioning.hostname\" to \"remoteprovisioning.googleapis.com\". "
+	else
+		exitCode=$((exitCode | 32))
+		echo "- Failed to set \"remote_provisioning.hostname\" to \"remoteprovisioning.googleapis.com\". "		
+	fi
+fi
+propertyToExistFlag=${EXIT_SUCCESS} # will be used to judge whether the VBMeta Fixer module should be installed
 for propertyToExist in ${propertiesToExist}
 do
-	if ! getprop "${propertyToExist}" | grep -qE "[A-Za-z0-9_-]";
+	if ! getprop "${propertyToExist}" | grep -q '.';
 	then
 		propertyToExistFlag=${EXIT_FAILURE}
+		exitCode=$((exitCode | 32))
 		echo "- The property \"${propertyToExist}\" did not exist or its value was empty, which was abnormal. "
 	fi
 done
 for propertyToBeDeleted in ${propertiesToBeDeleted}
 do
 	resetprop --delete "${propertyToBeDeleted}"
-	if getprop "${propertyToBeDeleted}" | grep -qE "[A-Za-z0-9_-]";
+	if getprop "${propertyToBeDeleted}" | grep -q '.';
 	then
 		exitCode=$((exitCode | 32))
 		echo "- The execution of \`\`resetprop --delete \"${propertyToBeDeleted}\"\`\` failed. "
@@ -1255,14 +1269,14 @@ then
 fi
 if [[ "$(getenforce)" == "Enforcing" ]];
 then
-	echo "SELinux is already Enforcing. "
+	echo "SELinux is already enforcing. "
 else
 	setenforce enforcing
 	if [[ $? -eq ${EXIT_SUCCESS} && "$(getenforce)" == "Enforcing" ]];
 	then
-		echo "SELinux was not Enforcing, which has been set to Enforcing. "
+		echo "SELinux was not enforcing, which has been set to enforcing. "
 	else
-		echo "SELinux is not Enforcing and cannot be set to Enforcing. "
+		echo "SELinux is not enforcing and failed to set it to enforcing. "
 	fi
 fi
 bannedSubStringFoundFlag=${EXIT_SUCCESS}
@@ -1343,8 +1357,9 @@ echo ""
 readonly variableFileName="variables.log"
 readonly variableFilePath="${generationOutputDirectoryPath}/${variableFileName}"
 readonly endTime="$(date '+%s.%N')"
-readonly timeDelta="$(computeTimeDelta "$(computeTimeDelta "${endTime}" "${startTime}")" "${gapTime}")"
 
+timeDelta="$(computeTimeDelta "${endTime}" "${startTime}")"
+timeDelta="$(computeTimeDelta "${timeDelta}" "${gapTime}")"
 mkdir -p "${generationOutputDirectoryPath}"
 set > "${variableFilePath}"
 if [[ ${EXIT_SUCCESS} -eq $((exitCode & EXIT_FAILURE)) ]];

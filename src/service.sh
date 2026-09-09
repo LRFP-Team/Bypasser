@@ -3,7 +3,7 @@ readonly EXIT_SUCCESS=0
 readonly EXIT_FAILURE=1
 readonly EOF=255
 readonly moduleName="Bypasser"
-readonly moduleId="bypasser"
+readonly moduleID="bypasser"
 readonly moduleFolderPath="$(dirname "$0")"
 
 function clearCaches
@@ -36,7 +36,7 @@ function setPermissions
 
 clearCaches > /dev/null 2>&1
 chmod 755 "${moduleFolderPath}" 2>/dev/null && cd "${moduleFolderPath}" 2>/dev/null
-if [[ $? -eq ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleId}" ]];
+if [[ $? -eq ${EXIT_SUCCESS} && "$(basename "$(pwd)")" == "${moduleID}" ]];
 then
 	setPermissions > /dev/null 2>&1
 	# TODO #

@@ -5,14 +5,14 @@ This is a developing rooting-layer system module for systematically bypassing en
 This module will only take effect when users install it or click the ``action`` button. The currently supported features are as follows. 
 
 - Welcome (0b00000X): Perform built-in configurations for this module. 
-- Update (0b0000X0): Perform regular dynamic updates for ``actionA.sh``/``actionB.sh``, the specified generator, and the web UI. Network access to GitHub is required. 
+- Update (0b0000X0): Perform regular dynamic updates for ``actionA.sh``/``actionB.sh``, the specified generator, and the web UI, including the database. Network access to GitHub is required. 
 - Zygisk Traces (0b000X00): Deploy correct configurations for different Zygisk solutions according to the Zygisk implementation, Shamiko, NoHello, and Zygisk Assistant modules used. 
 - HMA Configurations (0b00X000): Generate relevant configurations for HMA and its variants based on the cloud database and local packages. Remove old configuration directories of HMA and its variants if the action is confirmed by users. Users are required to manually import the configurations via HMA or one of its variants. 
 - Tricky Store Configurations (0b0X0000): Generate configurations for Tricky Store and its variants, including TEESimulator 4.x that uses a JSON file, based on the cloud database. The configurations will be written directly to the corresponding files. 
 - Shell (0bX00000): Perform some shell commands. Please check ``actionA.sh`` for details. 
   - Disable sensitive applications automatically installed by Google. 
   - Handle sensitive policies and properties. 
-  - Enforce SELinux (Use ``setenforce 0`` to reset if necessary). 
+  - Enforce SELinux (Use ``setenforce 0`` to switch to permissive temporarily if necessary). 
   - Check whether the kernel version involves banned strings. 
   - Check whether the ROM is signed with release keys. 
   - Check whether the build type is ``user``. 
