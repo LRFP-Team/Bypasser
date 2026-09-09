@@ -1,3 +1,11 @@
+## Bypasser_v2026091003
+
+- Adapt to Magisk 31000. 
+- Support fetching the latest generator from GitHub via the web UI. 
+- **Users using earlier versions on Magisk 31000 or above must flash this version of the module to make the shell scripts available.** 
+
+---
+
 ## Bypasser_v2026080202
 
 - Adjusted the variable order. 

@@ -28,6 +28,7 @@
 				"com.digilocker.android",
 				"com.disney.wheresmywater2_goo",
 				"com.flipkart.android",
+				"com.github.tmo1.sms_ie",
 				"com.google.android.apps.maps",
 				"com.google.android.apps.messaging",
 				"com.google.android.apps.youtube.music",
@@ -73,6 +74,7 @@
 				"com.sraoss.dmrc",
 				"com.tastegourmetgroup.app",
 				"com.tatadigital.tcp",
+				"com.teeter.game",
 				"com.ubercab.driver",
 				"com.vnpay.vpbankonline",
 				"com.wemade.wemixplay",
@@ -684,6 +686,7 @@
 		"com.rebron1900.fcitx5enhanced",
 		"com.rel.languager",
 		"com.rel.mujde",
+		"com.resukisu.resukisu",
 		"com.reveny.protecttai.bypass",
 		"com.reveny.vbmetafix.service",
 		"com.revive.algorithmaide",
@@ -1040,6 +1043,7 @@
 		"io.github.kvmy666.autoexpand",
 		"io.github.kwensiu.dpis",
 		"io.github.lamprose.mi_ultra",
+		"io.github.lanrhyme.wetypekaomoji",
 		"io.github.ldxm666.mapadkiller",
 		"io.github.li_yifei.chromeautofillbridge",
 		"io.github.lilymilongc.asteria",
@@ -1385,6 +1389,7 @@
 		"com.google.android.trichromelibrary_777812033",
 		"com.google.android.trichromelibrary_777812133",
 		"com.google.android.tts",
+		"com.google.android.verifier",
 		"com.google.android.webview",
 		"com.google.ar.core",
 		"com.google.audio.hearing.visualization.accessibility.scribe",
@@ -1401,5 +1406,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.6+HKT20260910000703832510165"
+	"V": "3.8.5.6+HKT20260910025013374952545"
 }
