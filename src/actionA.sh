@@ -1150,8 +1150,7 @@ readonly sensitiveApplications="com.google.android.contactkeys com.google.androi
 readonly policiesToBeDeleted="hidden_api_policy hidden_api_policy_p_apps hidden_api_policy_pre_p_apps hidden_api_blacklist_exemptions"
 readonly propertiesToBeSet="ro.boot.vbmeta.device_state:locked ro.boot.verifiedbootstate:green vendor.boot.secboot:enabled"
 readonly propertiesToExist="ro.boot.vbmeta.avb_version ro.boot.vbmeta.hash_alg ro.boot.vbmeta.size ro.boot.vbmeta.digest"
-readonly propertiesToBeDeleted="persist.sys.vold_app_data_isolation_enabled persist.zygote.app_data_isolation ro.oem_unlock_supported"
-readonly persistentPropertyFilePath="/data/property/persistent_properties"
+readonly propertiesToBeDeleted="persist.sys.vold_app_data_isolation_enabled persist.zygote.app_data_isolation"
 readonly bannedSubStrings="-AICP -arter97 -blu_spark -CAF -cm- -crDroid -crdroid -CyanogenMod -Deathly -EAS- -eas- -ElementalX -Elite -franco -hadesKernel -Lineage- -lineage- -LineageOS -lineageos -mokee -MoRoKernel -Noble -Optimus -SlimRoms -Sultan -sultan"
 readonly sourceXmlFilePath="/etc/compatconfig/services-platform-compat-config.xml"
 readonly replacementEntry="system"
@@ -1187,7 +1186,7 @@ echo "The policies are being handled. "
 for policyToBeDeleted in ${policiesToBeDeleted}
 do
 	executionContent="$(settings delete global ${policyToBeDeleted})"
-	if [[ $? -eq ${EXIT_SUCCESS} && "${executionContent}" == "Deleted 0 rows" ]];
+	if [[ $? -eq ${EXIT_SUCCESS} ]] && echo "${executionContent}" | grep -qE '^Deleted [0-9]+ rows?$';
 	then
 		echo "- The execution of \`\`settings delete global ${policyToBeDeleted}\`\` succeeded. "
 	else
@@ -1229,7 +1228,7 @@ fi
 propertyToExistFlag=${EXIT_SUCCESS} # will be used to judge whether the VBMeta Fixer module should be installed
 for propertyToExist in ${propertiesToExist}
 do
-	if ! getprop "${propertyToExist}" | grep -q '.';
+	if [[ -z "$(getprop "${propertyToExist}")" ]];
 	then
 		propertyToExistFlag=${EXIT_FAILURE}
 		exitCode=$((exitCode | 32))
@@ -1238,26 +1237,26 @@ do
 done
 for propertyToBeDeleted in ${propertiesToBeDeleted}
 do
-	resetprop --delete "${propertyToBeDeleted}"
-	if getprop "${propertyToBeDeleted}" | grep -q '.';
+	resetprop -d -p "${propertyToBeDeleted}"
+	if resetprop "${propertyToBeDeleted}" >/dev/null 2>&1;
 	then
 		exitCode=$((exitCode | 32))
-		echo "- The execution of \`\`resetprop --delete \"${propertyToBeDeleted}\"\`\` failed. "
+		echo "- Failed to persistently remove the isolation property \"${propertyToBeDeleted}\". "
+	else
+		echo "- Successfully persistently removed the isolation property \"${propertyToBeDeleted}\". "
 	fi
 done
-if [[ -f "${persistentPropertyFilePath}" ]];
-then
-	sed -i '/persist\.sys\.vold_app_data_isolation_enabled/d; /persist\.zygote\.app_data_isolation/d' "${persistentPropertyFilePath}"
-	if [[ $? -eq ${EXIT_SUCCESS} ]];
+for propertyToBeDeleted in $(resetprop | grep -E '^\[persist\.[^]]*(entryhooks|pihook|pixelprops|spoof)' | sed -E "s/^\[([^]]+)\].*/\1/");
+do
+	resetprop -d -p "${propertyToBeDeleted}"
+	if resetprop "${propertyToBeDeleted}" >/dev/null 2>&1;
 	then
-		echo "- Successfully removed persistent property traces from \"${persistentPropertyFilePath}\". "
-	else
 		exitCode=$((exitCode | 32))
-		echo "- Failed to remove persistent property traces from \"${persistentPropertyFilePath}\". "
+		echo "- Failed to persistently remove the custom ROM property \"${propertyToBeDeleted}\". "
+	else
+		echo "- Successfully persistently removed the custom ROM property \"${propertyToBeDeleted}\". "
 	fi
-else
-	echo "- The persistent property file \"${persistentPropertyFilePath}\" did not exist. "
-fi
+done
 if [[ ${propertyToExistFlag} -eq ${EXIT_FAILURE} ]];
 then
 	if [[ "${KSU}" == "true" || "${APATCH}" == "true" ]];
