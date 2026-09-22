@@ -1176,6 +1176,7 @@ do
 	fi
 done
 unset packageList
+unset sensitiveApplication 2>/dev/null || true
 if [[ ${sensitiveApplicationCount} -ge 1 ]];
 then
 	echo "Successfully disabled ${disabledSensitiveApplicationCount} / ${sensitiveApplicationCount} sensitive application(s). "
@@ -1185,44 +1186,55 @@ fi
 echo "The policies are being handled. "
 for policyToBeDeleted in ${policiesToBeDeleted}
 do
-	executionContent="$(settings delete global ${policyToBeDeleted})"
-	if [[ $? -eq ${EXIT_SUCCESS} ]] && echo "${executionContent}" | grep -qE '^Deleted [0-9]+ rows?$';
+	policyDeletionStandardOutput="$(settings delete global "${policyToBeDeleted}" 2>&1)"
+	policyDeletionExitStatus=$?
+	if [[ ${EXIT_SUCCESS} -eq ${policyDeletionExitStatus} ]] && echo "${policyDeletionStandardOutput}" | grep -qE '^Deleted (0|[1-9][0-9]*) rows?$';
 	then
-		echo "- The execution of \`\`settings delete global ${policyToBeDeleted}\`\` succeeded. "
+		echo "- Successfully deleted the global policy \`\`${policyToBeDeleted}\`\` with $(echo "${policyDeletionStandardOutput}" | grep -oE '(0|[1-9][0-9]*)') row(s) deleted (${policyDeletionExitStatus}). "
 	else
 		exitCode=$((exitCode | 32))
-		echo "- The execution of \`\`settings delete global ${policyToBeDeleted}\`\` failed. "
+		echo "- Failed to delete the global policy \`\`${policyToBeDeleted}\`\` (${policyDeletionExitStatus}). "
 	fi
+	unset policyDeletionStandardOutput
+	unset policyDeletionExitStatus
 done
+unset policyToBeDeleted 2>/dev/null || true
 echo "The properties are being handled. "
 for propertyKeyValue in ${propertiesToBeSet}
 do
 	propertyKey="$(echo "${propertyKeyValue}" | cut -d ':' -f1)"
 	propertyValue="$(echo "${propertyKeyValue}" | cut -d ':' -f2)"
-	executionContent="$(getprop "${propertyKey}")"
-	if [[ $? -eq ${EXIT_SUCCESS} && "${executionContent}" == "${propertyValue}" ]];
+	propertyGettingStandardOutput="$(getprop "${propertyKey}")"
+	propertyGettingExitStatus=$?
+	if [[ ${EXIT_SUCCESS} -eq ${propertyGettingExitStatus} && "${propertyGettingStandardOutput}" == "${propertyValue}" ]];
 	then
-		echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which was proper. "
+		echo "- The value of \`\`${propertyKey}\`\` was \"${propertyGettingStandardOutput}\", which was proper. "
 	else
 		resetprop "${propertyKey}" "${propertyValue}"
-		if [[ $? -eq ${EXIT_SUCCESS} && "$(getprop "${propertyKey}")" == "${propertyValue}" ]];
+		propertyResettingExitStatus=$?
+		if [[ ${EXIT_SUCCESS} -eq ${propertyResettingExitStatus} && "$(getprop "${propertyKey}")" == "${propertyValue}" ]];
 		then
-			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be and successfully be set to \"${propertyValue}\". "
+			echo "- The value of \`\`${propertyKey}\`\` was \`\`${propertyGettingStandardOutput}\`\`, which should be and successfully be set to \`\`${propertyValue}\`\`. "
 		else
 			exitCode=$((exitCode | 32))
-			echo "- The value of \`\`${propertyKey}\`\` was \"${executionContent}\", which should be but failed to be set to \"${propertyValue}\". "
+			echo "- The value of \`\`${propertyKey}\`\` was \`\`${propertyGettingStandardOutput}\`\`, which should be but failed to be set to \`\`${propertyValue}\`\`. "
 		fi
 	fi
+	unset propertyKey
+	unset propertyValue
+	unset propertyGettingStandardOutput
+	unset propertyGettingExitStatus
 done
+unset propertyKeyValue 2>/dev/null || true
 if [[ ${androidVersion} -ge 12 ]] && ! getprop "remote_provisioning.hostname" | grep -qE '^([0-9A-Za-z]([0-9A-Za-z-]{0,61}[0-9A-Za-z])?\.)+[A-Za-z]{2,}$';
 then
 	resetprop "remote_provisioning.hostname" "remoteprovisioning.googleapis.com"
 	if [[ $? -eq ${EXIT_SUCCESS} && "$(getprop "remote_provisioning.hostname")" == "remoteprovisioning.googleapis.com" ]];
 	then
-		echo "- Successfully set \"remote_provisioning.hostname\" to \"remoteprovisioning.googleapis.com\". "
+		echo "- Successfully set \`\`remote_provisioning.hostname\`\` to \`\`remoteprovisioning.googleapis.com\`\`. "
 	else
 		exitCode=$((exitCode | 32))
-		echo "- Failed to set \"remote_provisioning.hostname\" to \"remoteprovisioning.googleapis.com\". "		
+		echo "- Failed to set \`\`remote_provisioning.hostname\`\` to \`\`remoteprovisioning.googleapis.com\`\`. "
 	fi
 fi
 propertyToExistFlag=${EXIT_SUCCESS} # will be used to judge whether the VBMeta Fixer module should be installed
@@ -1232,18 +1244,19 @@ do
 	then
 		propertyToExistFlag=${EXIT_FAILURE}
 		exitCode=$((exitCode | 32))
-		echo "- The property \"${propertyToExist}\" did not exist or its value was empty, which was abnormal. "
+		echo "- The property \`\`${propertyToExist}\`\` did not exist or its value was empty, which was abnormal. "
 	fi
 done
+unset propertyToExist 2>/dev/null || true
 for propertyToBeDeleted in ${propertiesToBeDeleted}
 do
 	resetprop -d -p "${propertyToBeDeleted}"
 	if resetprop "${propertyToBeDeleted}" >/dev/null 2>&1;
 	then
 		exitCode=$((exitCode | 32))
-		echo "- Failed to persistently remove the isolation property \"${propertyToBeDeleted}\". "
+		echo "- Failed to persistently remove the isolation property \`\`${propertyToBeDeleted}\`\`. "
 	else
-		echo "- Successfully persistently removed the isolation property \"${propertyToBeDeleted}\". "
+		echo "- Successfully persistently removed the isolation property \`\`${propertyToBeDeleted}\`\`. "
 	fi
 done
 for propertyToBeDeleted in $(resetprop | grep -E '^\[persist\.[^]]*(entryhooks|pihook|pixelprops|spoof)' | sed -E "s/^\[([^]]+)\].*/\1/");
@@ -1252,11 +1265,12 @@ do
 	if resetprop "${propertyToBeDeleted}" >/dev/null 2>&1;
 	then
 		exitCode=$((exitCode | 32))
-		echo "- Failed to persistently remove the custom ROM property \"${propertyToBeDeleted}\". "
+		echo "- Failed to persistently remove the custom ROM property \`\`${propertyToBeDeleted}\`\`. "
 	else
-		echo "- Successfully persistently removed the custom ROM property \"${propertyToBeDeleted}\". "
+		echo "- Successfully persistently removed the custom ROM property \`\`${propertyToBeDeleted}\`\`. "
 	fi
 done
+unset propertyToBeDeleted 2>/dev/null || true
 if [[ ${propertyToExistFlag} -eq ${EXIT_FAILURE} ]];
 then
 	if [[ "${KSU}" == "true" || "${APATCH}" == "true" ]];
@@ -1289,6 +1303,7 @@ do
 		break
 	fi
 done
+unset bannedSubString 2>/dev/null || true
 if [[ ${bannedSubStringFoundFlag} -eq ${EXIT_SUCCESS} ]];
 then
 	echo "No banned substrings were found in the kernel version \"${kernelVersion}\". "

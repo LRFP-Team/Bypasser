@@ -774,6 +774,7 @@
 		"com.skyhand.ppxxphelper",
 		"com.skyhand.redbookhelper",
 		"com.skyhand.sinahelper",
+		"com.slimenull.customsidebuttonfunctions",
 		"com.softwarebakery.drivedroid",
 		"com.somebody.vipFucker",
 		"com.sotap.module",
@@ -1104,6 +1105,7 @@
 		"io.github.khalil212002.unmockgps",
 		"io.github.khiqwq.pinguard",
 		"io.github.kvmy666.autoexpand",
+		"io.github.kvmy666.duostatusbar",
 		"io.github.kwensiu.dpis",
 		"io.github.lamprose.mi_ultra",
 		"io.github.lanrhyme.wetypekaomoji",
@@ -1163,6 +1165,7 @@
 		"io.github.tehcneko.telespeed",
 		"io.github.timeline_unlocker.xposed",
 		"io.github.twyora.douyinenhancer",
+		"io.github.voreul_ch.installerpurify",
 		"io.github.vvb2060.callrecording",
 		"io.github.vvb2060.magisk",
 		"io.github.wauxv.v1",
@@ -1478,5 +1481,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.6+HKT20260922041533337913000"
+	"V": "3.8.5.6+HKT20260922141938379026722"
 }
