@@ -12,12 +12,13 @@ This module will only take effect when users install it or click the ``action`` 
 - Shell (0bX00000): Perform some shell commands. Please check ``actionA.sh`` for details. 
   - Disable sensitive applications automatically installed by Google. 
   - Handle sensitive policies and properties. 
-  - Enforce SELinux (Use ``setenforce 0`` to switch to permissive temporarily if necessary). 
+  - Disable ``adb_root`` and enable ``selinux_hide`` if ``ksud`` is available. 
   - Check whether the kernel version involves banned strings. 
   - Check whether the ROM is signed with release keys. 
   - Check whether the build type is ``user``. 
   - Patch ``/etc/compatconfig/services-platform-compat-config.xml``. 
-  - Enable the feature of hiding desktop icons on devices running Android 10 or above. 
+  - Enable the feature to hide desktop icons on devices running Android 10 or above. 
+  - Enforce SELinux (Use ``setenforce 0`` to switch to permissive temporarily if necessary). 
 
 Please be aware that this module will only optimize the rooting and injection environments based on the current environments. 
 This module will not include, install, enable, disable, or uninstall any other modules or plugins. 

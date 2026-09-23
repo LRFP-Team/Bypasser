@@ -854,6 +854,7 @@
 		"com.way.facebiometricfix",
 		"com.wayne.hyperaicrbypass",
 		"com.wayne.statusbarforceclose",
+		"com.web.czero",
 		"com.wechat.wechatai",
 		"com.wecom.padbridge",
 		"com.wengui.hook",
@@ -906,6 +907,7 @@
 		"com.yuanwofei.cardemulator.pro",
 		"com.yubyf.quotelockx",
 		"com.yukino1111.XMSFNotiChannelFork",
+		"com.yumito.yumyhook",
 		"com.yunzia.hyperstar",
 		"com.yureitzk.nophotopickerapi",
 		"com.yuuki.automtp",
@@ -1023,6 +1025,7 @@
 		"io.github.Morpheus799.QQAnonFwd",
 		"io.github.Retmon403.oppotheme",
 		"io.github.Rillwyn.maceditor",
+		"io.github.YGHFv.ReaMicroExtend",
 		"io.github.a13e300.fusefixer",
 		"io.github.a13e300.ksuwebui",
 		"io.github.a13e300.tools.stethox",
@@ -1073,6 +1076,7 @@
 		"io.github.enhancege",
 		"io.github.erenche.syncclipboard",
 		"io.github.ex3124.unlockcngms",
+		"io.github.fredoseep.bilidanmucheck",
 		"io.github.fzer0x.fuckmeta",
 		"io.github.generalpeople1970.adbstayawake",
 		"io.github.gjr787878.devicereset",
@@ -1166,6 +1170,7 @@
 		"io.github.timeline_unlocker.xposed",
 		"io.github.twyora.douyinenhancer",
 		"io.github.voreul_ch.installerpurify",
+		"io.github.voreulch.installerpurify",
 		"io.github.vvb2060.callrecording",
 		"io.github.vvb2060.magisk",
 		"io.github.wauxv.v1",
@@ -1274,6 +1279,7 @@
 		"moe.henry_zhr.kill_domain_verification",
 		"moe.lovefirefly.betterzuikey",
 		"moe.lovefirefly.bzk.sogouoemext",
+		"moe.lovefirefly.bzk.wetypeext",
 		"moe.lyniko.hiderecent",
 		"moe.lyniko.replacecursor",
 		"moe.lz233.mitranslator",
@@ -1481,5 +1487,5 @@
 		"com.bochk.bocpay": false
 	},
 	"U": "^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$",
-	"V": "3.8.5.6+HKT20260922141938379026722"
+	"V": "3.8.5.6+HKT20260923170523867863331"
 }

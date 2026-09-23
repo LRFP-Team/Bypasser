@@ -94,7 +94,7 @@ then
 	else
 		echo "Booted: The device is working in an unknown mode. "
 	fi
-	if [[ "${KSU}" == "true" ]];
+	if [[ "true" == "${KSU}" ]];
 	then
 		echo "KSU (${KSU_VER_CODE}): Please "
 		echo "- deploy the latest ReSukiSU with only applications requiring root privileges configured and granted in the ReSukiSU Manager, "
@@ -118,7 +118,7 @@ then
 		then
 			echo "The Magisk directory exists while KSU or one of its variants is using. Please consider removing the Magisk directory. "
 		fi
-	elif [[ "${APATCH}" == "true" ]];
+	elif [[ "true" == "${APATCH}" ]];
 	then
 		echo "Apatch (${APATCH_VER_CODE}): Please "
 		echo "- deploy the latest Apatch with only applications requiring root privileges configured and granted in the Apatch Manager, "
@@ -524,7 +524,7 @@ then
 		then
 			toBeWritten="0"
 			echo "The Shamiko module was installed. "
-			if [[ "${APATCH}" == "true" ]];
+			if [[ "true" == "${APATCH}" ]];
 			then
 				echo "Please kindly acknowledge that the Shamiko module does not work with Apatch. Please consider using ReZygisk + NoHello in Apatch. "
 			elif [[ ${MAGISK_VER} == *-kitsune || ${MAGISK_VER} == *-delta ]];
@@ -675,7 +675,7 @@ then
 			fi
 			if isModuleInstalled "${shamikoModuleId}" > /dev/null;
 			then
-				if [[ "${APATCH}" == "true" ]];
+				if [[ "true" == "${APATCH}" ]];
 				then
 					echo "The Shamiko module does not work with Apatch or NeoZygisk. Please consider removing this module and switching to ReZygisk + NoHello. "
 				else
@@ -1273,23 +1273,31 @@ done
 unset propertyToBeDeleted 2>/dev/null || true
 if [[ ${propertyToExistFlag} -eq ${EXIT_FAILURE} ]];
 then
-	if [[ "${KSU}" == "true" || "${APATCH}" == "true" ]];
+	if [[ "true" == "${KSU}" || "true" == "${APATCH}" ]];
 	then
 		echo "Missing properties, please install the latest [VBMeta Fixer](https://github.com/reveny/Android-VBMeta-Fixer) module as a system module. "
 	else
 		echo "Missing properties, please install the latest [VBMeta Fixer](https://github.com/reveny/Android-VBMeta-Fixer) module. "
 	fi
 fi
-if [[ "$(getenforce)" == "Enforcing" ]];
+if [[ "true" == "${KSU}" ]] && command -v ksud >/dev/null 2>&1;
 then
-	echo "SELinux is already enforcing. "
-else
-	setenforce enforcing
-	if [[ $? -eq ${EXIT_SUCCESS} && "$(getenforce)" == "Enforcing" ]];
+	echo "Configuring features via \`\`ksud\`\`. "
+	ksud feature set adb_root 0
+	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
-		echo "SELinux was not enforcing, which has been set to enforcing. "
+		echo "- Successfully disabled the \`\`adb_root\`\` feature. "
 	else
-		echo "SELinux is not enforcing and failed to set it to enforcing. "
+		exitCode=$((exitCode | 32))
+		echo "- Failed to disable the \`\`adb_root\`\` feature. "
+	fi
+	ksud feature set selinux_hide 1
+	if [[ $? -eq ${EXIT_SUCCESS} ]];
+	then
+		echo "- Successfully enabled the \`\`selinux_hide\`\` feature. "
+	else
+		exitCode=$((exitCode | 32))
+		echo "- Failed to enable the \`\`selinux_hide\`\` feature. "
 	fi
 fi
 bannedSubStringFoundFlag=${EXIT_SUCCESS}
@@ -1363,6 +1371,18 @@ then
 		echo "Successfully enabled the feature of hiding desktop icons (Android ${androidVersion}). "
 	else
 		echo "Failed to enable the feature of hiding desktop icons (Android ${androidVersion}). "
+	fi
+fi
+if [[ "$(getenforce)" == "Enforcing" ]];
+then
+	echo "SELinux is already enforcing. "
+else
+	setenforce enforcing
+	if [[ $? -eq ${EXIT_SUCCESS} && "$(getenforce)" == "Enforcing" ]];
+	then
+		echo "SELinux was not enforcing, which has been set to enforcing. "
+	else
+		echo "SELinux is not enforcing and failed to set it to enforcing. "
 	fi
 fi
 echo ""
