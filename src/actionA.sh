@@ -1283,7 +1283,7 @@ fi
 if [[ "true" == "${KSU}" ]] && command -v ksud >/dev/null 2>&1;
 then
 	echo "Configuring features via \`\`ksud\`\`. "
-	ksud feature set adb_root 0
+	ksud feature set adb_root 0 >/dev/null 2>&1
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
 		echo "- Successfully disabled the \`\`adb_root\`\` feature. "
@@ -1291,7 +1291,7 @@ then
 		exitCode=$((exitCode | 32))
 		echo "- Failed to disable the \`\`adb_root\`\` feature. "
 	fi
-	ksud feature set selinux_hide 1
+	ksud feature set selinux_hide 1 >/dev/null 2>&1
 	if [[ $? -eq ${EXIT_SUCCESS} ]];
 	then
 		echo "- Successfully enabled the \`\`selinux_hide\`\` feature. "
