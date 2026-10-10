@@ -19,14 +19,25 @@ jobs:
             src
             build.sh
       
-      - name: Install the Android C++ compiler
+      - name: Setup Android NDK
         run: |
           cd "${HOME}"
-          NDK_VERSION="r29"
-          wget "https://dl.google.com/android/repository/android-ndk-${NDK_VERSION}-linux.zip"
-          unzip "android-ndk-${NDK_VERSION}-linux.zip"
-          rm "android-ndk-${NDK_VERSION}-linux.zip"
-          echo "${HOME}/android-ndk-${NDK_VERSION}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
+          MAJOR_VERSION=30
+          directoryName="android-ndk-r${MAJOR_VERSION}"
+          wget "https://dl.google.com/android/repository/${directoryName}-linux.zip"
+          rm -rf "${directoryName}"
+          unzip "${directoryName}-linux.zip"
+          rm "${directoryName}-linux.zip"
+          NDK_REVISION=$(grep -E '^Pkg\.Revision' "${directoryName}/source.properties" | awk -F '=' '{print $2}' | tr -d ' ')
+          echo "${NDK_REVISION}" | grep -qE "^${MAJOR_VERSION}\.[0-9]+(\.[0-9]+)*$" || exit 1
+          ANDROID_HOME="${HOME}/Android/Sdk"
+          ndkDirectory="${ANDROID_HOME}/ndk"
+          ANDROID_NDK_HOME="${ndkDirectory}/${NDK_REVISION}"
+          mkdir -p "${ndkDirectory}"
+          rm -rf "${ANDROID_NDK_HOME}"
+          mv -T "${directoryName}" "${ANDROID_NDK_HOME}"
+          echo "ANDROID_NDK_HOME=${ANDROID_NDK_HOME}" >> "${GITHUB_ENV}"
+          echo "${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/bin" >> "${GITHUB_PATH}"
       
       - name: Build
         run: |

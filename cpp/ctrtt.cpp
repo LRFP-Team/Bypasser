@@ -26,11 +26,12 @@
 
 namespace
 {
-class Ctr2Application
+class CtrTimeTravelApplication
 {
 private:
-	static constexpr const char* PackageName = "com.zeptolab.ctr2.f2p.google";
-	static constexpr const char* PreferencesFileName = "CTR2.xml";
+	static constexpr const char* PackageName = "com.zeptolab.timetravel.free.google";
+	static constexpr const char* PreferencesFileName = "TIMETRAVEL.xml";
+	static constexpr const char* HashSalt = "ctr_tt_hd_Shame 0n You ";
 
 	enum class InputKind
 	{
@@ -58,21 +59,11 @@ private:
 		bool help = false;
 		bool overwrite = false;
 		std::optional<std::string> ssaid{};
-		std::optional<int> balloonCount{};
-		std::optional<int> bombCount{};
-		std::optional<int> coinCount{};
-		std::optional<int> freeCoinCount{};
 		std::optional<int> hintCount{};
-		std::optional<int> teleportCount{};
-		std::optional<int> unlimitedCoinCount{};
+		std::optional<int> superpowerCount{};
 		bool updateAll = false;
-		bool updateBalloon = false;
-		bool updateBomb = false;
-		bool updateCoin = false;
-		bool updateFreeCoin = false;
 		bool updateHint = false;
-		bool updateTeleport = false;
-		bool updateUnlimitedCoin = false;
+		bool updateSuperpower = false;
 		bool dataOptionSpecified = false;
 		std::optional<std::string> powerAction{};
 		std::optional<std::string> powerMode{};
@@ -100,13 +91,8 @@ private:
 
 	struct PreferencesState
 	{
-		FieldState balloons{};
-		FieldState bombs{};
-		FieldState coins{};
-		FieldState freeCoins{};
 		FieldState hints{};
-		FieldState teleports{};
-		FieldState unlimitedCoins{};
+		FieldState superpowers{};
 	};
 
 	struct TagRange
@@ -199,20 +185,10 @@ private:
 				std::cerr << "Invalid " << name << " count: " << quote(value) << "." << std::endl;
 				return false;
 			}
-			if ("balloon" == name || "balloons" == name)
-				options.balloonCount = parsed;
-			else if ("bomb" == name || "bombs" == name)
-				options.bombCount = parsed;
-			else if ("coin" == name || "coins" == name)
-				options.coinCount = parsed;
-			else if ("free-coin" == name || "free-coins" == name)
-				options.freeCoinCount = parsed;
-			else if ("hint" == name || "hints" == name)
+			if ("hint" == name || "hints" == name)
 				options.hintCount = parsed;
-			else if ("teleport" == name || "teleports" == name)
-				options.teleportCount = parsed;
-			else if ("unlimited-coin" == name || "unlimited-coins" == name)
-				options.unlimitedCoinCount = parsed;
+			else if ("superpower" == name || "superpowers" == name)
+				options.superpowerCount = parsed;
 			else
 			{
 				std::cerr << "Unknown protected quantity: " << quote(name) << "." << std::endl;
@@ -236,20 +212,10 @@ private:
 			const std::string name = lowercase(argv[++index]);
 			if ("all" == name)
 				options.updateAll = true;
-			else if ("balloon" == name || "balloons" == name)
-				options.updateBalloon = true;
-			else if ("bomb" == name || "bombs" == name)
-				options.updateBomb = true;
-			else if ("coin" == name || "coins" == name)
-				options.updateCoin = true;
-			else if ("free-coin" == name || "free-coins" == name)
-				options.updateFreeCoin = true;
 			else if ("hint" == name || "hints" == name)
 				options.updateHint = true;
-			else if ("teleport" == name || "teleports" == name)
-				options.updateTeleport = true;
-			else if ("unlimited-coin" == name || "unlimited-coins" == name)
-				options.updateUnlimitedCoin = true;
+			else if ("superpower" == name || "superpowers" == name)
+				options.updateSuperpower = true;
 			else
 			{
 				std::cerr << "Unknown protected quantity: " << quote(name) << "." << std::endl;
@@ -306,19 +272,17 @@ private:
 		std::cout
 			<< "Usage: " << program << " [options]\n\n"
 			<< "Input options:\n"
-			<< "  -il, --input-local <local>          Read a local file or CTR2.xml in a local directory.\n"
+			<< "  -il, --input-local <local>          Read a local file or TIMETRAVEL.xml in a local directory.\n"
 			<< "  -in, --input-network <network>      Read a mounted network path.\n"
-			<< "  -iu, --input-user <user>            Read CTR2.xml for an Android user ID.\n\n"
+			<< "  -iu, --input-user <user>            Read TIMETRAVEL.xml for an Android user ID.\n\n"
 			<< "Output options:\n"
 			<< "  -oc, --output-console               Write the XML document to standard output.\n"
-			<< "  -od, --output-directory <directory> Write CTR2.xml to a local directory.\n"
+			<< "  -od, --output-directory <directory> Write TIMETRAVEL.xml to a local directory.\n"
 			<< "  -of, --output-file <file>           Write to a local file.\n"
 			<< "  -on, --output-network <network>     Write to a mounted network path.\n\n"
 			<< "Modification options:\n"
 			<< "  -s, --set <name> <value> [...]      Set protected quantities without updating hashes.\n"
-			<< "                                       Names: ssaid, balloon(s), bomb(s), coin(s),\n"
-			<< "                                       free-coin(s), hint(s), teleport(s),\n"
-			<< "                                       unlimited-coin(s).\n"
+			<< "                                       Names: ssaid, hint(s), superpower(s).\n"
 			<< "  -u, --update <name> [...]           Update selected integrity values. Use all for every hash.\n\n"
 			<< "Power options:\n"
 			<< "  -p, --power reboot [mode]           Reboot normally or into bootloader, fastboot,\n"
@@ -441,7 +405,7 @@ private:
 			/ std::to_string(userId) / PackageName;
 		if (!std::filesystem::is_directory(packageDirectory, error))
 		{
-			std::cerr << "The Cut the Rope 2 is not installed for Android user " << userId << "." << std::endl;
+			std::cerr << "Cut the Rope Time Travel is not installed for Android user " << userId << "." << std::endl;
 			return false;
 		}
 		struct stat information{};
@@ -685,20 +649,10 @@ private:
 
 	bool readState(const std::string& document, PreferencesState& state)
 	{
-		return readCount(document, "com.zeptolab.ctr2.f2p.balloons", state.balloons.count)
-			&& readHash(document, "com.zeptolab.ctr2.f2p.balloons_HASH", state.balloons.hash)
-			&& readCount(document, "com.zeptolab.ctr2.f2p.bombs", state.bombs.count)
-			&& readHash(document, "com.zeptolab.ctr2.f2p.bombs_HASH", state.bombs.hash)
-			&& readCount(document, "com.zeptolab.ctr2.f2p.coins", state.coins.count)
-			&& readHash(document, "com.zeptolab.ctr2.f2p.coins_HASH", state.coins.hash)
-			&& readCount(document, "com.zeptolab.ctr2.f2p.coins_free", state.freeCoins.count)
-			&& readHash(document, "com.zeptolab.ctr2.f2p.coins_free_HASH", state.freeCoins.hash)
-			&& readCount(document, "com.zeptolab.ctr2.f2p.hints", state.hints.count)
-			&& readHash(document, "com.zeptolab.ctr2.f2p.hints_HASH", state.hints.hash)
-			&& readCount(document, "com.zeptolab.ctr2.f2p.teleports", state.teleports.count)
-			&& readHash(document, "com.zeptolab.ctr2.f2p.teleports_HASH", state.teleports.hash)
-			&& readCount(document, "com.zeptolab.ctr2.f2p.coins_unlim", state.unlimitedCoins.count)
-			&& readHash(document, "com.zeptolab.ctr2.f2p.coins_unlim_HASH", state.unlimitedCoins.hash);
+		return readCount(document, "PREFS_HINTS_COUNT", state.hints.count)
+			&& readHash(document, "PREFS_HINTS_COUNT_HASH", state.hints.hash)
+			&& readCount(document, "PREFS_SUPERPOWERS_COUNT", state.superpowers.count)
+			&& readHash(document, "PREFS_SUPERPOWERS_COUNT_HASH", state.superpowers.hash);
 	}
 
 	bool setCount(std::string& document, const std::string& key, const int value)
@@ -1329,10 +1283,9 @@ private:
 		return result.str();
 	}
 
-	std::string countHash(const std::string& ssaid, const std::string& logicalKey, const int count)
+	std::string countHash(const std::string& ssaid, const int count)
 	{
-		const std::string decimal = std::to_string(count);
-		return md5(decimal + "!don'thackthis!" + logicalKey + '!' + decimal + '!' + ssaid + "!ctr2.");
+		return md5(ssaid + HashSalt + std::to_string(count));
 	}
 
 	bool writeFileLocked(const std::filesystem::path& path, const std::string& contents)
@@ -1419,87 +1372,49 @@ private:
 		return successful;
 	}
 
-	bool shouldUpdateBalloonHash(const Options& options)
-	{
-		return options.updateAll || options.updateBalloon;
-	}
-
-	bool shouldUpdateBombHash(const Options& options)
-	{
-		return options.updateAll || options.updateBomb;
-	}
-
-	bool shouldUpdateCoinHash(const Options& options)
-	{
-		return options.updateAll || options.updateCoin;
-	}
-
-	bool shouldUpdateFreeCoinHash(const Options& options)
-	{
-		return options.updateAll || options.updateFreeCoin;
-	}
-
 	bool shouldUpdateHintHash(const Options& options)
 	{
 		return options.updateAll || options.updateHint;
 	}
 
-	bool shouldUpdateTeleportHash(const Options& options)
+	bool shouldUpdateSuperpowerHash(const Options& options)
 	{
-		return options.updateAll || options.updateTeleport;
-	}
-
-	bool shouldUpdateUnlimitedCoinHash(const Options& options)
-	{
-		return options.updateAll || options.updateUnlimitedCoin;
+		return options.updateAll || options.updateSuperpower;
 	}
 
 	bool applyRequestedChanges(std::string& document, const PreferencesState& before, const Options& options,
 		const std::string& ssaid)
 	{
 		auto apply = [&](const FieldState& field, const std::optional<int>& requested,
-			const bool updateHash, const std::string& countKey, const std::string& hashKey,
-			const std::string& logicalKey)
+			const bool updateHash, const std::string& countKey, const std::string& hashKey)
 		{
 			const int targetCount = requested.value_or(field.count);
 			if (requested.has_value() && !setCount(document, countKey, targetCount))
 				return false;
-			return !updateHash || setHash(document, hashKey, countHash(ssaid, logicalKey, targetCount));
+			return !updateHash || setHash(document, hashKey, countHash(ssaid, targetCount));
 		};
-		return apply(before.balloons, options.balloonCount, shouldUpdateBalloonHash(options),
-			"com.zeptolab.ctr2.f2p.balloons", "com.zeptolab.ctr2.f2p.balloons_HASH", "f2p.balloons")
-			&& apply(before.bombs, options.bombCount, shouldUpdateBombHash(options),
-				"com.zeptolab.ctr2.f2p.bombs", "com.zeptolab.ctr2.f2p.bombs_HASH", "f2p.bombs")
-			&& apply(before.coins, options.coinCount, shouldUpdateCoinHash(options),
-			"com.zeptolab.ctr2.f2p.coins", "com.zeptolab.ctr2.f2p.coins_HASH", "f2p.coins")
-			&& apply(before.freeCoins, options.freeCoinCount, shouldUpdateFreeCoinHash(options),
-				"com.zeptolab.ctr2.f2p.coins_free", "com.zeptolab.ctr2.f2p.coins_free_HASH", "f2p.coins_free")
-			&& apply(before.hints, options.hintCount, shouldUpdateHintHash(options),
-				"com.zeptolab.ctr2.f2p.hints", "com.zeptolab.ctr2.f2p.hints_HASH", "f2p.hints")
-			&& apply(before.teleports, options.teleportCount, shouldUpdateTeleportHash(options),
-				"com.zeptolab.ctr2.f2p.teleports", "com.zeptolab.ctr2.f2p.teleports_HASH", "f2p.teleports")
-			&& apply(before.unlimitedCoins, options.unlimitedCoinCount,
-				shouldUpdateUnlimitedCoinHash(options),
-				"com.zeptolab.ctr2.f2p.coins_unlim", "com.zeptolab.ctr2.f2p.coins_unlim_HASH", "f2p.coins_unlim");
+		return apply(before.hints, options.hintCount, shouldUpdateHintHash(options),
+				"PREFS_HINTS_COUNT", "PREFS_HINTS_COUNT_HASH")
+			&& apply(before.superpowers, options.superpowerCount, shouldUpdateSuperpowerHash(options),
+				"PREFS_SUPERPOWERS_COUNT", "PREFS_SUPERPOWERS_COUNT_HASH");
 	}
 
 	bool fieldMatches(const FieldState& actual, const FieldState& before, const std::optional<int>& requested,
-		const std::string& ssaid, const std::string& logicalKey, const bool updateHash)
+		const std::string& ssaid, const bool updateHash)
 	{
 		const int targetCount = requested.value_or(before.count);
 		const bool countMatches = !requested.has_value() || actual.count == targetCount;
-		const bool hashMatches = !updateHash || actual.hash == countHash(ssaid, logicalKey, targetCount);
+		const bool hashMatches = !updateHash || actual.hash == countHash(ssaid, targetCount);
 		return countMatches && hashMatches;
 	}
 
-	bool printField(const std::string& label, const std::string& logicalKey,
-		const FieldState& before, const FieldState& after, const std::optional<int>& requested,
-		const std::string& originalSsaid, const std::string& effectiveSsaid,
-		const bool updateHash, const bool attempted)
+	bool printField(const std::string& label, const FieldState& before, const FieldState& after,
+		const std::optional<int>& requested, const std::string& originalSsaid,
+		const std::string& effectiveSsaid, const bool updateHash, const bool attempted)
 	{
 		const int targetCount = requested.value_or(before.count);
-		const std::string expectedBeforeHash = countHash(originalSsaid, logicalKey, before.count);
-		const std::string targetHash = countHash(effectiveSsaid, logicalKey, targetCount);
+		const std::string expectedBeforeHash = countHash(originalSsaid, before.count);
+		const std::string targetHash = countHash(effectiveSsaid, targetCount);
 		const std::string expectedBeforeSuffix = before.hash == expectedBeforeHash
 			? std::string() : " (expected: " + expectedBeforeHash + ')';
 
@@ -1524,7 +1439,7 @@ private:
 				? std::string() : " (expected: " + targetHash + ')';
 			std::cerr << label << " count hash: " << after.hash << expectedAfterSuffix << std::endl;
 		}
-		return after.hash != countHash(effectiveSsaid, logicalKey, after.count);
+		return after.hash != countHash(effectiveSsaid, after.count);
 	}
 
 	void printState(const std::filesystem::path& inputPath,
@@ -1541,29 +1456,13 @@ private:
 				<< (ssaidUpdateSuccessful ? "successful" : "failed") << std::endl;
 		else
 			std::cerr << "SSAID: " << originalSsaid << std::endl;
-		bool integrityMismatch = printField("Balloon", "f2p.balloons", before.balloons, after.balloons,
-			options.balloonCount, originalSsaid, effectiveSsaid, shouldUpdateBalloonHash(options), attempted);
-		integrityMismatch = printField("Bomb", "f2p.bombs", before.bombs, after.bombs, options.bombCount,
-			originalSsaid, effectiveSsaid, shouldUpdateBombHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Coin", "f2p.coins", before.coins, after.coins, options.coinCount,
-			originalSsaid, effectiveSsaid, shouldUpdateCoinHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Free coin", "f2p.coins_free", before.freeCoins, after.freeCoins,
-			options.freeCoinCount, originalSsaid, effectiveSsaid,
-			shouldUpdateFreeCoinHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Hint", "f2p.hints", before.hints, after.hints, options.hintCount,
-			originalSsaid, effectiveSsaid, shouldUpdateHintHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Teleport", "f2p.teleports", before.teleports, after.teleports,
-			options.teleportCount, originalSsaid, effectiveSsaid,
-			shouldUpdateTeleportHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Unlimited coin", "f2p.coins_unlim", before.unlimitedCoins,
-			after.unlimitedCoins, options.unlimitedCoinCount, originalSsaid, effectiveSsaid,
-			shouldUpdateUnlimitedCoinHash(options), attempted) || integrityMismatch;
-		const bool modificationRequested = options.ssaid.has_value() || options.balloonCount.has_value()
-			|| options.bombCount.has_value() || options.coinCount.has_value() || options.freeCoinCount.has_value()
-			|| options.hintCount.has_value() || options.teleportCount.has_value()
-			|| options.unlimitedCoinCount.has_value() || options.updateAll || options.updateBalloon
-			|| options.updateBomb || options.updateCoin || options.updateFreeCoin || options.updateHint
-			|| options.updateTeleport || options.updateUnlimitedCoin;
+		bool integrityMismatch = printField("Hint", before.hints, after.hints, options.hintCount, originalSsaid,
+			effectiveSsaid, shouldUpdateHintHash(options), attempted);
+		integrityMismatch = printField("Superpower", before.superpowers, after.superpowers, options.superpowerCount,
+			originalSsaid, effectiveSsaid, shouldUpdateSuperpowerHash(options), attempted) || integrityMismatch;
+		const bool modificationRequested = options.ssaid.has_value() || options.hintCount.has_value()
+			|| options.superpowerCount.has_value() || options.updateAll
+			|| options.updateHint || options.updateSuperpower;
 		if (modificationRequested && integrityMismatch)
 			std::cerr << "Note: Update the integrity values before launching the game." << std::endl;
 		if (ssaidChanged)
@@ -1627,12 +1526,9 @@ public:
 		}
 
 		PreferencesState after = before;
-		const bool gameChangesRequested = ssaidChanged || options.balloonCount.has_value()
-			|| options.bombCount.has_value() || options.coinCount.has_value() || options.freeCoinCount.has_value()
-			|| options.hintCount.has_value() || options.teleportCount.has_value()
-			|| options.unlimitedCoinCount.has_value() || options.updateAll || options.updateBalloon
-			|| options.updateBomb || options.updateCoin || options.updateFreeCoin || options.updateHint
-			|| options.updateTeleport || options.updateUnlimitedCoin;
+		const bool gameChangesRequested = ssaidChanged || options.hintCount.has_value()
+			|| options.superpowerCount.has_value() || options.updateAll
+			|| options.updateHint || options.updateSuperpower;
 		const bool outputCopyRequested = OutputKind::InPlace != options.outputKind;
 		bool gameUpdateSuccessful = true;
 		if (gameChangesRequested || outputCopyRequested)
@@ -1653,20 +1549,10 @@ public:
 					gameUpdateSuccessful = readFile(*outputPath, verifiedDocument) && readState(verifiedDocument, after);
 			}
 			if (gameUpdateSuccessful)
-				gameUpdateSuccessful = fieldMatches(after.balloons, before.balloons, options.balloonCount,
-					effectiveSsaid, "f2p.balloons", shouldUpdateBalloonHash(options))
-					&& fieldMatches(after.bombs, before.bombs, options.bombCount,
-						effectiveSsaid, "f2p.bombs", shouldUpdateBombHash(options))
-					&& fieldMatches(after.coins, before.coins, options.coinCount,
-					effectiveSsaid, "f2p.coins", shouldUpdateCoinHash(options))
-					&& fieldMatches(after.freeCoins, before.freeCoins, options.freeCoinCount,
-						effectiveSsaid, "f2p.coins_free", shouldUpdateFreeCoinHash(options))
-					&& fieldMatches(after.hints, before.hints, options.hintCount,
-						effectiveSsaid, "f2p.hints", shouldUpdateHintHash(options))
-					&& fieldMatches(after.teleports, before.teleports, options.teleportCount,
-						effectiveSsaid, "f2p.teleports", shouldUpdateTeleportHash(options))
-					&& fieldMatches(after.unlimitedCoins, before.unlimitedCoins, options.unlimitedCoinCount,
-						effectiveSsaid, "f2p.coins_unlim", shouldUpdateUnlimitedCoinHash(options));
+				gameUpdateSuccessful = fieldMatches(after.hints, before.hints, options.hintCount,
+						effectiveSsaid, shouldUpdateHintHash(options))
+					&& fieldMatches(after.superpowers, before.superpowers, options.superpowerCount,
+						effectiveSsaid, shouldUpdateSuperpowerHash(options));
 			if (!gameUpdateSuccessful)
 			{
 				if (OutputKind::Console == options.outputKind)
@@ -1688,6 +1574,6 @@ public:
 
 int main(int argc, char* argv[])
 {
-	Ctr2Application application{};
+	CtrTimeTravelApplication application{};
 	return application.run(argc, argv);
 }

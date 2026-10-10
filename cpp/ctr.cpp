@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 namespace
@@ -67,6 +68,9 @@ private:
 		bool updateHint = false;
 		bool updateMagnet = false;
 		bool updateSuperpower = false;
+		bool dataOptionSpecified = false;
+		std::optional<std::string> powerAction{};
+		std::optional<std::string> powerMode{};
 	};
 
 	struct LocatedPreferences
@@ -146,6 +150,137 @@ private:
 		return isAlias(argument, {"h", "/h", "-h", "help", "/help", "--help"});
 	}
 
+	bool isTopLevelOption(const std::string& argument)
+	{
+		return isHelpArgument(argument)
+			|| isAlias(argument, {"il", "/il", "-il", "input-local", "/input-local", "--input-local"})
+			|| isAlias(argument, {"in", "/in", "-in", "input-network", "/input-network", "--input-network"})
+			|| isAlias(argument, {"iu", "/iu", "-iu", "input-user", "/input-user", "--input-user"})
+			|| isAlias(argument, {"oc", "/oc", "-oc", "output-console", "/output-console", "--output-console"})
+			|| isAlias(argument, {"od", "/od", "-od", "output-directory", "/output-directory", "--output-directory"})
+			|| isAlias(argument, {"of", "/of", "-of", "output-file", "/output-file", "--output-file"})
+			|| isAlias(argument, {"on", "/on", "-on", "output-network", "/output-network", "--output-network"})
+			|| isAlias(argument, {"p", "/p", "-p", "power", "/power", "--power"})
+			|| isAlias(argument, {"s", "/s", "-s", "set", "/set", "--set"})
+			|| isAlias(argument, {"u", "/u", "-u", "update", "/update", "--update"})
+			|| isAlias(argument, {"y", "/y", "-y", "yes", "/yes", "--yes"});
+	}
+
+	bool parseSetArguments(const int argc, char* argv[], int& index, Options& options)
+	{
+		bool found = false;
+		while (index + 1 < argc && !isTopLevelOption(argv[index + 1]))
+		{
+			found = true;
+			const std::string name = lowercase(argv[++index]);
+			if (index + 1 >= argc || isTopLevelOption(argv[index + 1]))
+			{
+				std::cerr << "Missing value for protected quantity: " << quote(name) << "." << std::endl;
+				return false;
+			}
+			const std::string value = argv[++index];
+			if ("ssaid" == name)
+			{
+				options.ssaid = value;
+				continue;
+			}
+
+			int parsed = 0;
+			if (!parseInteger(value, parsed))
+			{
+				std::cerr << "Invalid " << name << " count: " << quote(value) << "." << std::endl;
+				return false;
+			}
+			if ("coin" == name || "coins" == name)
+				options.coinCount = parsed;
+			else if ("hint" == name || "hints" == name)
+				options.hintCount = parsed;
+			else if ("magnet" == name || "magnets" == name)
+				options.magnetCount = parsed;
+			else if ("superpower" == name || "superpowers" == name)
+				options.superpowerCount = parsed;
+			else
+			{
+				std::cerr << "Unknown protected quantity: " << quote(name) << "." << std::endl;
+				return false;
+			}
+		}
+		if (!found)
+		{
+			std::cerr << "Missing protected quantity for set operation." << std::endl;
+			return false;
+		}
+		return true;
+	}
+
+	bool parseUpdateArguments(const int argc, char* argv[], int& index, Options& options)
+	{
+		bool found = false;
+		while (index + 1 < argc && !isTopLevelOption(argv[index + 1]))
+		{
+			found = true;
+			const std::string name = lowercase(argv[++index]);
+			if ("all" == name)
+				options.updateAll = true;
+			else if ("coin" == name || "coins" == name)
+				options.updateCoin = true;
+			else if ("hint" == name || "hints" == name)
+				options.updateHint = true;
+			else if ("magnet" == name || "magnets" == name)
+				options.updateMagnet = true;
+			else if ("superpower" == name || "superpowers" == name)
+				options.updateSuperpower = true;
+			else
+			{
+				std::cerr << "Unknown protected quantity: " << quote(name) << "." << std::endl;
+				return false;
+			}
+		}
+		if (!found)
+		{
+			std::cerr << "Missing protected quantity for update operation." << std::endl;
+			return false;
+		}
+		return true;
+	}
+
+	bool parsePowerArguments(const int argc, char* argv[], int& index, const std::string& argument,
+		Options& options)
+	{
+		if (index + 1 >= argc)
+		{
+			std::cerr << "Missing value for argument: " << quote(argument) << "." << std::endl;
+			return false;
+		}
+		const std::string action = lowercase(argv[++index]);
+		if ("shutdown" == action)
+		{
+			options.powerAction = action;
+			options.powerMode.reset();
+			return true;
+		}
+		if ("reboot" != action)
+		{
+			std::cerr << "Unknown power action: " << quote(action) << "." << std::endl;
+			return false;
+		}
+
+		options.powerAction = action;
+		options.powerMode.reset();
+		if (index + 1 < argc && !isTopLevelOption(argv[index + 1]))
+		{
+			const std::string mode = lowercase(argv[++index]);
+			if ("bootloader" != mode && "fastboot" != mode && "recovery" != mode
+				&& "safemode" != mode && "userspace" != mode)
+			{
+				std::cerr << "Unknown reboot mode: " << quote(mode) << "." << std::endl;
+				return false;
+			}
+			options.powerMode = mode;
+		}
+		return true;
+	}
+
 	void printHelp(const std::string& program)
 	{
 		std::cout
@@ -160,16 +295,14 @@ private:
 			<< "  -of, --output-file <file>           Write to a local file.\n"
 			<< "  -on, --output-network <network>     Write to a mounted network path.\n\n"
 			<< "Modification options:\n"
-			<< "  -s,  --ssaid <SSAID>                Change the SSAID.\n"
-			<< "  -sc, --set-coin <coin>              Change the coin count.\n"
-			<< "  -sh, --set-hint <hint>              Change the hint count.\n"
-			<< "  -sm, --set-magnet <magnet>          Change the magnet count.\n"
-			<< "  -ss, --set-superpower <superpower>  Change the superpower count.\n"
-			<< "  -u,  --update-all                   Update all count hashes.\n"
-			<< "  -uc, --update-coin                  Update the coin hash.\n"
-			<< "  -uh, --update-hint                  Update the hint hash.\n"
-			<< "  -um, --update-magnet                Update the magnet hash.\n"
-			<< "  -up, --update-superpower            Update the superpower hash.\n\n"
+			<< "  -s, --set <name> <value> [...]      Set protected quantities without updating hashes.\n"
+			<< "                                       Names: ssaid, coin(s), hint(s), magnet(s),\n"
+			<< "                                       superpower(s).\n"
+			<< "  -u, --update <name> [...]           Update selected integrity values. Use all for every hash.\n\n"
+			<< "Power options:\n"
+			<< "  -p, --power reboot [mode]           Reboot normally or into bootloader, fastboot,\n"
+			<< "                                       recovery, safemode, or userspace.\n"
+			<< "  -p, --power shutdown                Shut down the device.\n\n"
 			<< "Other options:\n"
 			<< "  -h,  --help                         Show this help and exit successfully.\n"
 			<< "  -y,  --yes                          Overwrite an existing output without asking.\n\n"
@@ -203,6 +336,8 @@ private:
 			const std::string argument = argv[index];
 			const char* value = nullptr;
 			int parsed = 0;
+			if (!isAlias(argument, {"p", "/p", "-p", "power", "/power", "--power"}))
+				options.dataOptionSpecified = true;
 			// Keep option recognition in lexicographical order.
 			if (isAlias(argument, {"il", "/il", "-il", "input-local", "/input-local", "--input-local"}))
 			{
@@ -250,62 +385,18 @@ private:
 				options.outputKind = OutputKind::Network;
 				options.outputPath = value;
 			}
-			else if (isAlias(argument, {"s", "/s", "-s", "ssaid", "/ssaid", "--ssaid"}))
+			else if (isAlias(argument, {"p", "/p", "-p", "power", "/power", "--power"}))
 			{
-				if (nullptr == (value = nextValue(index, argument))) return false;
-				options.ssaid = value;
+				if (!parsePowerArguments(argc, argv, index, argument, options)) return false;
 			}
-			else if (isAlias(argument, {"sc", "/sc", "-sc", "set-coin", "/set-coin", "--set-coin"}))
+			else if (isAlias(argument, {"s", "/s", "-s", "set", "/set", "--set"}))
 			{
-				if (nullptr == (value = nextValue(index, argument))) return false;
-				if (!parseInteger(value, parsed))
-				{
-					std::cerr << "Invalid coin count: " << quote(value) << "." << std::endl;
-					return false;
-				}
-				options.coinCount = parsed;
+				if (!parseSetArguments(argc, argv, index, options)) return false;
 			}
-			else if (isAlias(argument, {"sh", "/sh", "-sh", "set-hint", "/set-hint", "--set-hint"}))
+			else if (isAlias(argument, {"u", "/u", "-u", "update", "/update", "--update"}))
 			{
-				if (nullptr == (value = nextValue(index, argument))) return false;
-				if (!parseInteger(value, parsed))
-				{
-					std::cerr << "Invalid hint count: " << quote(value) << "." << std::endl;
-					return false;
-				}
-				options.hintCount = parsed;
+				if (!parseUpdateArguments(argc, argv, index, options)) return false;
 			}
-			else if (isAlias(argument, {"sm", "/sm", "-sm", "set-magnet", "/set-magnet", "--set-magnet"}))
-			{
-				if (nullptr == (value = nextValue(index, argument))) return false;
-				if (!parseInteger(value, parsed))
-				{
-					std::cerr << "Invalid magnet count: " << quote(value) << "." << std::endl;
-					return false;
-				}
-				options.magnetCount = parsed;
-			}
-			else if (isAlias(argument, {"ss", "/ss", "-ss", "set-superpower", "/set-superpower", "--set-superpower"}))
-			{
-				if (nullptr == (value = nextValue(index, argument))) return false;
-				if (!parseInteger(value, parsed))
-				{
-					std::cerr << "Invalid superpower count: " << quote(value) << "." << std::endl;
-					return false;
-				}
-				options.superpowerCount = parsed;
-			}
-			else if (isAlias(argument, {"u", "/u", "-u", "ua", "/ua", "-ua", "update", "/update", "--update",
-				"update-all", "/update-all", "--update-all"}))
-				options.updateAll = true;
-			else if (isAlias(argument, {"uc", "/uc", "-uc", "update-coin", "/update-coin", "--update-coin"}))
-				options.updateCoin = true;
-			else if (isAlias(argument, {"uh", "/uh", "-uh", "update-hint", "/update-hint", "--update-hint"}))
-				options.updateHint = true;
-			else if (isAlias(argument, {"um", "/um", "-um", "update-magnet", "/update-magnet", "--update-magnet"}))
-				options.updateMagnet = true;
-			else if (isAlias(argument, {"up", "/up", "-up", "update-superpower", "/update-superpower", "--update-superpower"}))
-				options.updateSuperpower = true;
 			else if (isAlias(argument, {"y", "/y", "-y", "yes", "/yes", "--yes"}))
 				options.overwrite = true;
 			else
@@ -1258,28 +1349,70 @@ private:
 		return verified.has_value() && *verified == ssaid;
 	}
 
-	bool shouldUpdateCoinHash(const Options& options, const bool ssaidChanged)
+	bool executePowerAction(const Options& options)
 	{
-		return ssaidChanged || options.updateAll || options.updateCoin || options.coinCount.has_value();
+		if (!options.powerAction.has_value())
+			return true;
+
+		std::string description = *options.powerAction;
+		if (options.powerMode.has_value())
+			description += ' ' + *options.powerMode;
+		std::cerr << "Power action: " << description << "." << std::endl;
+		std::cerr.flush();
+		sync();
+
+		const pid_t child = fork();
+		if (child < 0)
+		{
+			std::cerr << "Failed to start the power action." << std::endl;
+			return false;
+		}
+		if (0 == child)
+		{
+			if ("shutdown" == *options.powerAction)
+				execl("/system/bin/reboot", "reboot", "-p", static_cast<char*>(nullptr));
+			else if (options.powerMode.has_value())
+				execl("/system/bin/reboot", "reboot", options.powerMode->c_str(), static_cast<char*>(nullptr));
+			else
+				execl("/system/bin/reboot", "reboot", static_cast<char*>(nullptr));
+			_exit(127);
+		}
+
+		int status = 0;
+		pid_t waited = -1;
+		do
+		{
+			waited = waitpid(child, &status, 0);
+		}
+		while (waited < 0 && EINTR == errno);
+		const bool successful = waited == child && WIFEXITED(status) && 0 == WEXITSTATUS(status);
+		if (!successful)
+			std::cerr << "Power action failed." << std::endl;
+		return successful;
 	}
 
-	bool shouldUpdateHintHash(const Options& options, const bool ssaidChanged)
+	bool shouldUpdateCoinHash(const Options& options)
 	{
-		return ssaidChanged || options.updateAll || options.updateHint || options.hintCount.has_value();
+		return options.updateAll || options.updateCoin;
 	}
 
-	bool shouldUpdateMagnetHash(const Options& options, const bool ssaidChanged)
+	bool shouldUpdateHintHash(const Options& options)
 	{
-		return ssaidChanged || options.updateAll || options.updateMagnet || options.magnetCount.has_value();
+		return options.updateAll || options.updateHint;
 	}
 
-	bool shouldUpdateSuperpowerHash(const Options& options, const bool ssaidChanged)
+	bool shouldUpdateMagnetHash(const Options& options)
 	{
-		return ssaidChanged || options.updateAll || options.updateSuperpower || options.superpowerCount.has_value();
+		return options.updateAll || options.updateMagnet;
+	}
+
+	bool shouldUpdateSuperpowerHash(const Options& options)
+	{
+		return options.updateAll || options.updateSuperpower;
 	}
 
 	bool applyRequestedChanges(std::string& document, const PreferencesState& before, const Options& options,
-		const std::string& ssaid, const bool ssaidChanged)
+		const std::string& ssaid)
 	{
 		auto apply = [&](const FieldState& field, const std::optional<int>& requested,
 			const bool updateHash, const std::string& countKey, const std::string& hashKey)
@@ -1289,13 +1422,13 @@ private:
 				return false;
 			return !updateHash || setHash(document, hashKey, countHash(ssaid, targetCount));
 		};
-		return apply(before.coins, options.coinCount, shouldUpdateCoinHash(options, ssaidChanged),
+		return apply(before.coins, options.coinCount, shouldUpdateCoinHash(options),
 			"PREFS_COINS_COUNT", "PREFS_COINS_COUNT_HASH")
-			&& apply(before.hints, options.hintCount, shouldUpdateHintHash(options, ssaidChanged),
+			&& apply(before.hints, options.hintCount, shouldUpdateHintHash(options),
 				"PREFS_HINTS_COUNT", "PREFS_HINTS_COUNT_HASH")
-			&& apply(before.magents, options.magnetCount, shouldUpdateMagnetHash(options, ssaidChanged),
+			&& apply(before.magents, options.magnetCount, shouldUpdateMagnetHash(options),
 				"PREFS_MAGNETS_COUNT", "PREFS_MAGNETS_COUNT_HASH")
-			&& apply(before.superpowers, options.superpowerCount, shouldUpdateSuperpowerHash(options, ssaidChanged),
+			&& apply(before.superpowers, options.superpowerCount, shouldUpdateSuperpowerHash(options),
 				"PREFS_SUPERPOWERS_COUNT", "PREFS_SUPERPOWERS_COUNT_HASH");
 	}
 
@@ -1308,14 +1441,14 @@ private:
 		return countMatches && hashMatches;
 	}
 
-	void printField(const std::string& label, const FieldState& before, const FieldState& after,
+	bool printField(const std::string& label, const FieldState& before, const FieldState& after,
 		const std::optional<int>& requested, const std::string& originalSsaid,
 		const std::string& effectiveSsaid, const bool updateHash, const bool attempted)
 	{
 		const int targetCount = requested.value_or(before.count);
 		const std::string expectedBeforeHash = countHash(originalSsaid, before.count);
 		const std::string targetHash = countHash(effectiveSsaid, targetCount);
-		const std::string expectedSuffix = before.hash == expectedBeforeHash
+		const std::string expectedBeforeSuffix = before.hash == expectedBeforeHash
 			? std::string() : " (expected: " + expectedBeforeHash + ')';
 
 		if (requested.has_value())
@@ -1330,11 +1463,16 @@ private:
 		if (updateHash)
 		{
 			const bool successful = attempted && after.hash == targetHash;
-			std::cerr << label << " count hash: " << before.hash << expectedSuffix << " -> " << targetHash << " -> "
+			std::cerr << label << " count hash: " << before.hash << expectedBeforeSuffix << " -> " << targetHash << " -> "
 				<< (successful ? "successful" : "failed") << std::endl;
 		}
 		else
-			std::cerr << label << " count hash: " << before.hash << expectedSuffix << std::endl;
+		{
+			const std::string expectedAfterSuffix = after.hash == targetHash
+				? std::string() : " (expected: " + targetHash + ')';
+			std::cerr << label << " count hash: " << after.hash << expectedAfterSuffix << std::endl;
+		}
+		return after.hash != countHash(effectiveSsaid, after.count);
 	}
 
 	void printState(const std::filesystem::path& inputPath,
@@ -1348,17 +1486,25 @@ private:
 			std::cerr << "Output: " << outputPath->string() << std::endl;
 		if (options.ssaid.has_value())
 			std::cerr << "SSAID: " << originalSsaid << " -> " << *options.ssaid << " -> "
-				<< (ssaidUpdateSuccessful ? "reboot required" : "failed") << std::endl;
+				<< (ssaidUpdateSuccessful ? "successful" : "failed") << std::endl;
 		else
 			std::cerr << "SSAID: " << originalSsaid << std::endl;
-		printField("Coin", before.coins, after.coins, options.coinCount, originalSsaid,
-			effectiveSsaid, shouldUpdateCoinHash(options, ssaidChanged), attempted);
-		printField("Hint", before.hints, after.hints, options.hintCount, originalSsaid,
-			effectiveSsaid, shouldUpdateHintHash(options, ssaidChanged), attempted);
-		printField("Magnet", before.magents, after.magents, options.magnetCount, originalSsaid,
-			effectiveSsaid, shouldUpdateMagnetHash(options, ssaidChanged), attempted);
-		printField("Superpower", before.superpowers, after.superpowers, options.superpowerCount, originalSsaid,
-			effectiveSsaid, shouldUpdateSuperpowerHash(options, ssaidChanged), attempted);
+		bool integrityMismatch = printField("Coin", before.coins, after.coins, options.coinCount, originalSsaid,
+			effectiveSsaid, shouldUpdateCoinHash(options), attempted);
+		integrityMismatch = printField("Hint", before.hints, after.hints, options.hintCount, originalSsaid,
+			effectiveSsaid, shouldUpdateHintHash(options), attempted) || integrityMismatch;
+		integrityMismatch = printField("Magnet", before.magents, after.magents, options.magnetCount, originalSsaid,
+			effectiveSsaid, shouldUpdateMagnetHash(options), attempted) || integrityMismatch;
+		integrityMismatch = printField("Superpower", before.superpowers, after.superpowers, options.superpowerCount,
+			originalSsaid, effectiveSsaid, shouldUpdateSuperpowerHash(options), attempted) || integrityMismatch;
+		const bool modificationRequested = options.ssaid.has_value() || options.coinCount.has_value()
+			|| options.hintCount.has_value() || options.magnetCount.has_value()
+			|| options.superpowerCount.has_value() || options.updateAll || options.updateCoin
+			|| options.updateHint || options.updateMagnet || options.updateSuperpower;
+		if (modificationRequested && integrityMismatch)
+			std::cerr << "Note: Update the integrity values before launching the game." << std::endl;
+		if (ssaidChanged)
+			std::cerr << "Note: Restart the device before launching the game to apply the SSAID change." << std::endl;
 	}
 
 public:
@@ -1374,6 +1520,8 @@ public:
 			std::cerr << "Permission denied, are you root?" << std::endl;
 			return EXIT_FAILURE;
 		}
+		if (options.powerAction.has_value() && !options.dataOptionSpecified)
+			return executePowerAction(options) ? EXIT_SUCCESS : EXIT_FAILURE;
 
 		LocatedPreferences located{};
 		if (!locatePreferences(options, located))
@@ -1424,8 +1572,7 @@ public:
 		if (gameChangesRequested || outputCopyRequested)
 		{
 			std::string modifiedDocument = document;
-			gameUpdateSuccessful = applyRequestedChanges(modifiedDocument, before, options,
-				effectiveSsaid, ssaidChanged);
+			gameUpdateSuccessful = applyRequestedChanges(modifiedDocument, before, options, effectiveSsaid);
 			if (gameUpdateSuccessful && OutputKind::Console == options.outputKind)
 			{
 				std::cout.write(modifiedDocument.data(), static_cast<std::streamsize>(modifiedDocument.size()));
@@ -1441,13 +1588,13 @@ public:
 			}
 			if (gameUpdateSuccessful)
 				gameUpdateSuccessful = fieldMatches(after.coins, before.coins, options.coinCount,
-					effectiveSsaid, shouldUpdateCoinHash(options, ssaidChanged))
+					effectiveSsaid, shouldUpdateCoinHash(options))
 					&& fieldMatches(after.hints, before.hints, options.hintCount,
-						effectiveSsaid, shouldUpdateHintHash(options, ssaidChanged))
+						effectiveSsaid, shouldUpdateHintHash(options))
 					&& fieldMatches(after.magents, before.magents, options.magnetCount,
-						effectiveSsaid, shouldUpdateMagnetHash(options, ssaidChanged))
+						effectiveSsaid, shouldUpdateMagnetHash(options))
 					&& fieldMatches(after.superpowers, before.superpowers, options.superpowerCount,
-						effectiveSsaid, shouldUpdateSuperpowerHash(options, ssaidChanged));
+						effectiveSsaid, shouldUpdateSuperpowerHash(options));
 			if (!gameUpdateSuccessful)
 			{
 				if (OutputKind::Console == options.outputKind)
@@ -1459,7 +1606,10 @@ public:
 
 		printState(located.filePath, outputPath, originalSsaid, effectiveSsaid, before, after, options,
 			ssaidUpdateSuccessful, ssaidChanged, gameUpdateSuccessful);
-		return ssaidUpdateSuccessful && gameUpdateSuccessful ? EXIT_SUCCESS : EXIT_FAILURE;
+		bool successful = ssaidUpdateSuccessful && gameUpdateSuccessful;
+		if (successful && options.powerAction.has_value())
+			successful = executePowerAction(options);
+		return successful ? EXIT_SUCCESS : EXIT_FAILURE;
 	}
 };
 }
