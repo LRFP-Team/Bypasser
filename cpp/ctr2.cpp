@@ -16,6 +16,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <utility>
 #include <vector>
 
 #include <fcntl.h>
@@ -48,6 +49,14 @@ private:
 		Network
 	};
 
+	enum class EquationMode
+	{
+		Canonical,
+		Bought,
+		Earned,
+		Used
+	};
+
 	struct Options
 	{
 		InputKind inputKind = InputKind::User;
@@ -65,6 +74,12 @@ private:
 		std::optional<int> hintCount{};
 		std::optional<int> teleportCount{};
 		std::optional<int> unlimitedCoinCount{};
+		std::optional<EquationMode> balloonEquation{};
+		std::optional<EquationMode> bombEquation{};
+		std::optional<EquationMode> coinEquation{};
+		std::optional<EquationMode> freeCoinEquation{};
+		std::optional<EquationMode> hintEquation{};
+		std::optional<EquationMode> teleportEquation{};
 		bool updateAll = false;
 		bool updateBalloon = false;
 		bool updateBomb = false;
@@ -96,6 +111,13 @@ private:
 	{
 		int count = 0;
 		std::string hash{};
+		struct EquationState
+		{
+			int bought = 0;
+			int earned = 0;
+			int used = 0;
+		};
+		std::optional<EquationState> equation{};
 	};
 
 	struct PreferencesState
@@ -161,6 +183,7 @@ private:
 	bool isTopLevelOption(const std::string& argument)
 	{
 		return isHelpArgument(argument)
+			|| isAlias(argument, {"e", "/e", "-e", "equation", "/equation", "--equation"})
 			|| isAlias(argument, {"il", "/il", "-il", "input-local", "/input-local", "--input-local"})
 			|| isAlias(argument, {"in", "/in", "-in", "input-network", "/input-network", "--input-network"})
 			|| isAlias(argument, {"iu", "/iu", "-iu", "input-user", "/input-user", "--input-user"})
@@ -172,6 +195,75 @@ private:
 			|| isAlias(argument, {"s", "/s", "-s", "set", "/set", "--set"})
 			|| isAlias(argument, {"u", "/u", "-u", "update", "/update", "--update"})
 			|| isAlias(argument, {"y", "/y", "-y", "yes", "/yes", "--yes"});
+	}
+
+	bool parseEquationArguments(const int argc, char* argv[], int& index, Options& options)
+	{
+		bool found = false;
+		while (index + 1 < argc && !isTopLevelOption(argv[index + 1]))
+		{
+			found = true;
+			const std::string name = lowercase(argv[++index]);
+			std::optional<EquationMode>* destination = nullptr;
+			const bool all = "all" == name;
+			if (all)
+				destination = nullptr;
+			else if ("balloon" == name || "balloons" == name)
+				destination = &options.balloonEquation;
+			else if ("bomb" == name || "bombs" == name)
+				destination = &options.bombEquation;
+			else if ("coin" == name || "coins" == name)
+				destination = &options.coinEquation;
+			else if ("free-coin" == name || "free-coins" == name)
+				destination = &options.freeCoinEquation;
+			else if ("hint" == name || "hints" == name)
+				destination = &options.hintEquation;
+			else if ("teleport" == name || "teleports" == name)
+				destination = &options.teleportEquation;
+			else
+			{
+				std::cerr << "Unknown equation quantity: " << quote(name) << "." << std::endl;
+				return false;
+			}
+
+			EquationMode mode = EquationMode::Canonical;
+			if (index + 1 < argc && !isTopLevelOption(argv[index + 1]))
+			{
+				const std::string component = lowercase(argv[index + 1]);
+				if ("bought" == component)
+				{
+					mode = EquationMode::Bought;
+					++index;
+				}
+				else if ("earned" == component)
+				{
+					mode = EquationMode::Earned;
+					++index;
+				}
+				else if ("used" == component)
+				{
+					mode = EquationMode::Used;
+					++index;
+				}
+			}
+			if (all)
+			{
+				options.balloonEquation = mode;
+				options.bombEquation = mode;
+				options.coinEquation = mode;
+				options.freeCoinEquation = mode;
+				options.hintEquation = mode;
+				options.teleportEquation = mode;
+			}
+			else
+				*destination = mode;
+		}
+		if (!found)
+		{
+			std::cerr << "Missing protected quantity for equation operation." << std::endl;
+			return false;
+		}
+		return true;
 	}
 
 	bool parseSetArguments(const int argc, char* argv[], int& index, Options& options)
@@ -319,6 +411,11 @@ private:
 			<< "                                       Names: ssaid, balloon(s), bomb(s), coin(s),\n"
 			<< "                                       free-coin(s), hint(s), teleport(s),\n"
 			<< "                                       unlimited-coin(s).\n"
+			<< "  -e, --equation <name> [field] [...] Reconcile quantity equations.\n"
+			<< "                                       Names: all, balloon(s), bomb(s), coin(s),\n"
+			<< "                                       free-coin(s), hint(s), teleport(s).\n"
+			<< "                                       Fields: bought, earned, or used.\n"
+			<< "                                       Without a field: bought=0, earned=current, used=0.\n"
 			<< "  -u, --update <name> [...]           Update selected integrity values. Use all for every hash.\n\n"
 			<< "Power options:\n"
 			<< "  -p, --power reboot [mode]           Reboot normally or into bootloader, fastboot,\n"
@@ -360,7 +457,11 @@ private:
 			if (!isAlias(argument, {"p", "/p", "-p", "power", "/power", "--power"}))
 				options.dataOptionSpecified = true;
 			// Keep option recognition in lexicographical order.
-			if (isAlias(argument, {"il", "/il", "-il", "input-local", "/input-local", "--input-local"}))
+			if (isAlias(argument, {"e", "/e", "-e", "equation", "/equation", "--equation"}))
+			{
+				if (!parseEquationArguments(argc, argv, index, options)) return false;
+			}
+			else if (isAlias(argument, {"il", "/il", "-il", "input-local", "/input-local", "--input-local"}))
 			{
 				if (nullptr == (value = nextValue(index, argument))) return false;
 				options.inputKind = InputKind::Local;
@@ -683,20 +784,40 @@ private:
 		return true;
 	}
 
+	bool readEquation(const std::string& document, const std::string& baseKey,
+		FieldState::EquationState& equation)
+	{
+		return readCount(document, baseKey + "_BOUGHT", equation.bought)
+			&& readCount(document, baseKey + "_EARNED_FOR_FREE", equation.earned)
+			&& readCount(document, baseKey + "_USED", equation.used);
+	}
+
 	bool readState(const std::string& document, PreferencesState& state)
 	{
+		state.balloons.equation.emplace();
+		state.bombs.equation.emplace();
+		state.coins.equation.emplace();
+		state.freeCoins.equation.emplace();
+		state.hints.equation.emplace();
+		state.teleports.equation.emplace();
 		return readCount(document, "com.zeptolab.ctr2.f2p.balloons", state.balloons.count)
 			&& readHash(document, "com.zeptolab.ctr2.f2p.balloons_HASH", state.balloons.hash)
+			&& readEquation(document, "com.zeptolab.ctr2.f2p.balloons", *state.balloons.equation)
 			&& readCount(document, "com.zeptolab.ctr2.f2p.bombs", state.bombs.count)
 			&& readHash(document, "com.zeptolab.ctr2.f2p.bombs_HASH", state.bombs.hash)
+			&& readEquation(document, "com.zeptolab.ctr2.f2p.bombs", *state.bombs.equation)
 			&& readCount(document, "com.zeptolab.ctr2.f2p.coins", state.coins.count)
 			&& readHash(document, "com.zeptolab.ctr2.f2p.coins_HASH", state.coins.hash)
+			&& readEquation(document, "com.zeptolab.ctr2.f2p.coins", *state.coins.equation)
 			&& readCount(document, "com.zeptolab.ctr2.f2p.coins_free", state.freeCoins.count)
 			&& readHash(document, "com.zeptolab.ctr2.f2p.coins_free_HASH", state.freeCoins.hash)
+			&& readEquation(document, "com.zeptolab.ctr2.f2p.coins_free", *state.freeCoins.equation)
 			&& readCount(document, "com.zeptolab.ctr2.f2p.hints", state.hints.count)
 			&& readHash(document, "com.zeptolab.ctr2.f2p.hints_HASH", state.hints.hash)
+			&& readEquation(document, "com.zeptolab.ctr2.f2p.hints", *state.hints.equation)
 			&& readCount(document, "com.zeptolab.ctr2.f2p.teleports", state.teleports.count)
 			&& readHash(document, "com.zeptolab.ctr2.f2p.teleports_HASH", state.teleports.hash)
+			&& readEquation(document, "com.zeptolab.ctr2.f2p.teleports", *state.teleports.equation)
 			&& readCount(document, "com.zeptolab.ctr2.f2p.coins_unlim", state.unlimitedCoins.count)
 			&& readHash(document, "com.zeptolab.ctr2.f2p.coins_unlim_HASH", state.unlimitedCoins.hash);
 	}
@@ -1454,42 +1575,145 @@ private:
 		return options.updateAll || options.updateUnlimitedCoin;
 	}
 
+	std::optional<FieldState::EquationState> calculateEquation(
+		const FieldState::EquationState& before, const int current, const EquationMode mode)
+	{
+		std::int64_t bought = before.bought;
+		std::int64_t earned = before.earned;
+		std::int64_t used = before.used;
+		const std::int64_t target = current;
+		if (EquationMode::Canonical == mode)
+		{
+			bought = 0;
+			earned = target;
+			used = 0;
+		}
+		else if (EquationMode::Bought == mode)
+		{
+			bought = target - earned + used;
+			if (bought < 0)
+			{
+				const std::int64_t half = (-bought + 1) / 2;
+				earned -= half;
+				used += half;
+				bought = target - earned + used;
+			}
+		}
+		else if (EquationMode::Earned == mode)
+		{
+			earned = target - bought + used;
+			if (earned < 0)
+			{
+				const std::int64_t half = (-earned + 1) / 2;
+				bought -= half;
+				used += half;
+				earned = target - bought + used;
+			}
+		}
+		else
+		{
+			used = bought + earned - target;
+			if (used < 0)
+			{
+				const std::int64_t half = (-used + 1) / 2;
+				bought += half;
+				earned += half;
+				used = bought + earned - target;
+			}
+		}
+
+		const auto fitsInteger = [](const std::int64_t value)
+		{
+			return value >= std::numeric_limits<int>::min() && value <= std::numeric_limits<int>::max();
+		};
+		if (!fitsInteger(bought) || !fitsInteger(earned) || !fitsInteger(used))
+			return std::nullopt;
+		return FieldState::EquationState{
+			static_cast<int>(bought), static_cast<int>(earned), static_cast<int>(used)};
+	}
+
+	bool setEquation(std::string& document, const std::string& baseKey,
+		const FieldState::EquationState& equation)
+	{
+		return setCount(document, baseKey + "_BOUGHT", equation.bought)
+			&& setCount(document, baseKey + "_EARNED_FOR_FREE", equation.earned)
+			&& setCount(document, baseKey + "_USED", equation.used);
+	}
+
 	bool applyRequestedChanges(std::string& document, const PreferencesState& before, const Options& options,
 		const std::string& ssaid)
 	{
 		auto apply = [&](const FieldState& field, const std::optional<int>& requested,
-			const bool updateHash, const std::string& countKey, const std::string& hashKey,
-			const std::string& logicalKey)
+			const std::optional<EquationMode>& equationMode, const bool updateHash,
+			const std::string& countKey, const std::string& hashKey, const std::string& logicalKey,
+			const std::string& label)
 		{
 			const int targetCount = requested.value_or(field.count);
 			if (requested.has_value() && !setCount(document, countKey, targetCount))
 				return false;
+			if (equationMode.has_value())
+			{
+				if (!field.equation.has_value())
+					return false;
+				const std::optional<FieldState::EquationState> targetEquation =
+					calculateEquation(*field.equation, targetCount, *equationMode);
+				if (!targetEquation.has_value())
+				{
+					std::cerr << label << " equation values are outside the supported integer range." << std::endl;
+					return false;
+				}
+				if (!setEquation(document, countKey, *targetEquation))
+					return false;
+			}
 			return !updateHash || setHash(document, hashKey, countHash(ssaid, logicalKey, targetCount));
 		};
-		return apply(before.balloons, options.balloonCount, shouldUpdateBalloonHash(options),
-			"com.zeptolab.ctr2.f2p.balloons", "com.zeptolab.ctr2.f2p.balloons_HASH", "f2p.balloons")
-			&& apply(before.bombs, options.bombCount, shouldUpdateBombHash(options),
-				"com.zeptolab.ctr2.f2p.bombs", "com.zeptolab.ctr2.f2p.bombs_HASH", "f2p.bombs")
-			&& apply(before.coins, options.coinCount, shouldUpdateCoinHash(options),
-			"com.zeptolab.ctr2.f2p.coins", "com.zeptolab.ctr2.f2p.coins_HASH", "f2p.coins")
-			&& apply(before.freeCoins, options.freeCoinCount, shouldUpdateFreeCoinHash(options),
-				"com.zeptolab.ctr2.f2p.coins_free", "com.zeptolab.ctr2.f2p.coins_free_HASH", "f2p.coins_free")
-			&& apply(before.hints, options.hintCount, shouldUpdateHintHash(options),
-				"com.zeptolab.ctr2.f2p.hints", "com.zeptolab.ctr2.f2p.hints_HASH", "f2p.hints")
-			&& apply(before.teleports, options.teleportCount, shouldUpdateTeleportHash(options),
-				"com.zeptolab.ctr2.f2p.teleports", "com.zeptolab.ctr2.f2p.teleports_HASH", "f2p.teleports")
-			&& apply(before.unlimitedCoins, options.unlimitedCoinCount,
+		return apply(before.balloons, options.balloonCount, options.balloonEquation,
+			shouldUpdateBalloonHash(options), "com.zeptolab.ctr2.f2p.balloons",
+			"com.zeptolab.ctr2.f2p.balloons_HASH", "com.zeptolab.ctr2.f2p.balloons", "Balloon")
+			&& apply(before.bombs, options.bombCount, options.bombEquation,
+				shouldUpdateBombHash(options), "com.zeptolab.ctr2.f2p.bombs",
+				"com.zeptolab.ctr2.f2p.bombs_HASH", "com.zeptolab.ctr2.f2p.bombs", "Bomb")
+			&& apply(before.coins, options.coinCount, options.coinEquation,
+				shouldUpdateCoinHash(options), "com.zeptolab.ctr2.f2p.coins",
+				"com.zeptolab.ctr2.f2p.coins_HASH", "com.zeptolab.ctr2.f2p.coins", "Coin")
+			&& apply(before.freeCoins, options.freeCoinCount, options.freeCoinEquation,
+				shouldUpdateFreeCoinHash(options), "com.zeptolab.ctr2.f2p.coins_free",
+				"com.zeptolab.ctr2.f2p.coins_free_HASH", "com.zeptolab.ctr2.f2p.coins_free", "Free coin")
+			&& apply(before.hints, options.hintCount, options.hintEquation,
+				shouldUpdateHintHash(options), "com.zeptolab.ctr2.f2p.hints",
+				"com.zeptolab.ctr2.f2p.hints_HASH", "com.zeptolab.ctr2.f2p.hints", "Hint")
+			&& apply(before.teleports, options.teleportCount, options.teleportEquation,
+				shouldUpdateTeleportHash(options), "com.zeptolab.ctr2.f2p.teleports",
+				"com.zeptolab.ctr2.f2p.teleports_HASH", "com.zeptolab.ctr2.f2p.teleports", "Teleport")
+			&& apply(before.unlimitedCoins, options.unlimitedCoinCount, std::nullopt,
 				shouldUpdateUnlimitedCoinHash(options),
-				"com.zeptolab.ctr2.f2p.coins_unlim", "com.zeptolab.ctr2.f2p.coins_unlim_HASH", "f2p.coins_unlim");
+				"com.zeptolab.ctr2.f2p.coins_unlim", "com.zeptolab.ctr2.f2p.coins_unlim_HASH",
+				"f2p.coins_unlim", "Unlimited coin");
 	}
 
 	bool fieldMatches(const FieldState& actual, const FieldState& before, const std::optional<int>& requested,
-		const std::string& ssaid, const std::string& logicalKey, const bool updateHash)
+		const std::optional<EquationMode>& equationMode, const std::string& ssaid,
+		const std::string& logicalKey, const bool updateHash)
 	{
 		const int targetCount = requested.value_or(before.count);
 		const bool countMatches = !requested.has_value() || actual.count == targetCount;
 		const bool hashMatches = !updateHash || actual.hash == countHash(ssaid, logicalKey, targetCount);
-		return countMatches && hashMatches;
+		bool equationMatches = true;
+		if (equationMode.has_value())
+		{
+			if (!before.equation.has_value() || !actual.equation.has_value())
+				equationMatches = false;
+			else
+			{
+				const std::optional<FieldState::EquationState> expected =
+					calculateEquation(*before.equation, targetCount, *equationMode);
+				equationMatches = expected.has_value()
+					&& actual.equation->bought == expected->bought
+					&& actual.equation->earned == expected->earned
+					&& actual.equation->used == expected->used;
+			}
+		}
+		return countMatches && hashMatches && equationMatches;
 	}
 
 	bool printField(const std::string& label, const std::string& logicalKey,
@@ -1511,6 +1735,13 @@ private:
 		}
 		else
 			std::cerr << label << " count: " << before.count << std::endl;
+		if (after.equation.has_value())
+		{
+			std::cerr << label << " equation: (current = " << after.count
+				<< ") = (bought = " << after.equation->bought
+				<< ") + (earned = " << after.equation->earned
+				<< ") - (used = " << after.equation->used << ')' << std::endl;
+		}
 
 		if (updateHash)
 		{
@@ -1541,18 +1772,18 @@ private:
 				<< (ssaidUpdateSuccessful ? "successful" : "failed") << std::endl;
 		else
 			std::cerr << "SSAID: " << originalSsaid << std::endl;
-		bool integrityMismatch = printField("Balloon", "f2p.balloons", before.balloons, after.balloons,
+		bool integrityMismatch = printField("Balloon", "com.zeptolab.ctr2.f2p.balloons", before.balloons, after.balloons,
 			options.balloonCount, originalSsaid, effectiveSsaid, shouldUpdateBalloonHash(options), attempted);
-		integrityMismatch = printField("Bomb", "f2p.bombs", before.bombs, after.bombs, options.bombCount,
+		integrityMismatch = printField("Bomb", "com.zeptolab.ctr2.f2p.bombs", before.bombs, after.bombs, options.bombCount,
 			originalSsaid, effectiveSsaid, shouldUpdateBombHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Coin", "f2p.coins", before.coins, after.coins, options.coinCount,
+		integrityMismatch = printField("Coin", "com.zeptolab.ctr2.f2p.coins", before.coins, after.coins, options.coinCount,
 			originalSsaid, effectiveSsaid, shouldUpdateCoinHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Free coin", "f2p.coins_free", before.freeCoins, after.freeCoins,
+		integrityMismatch = printField("Free coin", "com.zeptolab.ctr2.f2p.coins_free", before.freeCoins, after.freeCoins,
 			options.freeCoinCount, originalSsaid, effectiveSsaid,
 			shouldUpdateFreeCoinHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Hint", "f2p.hints", before.hints, after.hints, options.hintCount,
+		integrityMismatch = printField("Hint", "com.zeptolab.ctr2.f2p.hints", before.hints, after.hints, options.hintCount,
 			originalSsaid, effectiveSsaid, shouldUpdateHintHash(options), attempted) || integrityMismatch;
-		integrityMismatch = printField("Teleport", "f2p.teleports", before.teleports, after.teleports,
+		integrityMismatch = printField("Teleport", "com.zeptolab.ctr2.f2p.teleports", before.teleports, after.teleports,
 			options.teleportCount, originalSsaid, effectiveSsaid,
 			shouldUpdateTeleportHash(options), attempted) || integrityMismatch;
 		integrityMismatch = printField("Unlimited coin", "f2p.coins_unlim", before.unlimitedCoins,
@@ -1561,13 +1792,38 @@ private:
 		const bool modificationRequested = options.ssaid.has_value() || options.balloonCount.has_value()
 			|| options.bombCount.has_value() || options.coinCount.has_value() || options.freeCoinCount.has_value()
 			|| options.hintCount.has_value() || options.teleportCount.has_value()
-			|| options.unlimitedCoinCount.has_value() || options.updateAll || options.updateBalloon
+			|| options.unlimitedCoinCount.has_value() || options.balloonEquation.has_value()
+			|| options.bombEquation.has_value() || options.coinEquation.has_value()
+			|| options.freeCoinEquation.has_value() || options.hintEquation.has_value()
+			|| options.teleportEquation.has_value() || options.updateAll || options.updateBalloon
 			|| options.updateBomb || options.updateCoin || options.updateFreeCoin || options.updateHint
 			|| options.updateTeleport || options.updateUnlimitedCoin;
 		if (modificationRequested && integrityMismatch)
 			std::cerr << "Note: Update the integrity values before launching the game." << std::endl;
 		if (ssaidChanged)
 			std::cerr << "Note: Restart the device before launching the game to apply the SSAID change." << std::endl;
+	}
+
+	bool validateSetCounts(const Options& options)
+	{
+		const std::array<std::pair<const char*, const std::optional<int>*>, 7> quantities{{
+			{"balloon", &options.balloonCount},
+			{"bomb", &options.bombCount},
+			{"coin", &options.coinCount},
+			{"free-coin", &options.freeCoinCount},
+			{"hint", &options.hintCount},
+			{"teleport", &options.teleportCount},
+			{"unlimited-coin", &options.unlimitedCoinCount}
+		}};
+		for (const auto& quantity : quantities)
+		{
+			if (quantity.second->has_value() && **quantity.second < 0)
+			{
+				std::cerr << "Protected quantity " << quote(quantity.first) << " cannot be negative." << std::endl;
+				return false;
+			}
+		}
+		return true;
 	}
 
 public:
@@ -1578,6 +1834,8 @@ public:
 			return EXIT_FAILURE;
 		if (options.help)
 			return EXIT_SUCCESS;
+		if (!validateSetCounts(options))
+			return EXIT_FAILURE;
 		if (0 != geteuid())
 		{
 			std::cerr << "Permission denied, are you root?" << std::endl;
@@ -1630,7 +1888,10 @@ public:
 		const bool gameChangesRequested = ssaidChanged || options.balloonCount.has_value()
 			|| options.bombCount.has_value() || options.coinCount.has_value() || options.freeCoinCount.has_value()
 			|| options.hintCount.has_value() || options.teleportCount.has_value()
-			|| options.unlimitedCoinCount.has_value() || options.updateAll || options.updateBalloon
+			|| options.unlimitedCoinCount.has_value() || options.balloonEquation.has_value()
+			|| options.bombEquation.has_value() || options.coinEquation.has_value()
+			|| options.freeCoinEquation.has_value() || options.hintEquation.has_value()
+			|| options.teleportEquation.has_value() || options.updateAll || options.updateBalloon
 			|| options.updateBomb || options.updateCoin || options.updateFreeCoin || options.updateHint
 			|| options.updateTeleport || options.updateUnlimitedCoin;
 		const bool outputCopyRequested = OutputKind::InPlace != options.outputKind;
@@ -1654,19 +1915,19 @@ public:
 			}
 			if (gameUpdateSuccessful)
 				gameUpdateSuccessful = fieldMatches(after.balloons, before.balloons, options.balloonCount,
-					effectiveSsaid, "f2p.balloons", shouldUpdateBalloonHash(options))
+					options.balloonEquation, effectiveSsaid, "com.zeptolab.ctr2.f2p.balloons", shouldUpdateBalloonHash(options))
 					&& fieldMatches(after.bombs, before.bombs, options.bombCount,
-						effectiveSsaid, "f2p.bombs", shouldUpdateBombHash(options))
+						options.bombEquation, effectiveSsaid, "com.zeptolab.ctr2.f2p.bombs", shouldUpdateBombHash(options))
 					&& fieldMatches(after.coins, before.coins, options.coinCount,
-					effectiveSsaid, "f2p.coins", shouldUpdateCoinHash(options))
+						options.coinEquation, effectiveSsaid, "com.zeptolab.ctr2.f2p.coins", shouldUpdateCoinHash(options))
 					&& fieldMatches(after.freeCoins, before.freeCoins, options.freeCoinCount,
-						effectiveSsaid, "f2p.coins_free", shouldUpdateFreeCoinHash(options))
+						options.freeCoinEquation, effectiveSsaid, "com.zeptolab.ctr2.f2p.coins_free", shouldUpdateFreeCoinHash(options))
 					&& fieldMatches(after.hints, before.hints, options.hintCount,
-						effectiveSsaid, "f2p.hints", shouldUpdateHintHash(options))
+						options.hintEquation, effectiveSsaid, "com.zeptolab.ctr2.f2p.hints", shouldUpdateHintHash(options))
 					&& fieldMatches(after.teleports, before.teleports, options.teleportCount,
-						effectiveSsaid, "f2p.teleports", shouldUpdateTeleportHash(options))
+						options.teleportEquation, effectiveSsaid, "com.zeptolab.ctr2.f2p.teleports", shouldUpdateTeleportHash(options))
 					&& fieldMatches(after.unlimitedCoins, before.unlimitedCoins, options.unlimitedCoinCount,
-						effectiveSsaid, "f2p.coins_unlim", shouldUpdateUnlimitedCoinHash(options));
+						std::nullopt, effectiveSsaid, "f2p.coins_unlim", shouldUpdateUnlimitedCoinHash(options));
 			if (!gameUpdateSuccessful)
 			{
 				if (OutputKind::Console == options.outputKind)

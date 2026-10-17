@@ -10,14 +10,16 @@ from json import dump, loads
 from re import compile
 from subprocess import TimeoutExpired, run
 from time import time_ns
+from urllib.parse import urlsplit
 from zipfile import ZipFile, ZipInfo
 try:
 	chdir(abspath(dirname(__file__)))
-except:
+except Exception:
 	pass
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
-EOF = (-1)
+EXIT_SOFTWARE = 70
+EXIT_INTERRUPTED = 130
 
 
 class DatabaseManager:
@@ -26,6 +28,8 @@ class DatabaseManager:
 	__DefaultEncoding = "utf-8"
 	__Caches = {}
 	__Pattern = compile("^[A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+$")
+	__PaginationPlaceholder = "{page}"
+	__get = None
 	__SpanPattern = compile("<span[^<>]*>([A-Za-z][A-Za-z0-9_]*(?:\\.[A-Za-z][A-Za-z0-9_]*)+)</span>")
 	__MajorVersion = 3
 	def __init__(self:object, databaseFilePath:str = __DefaultDatabaseFilePath, connectionTimeout:int|float = __DefaultConnectionTimeout, encoding:str = __DefaultEncoding) -> object:
@@ -34,10 +38,10 @@ class DatabaseManager:
 		try:
 			lookup(encoding)
 			self.__encoding = encoding
-		except:
+		except Exception:
 			self.__encoding = DatabaseManager.__DefaultEncoding
 		self.__database = None
-		self.__get = None
+		DatabaseManager.__get = None
 	@staticmethod
 	def loadCacheFile(cacheFilePath:str, encoding:str = __DefaultEncoding, error:str = "ignore") -> bool:
 		action = error.lower() if isinstance(error, str) else "ignore"
@@ -53,7 +57,7 @@ class DatabaseManager:
 			if action != "silent":
 				print("Successfully load caches from {0}. ".format(repr(cacheFilePath)))
 			return True
-		except BaseException as e:
+		except Exception as e:
 			if action.startswith("print"):
 				print("Failed to load caches from {0} due to {1}. ".format(repr(cacheFilePath), repr(e)))
 			if action.endswith("raise"):
@@ -223,7 +227,7 @@ class DatabaseManager:
 			else:
 				self.__database = None
 				return (False, ValueError("The data loaded from {0} could not be recognized. ".format(repr(self.__databaseFilePath))))
-		except BaseException as e:
+		except Exception as e:
 			return (False, e)
 	def check(self:object) -> tuple:
 		if isinstance(self.__database, dict):
@@ -251,63 +255,107 @@ class DatabaseManager:
 			return (not d, d)
 		else:
 			return (False, TypeError("The database is not a ``dict``. Please check whether the method function ``load`` has been called. "))
-	def __fetchPackageNamesFromURL(self:object, URL:str, d:dict) -> set:
+	def __fetchPackageNamesFromURL(self:object, URL:str, exceptionMappings:dict) -> set:
 		packageNames = set()
-		if isinstance(URL, str) and isinstance(d, dict):
+		if isinstance(URL, str) and isinstance(exceptionMappings, dict):
 			if URL not in DatabaseManager.__Caches:
-				if self.__get is None:
-					self.__get = __import__("requests").get
-				r = self.__get(URL, timeout = self.__connectionTimeout)
-				if 200 == r.status_code:
-					DatabaseManager.__Caches[URL] = r.content
-				else:
-					d[URL] = r.status_code
+				try:
+					if DatabaseManager.__get is None:
+						DatabaseManager.__get = __import__("requests").get
+					r = DatabaseManager.__get(URL, timeout = self.__connectionTimeout)
+					if 200 == r.status_code:
+						DatabaseManager.__Caches[URL] = r.content
+					else:
+						exceptionMappings[URL] = r.status_code
+				except Exception as e:
+					exceptionMappings[URL] = e
 			if URL in DatabaseManager.__Caches:
 				try:
 					obj = loads(DatabaseManager.__Caches[URL])
-					if isinstance(obj, list):
+					if isinstance(obj, (tuple, list)):
 						for item in obj:
 							if isinstance(item, dict) and "name" in item and DatabaseManager.__Pattern.match(item["name"]):
 								packageNames.add(item["name"])
-					elif isinstance(obj, dict) and "$D$" in obj and isinstance(obj["$D$"], list):
-						for item in obj["$D$"]:
-							if (
-								isinstance(item, dict) and "packageName" in item and "category" in item and len(item["category"]) <= 5
-								and item["category"].startswith("$D") and item["category"].endswith("$")
-							):
-								if isinstance(item["packageName"], (tuple, list, set)):
-									for packageName in item["packageName"]:
-										if DatabaseManager.__Pattern.match(packageName):
-											packageNames.add(packageName)
-								elif isinstance(item["packageName"], str) and DatabaseManager.__Pattern.match(item["packageName"]):
-									packageNames.add(item["packageName"])
-				except BaseException as e:
-					for packageName in DatabaseManager.__SpanPattern.findall(DatabaseManager.__Caches[URL].decode("utf-8")):
-						packageNames.add(packageName)
+					elif isinstance(obj, dict):
+						if "modules" in obj and isinstance(obj["modules"], (tuple, list)):
+							for item in obj["modules"]:
+								if isinstance(item, dict) and "name" in item and DatabaseManager.__Pattern.match(item["name"]):
+									packageNames.add(item["name"])
+						elif "$D$" in obj and isinstance(obj["$D$"], list):
+							for item in obj["$D$"]:
+								if (
+									isinstance(item, dict) and "packageName" in item and "category" in item and len(item["category"]) <= 5
+									and item["category"].startswith("$D") and item["category"].endswith("$")
+								):
+									if isinstance(item["packageName"], (tuple, list, set)):
+										for packageName in item["packageName"]:
+											if DatabaseManager.__Pattern.match(packageName):
+												packageNames.add(packageName)
+									elif isinstance(item["packageName"], str) and DatabaseManager.__Pattern.match(item["packageName"]):
+										packageNames.add(item["packageName"])
+					else:
+						try:
+							for packageName in DatabaseManager.__SpanPattern.findall(DatabaseManager.__Caches[URL].decode("utf-8")):
+								packageNames.add(packageName)
+						except Exception as e:
+							exceptionMappings[URL] = e
+				except Exception:
+					try:
+						for packageName in DatabaseManager.__SpanPattern.findall(DatabaseManager.__Caches[URL].decode("utf-8")):
+							packageNames.add(packageName)
+					except Exception as e:
+						exceptionMappings[URL] = e
 		return packageNames
 	def updateFromURLs(self:object, URLs:tuple|list|set|str, key:str, incrementalUpdate:bool = True) -> tuple:
 		try:
 			if isinstance(self.__database, dict) and key in ("D", "M"):
-				stack, packageNames, d, originalSize = [URLs], set(), OrderedDict(), 0
+				stack, packageNames, exceptionMappings, originalSize = [URLs], set(), OrderedDict(), 0
 				while stack:
 					element = stack.pop()
 					if isinstance(element, (tuple, list, set)):
 						stack.extend(reversed(element))
 					elif isinstance(element, str):
-						try:
-							packageNames.update(self.__fetchPackageNamesFromURL(element, d))
-						except BaseException as e:
-							d[element] = e
+						urlComponents = urlsplit(element)
+						if urlComponents.path.count(DatabaseManager.__PaginationPlaceholder) + urlComponents.query.count(DatabaseManager.__PaginationPlaceholder) == 1:
+							firstPageURL = element.replace(DatabaseManager.__PaginationPlaceholder, "1")
+							if firstPageURL not in DatabaseManager.__Caches:
+								if DatabaseManager.__get is None:
+									DatabaseManager.__get = __import__("requests").get # stop getting all the remaining URLs by raising
+								try:
+									r = DatabaseManager.__get(firstPageURL, timeout = self.__connectionTimeout)
+									if 200 == r.status_code:
+										DatabaseManager.__Caches[firstPageURL] = r.content
+								except Exception:
+									pass
+							if firstPageURL in DatabaseManager.__Caches:
+								try:
+									firstPageObject = loads(DatabaseManager.__Caches[firstPageURL])
+									for possibleKey in firstPageObject.keys(): # raise if it is not a ``dict`` object
+										if isinstance(possibleKey, str) and possibleKey.strip().lower().rstrip("s") in (
+											"page count", "page_count", "pagecount", "total page", "total_page", "totalpage"
+										):
+											stack.extend(element.replace(
+												DatabaseManager.__PaginationPlaceholder, str(page)
+											) for page in range(int(firstPageObject[possibleKey]), 0, -1))
+											break
+									else:
+										exceptionMappings[element] = KeyError("Failed to find a suitable key that indicates the total page count. ")
+								except Exception as e:
+									exceptionMappings[element] = e
+							else:
+								packageNames.update(self.__fetchPackageNamesFromURL(element, exceptionMappings)) # treat the placeholder as part of the URL
+						else:
+							packageNames.update(self.__fetchPackageNamesFromURL(element, exceptionMappings))
 				if key in self.__database and isinstance(self.__database[key], (tuple, list, set)) and incrementalUpdate is not False:
 					originalSize = len(self.__database[key])
 					packageNames.update(self.__database[key])
 				self.__database[key] = sorted(list(packageNames))
-				return (True, len(self.__database[key]) - originalSize, d)
+				return (True, len(self.__database[key]) - originalSize, exceptionMappings)
 			else:
 				return (False, 0, KeyError("The database was not initialized or the condition ``key in (\"D\", \"M\")`` was not satisfied. "))
-		except BaseException as e:
+		except Exception as e:
 			return (False, 0, e)
-	def summary(self:object, key:str) -> int:
+	def summarize(self:object, key:str) -> int|None:
 		if isinstance(self.__database, dict) and isinstance(key, str):
 			if key in self.__database and isinstance(self.__database[key], (tuple, list)):
 				return len(self.__database[key])
@@ -320,7 +368,7 @@ class DatabaseManager:
 				with open(self.__databaseFilePath, "w", encoding = self.__encoding) as f:
 					dump(self.__database, f, indent = "\t", ensure_ascii = False, sort_keys = True)
 				return (True, None)
-			except BaseException as e:
+			except Exception as e:
 				return (False, e)
 		else:
 			return (False, TypeError("The database is not a ``dict``. Please check whether the method function ``load`` has been called. "))
@@ -362,7 +410,7 @@ class RegularUpdater:
 			self.__databaseManager = DatabaseManager(databaseFilePath = self.__databaseFilePath, connectionTimeout = self.__connectionTimeout)
 			self.__flag = 0b00000001
 			print("Successfully initialized the updater with the parameters passed. ")
-		except BaseException as e:
+		except Exception as e:
 			self.__flag = 0b00000000
 			print("Failed to initialize the updater with the parameters passed. ")
 	def gitPull(self:object) -> bool: # 0b00000001 + 0b00000001 -> 0b00000010
@@ -380,7 +428,7 @@ class RegularUpdater:
 					return False
 			except TimeoutExpired as e:
 				print("Failed tp pull from the remote repository due to {0}. ".format({"cmd":e.cmd, "timeout":e.timeout}))
-			except BaseException as e:
+			except Exception as e:
 				print("Failed tp pull from the remote repository due to {0}. ".format(repr(e)))
 		else:
 			print("Please initialize the updater before pulling. ")
@@ -396,7 +444,7 @@ class RegularUpdater:
 		else:
 			print("Please pull from the remote repository before setting permissions. ")
 			return False
-		baseExceptions = []
+		exceptions = []
 		try:
 			chmod(".", 0o755)
 			for root, folderNames, fileNames in walk("."):
@@ -404,31 +452,31 @@ class RegularUpdater:
 					folderPath = join(root, folderName)
 					try:
 						chmod(folderPath, 0o755)
-					except BaseException as innerBaseException:
-						baseExceptions.append((folderPath, 0o755, innerBaseException))
+					except Exception as innerException:
+						exceptions.append((folderPath, 0o755, innerException))
 				for fileName in fileNames:
 					filePath = join(root, fileName)
 					if "LICENSE" == fileName or splitext(fileName)[1] == ".sha512":
 						try:
 							chmod(filePath, 0o444)
-						except BaseException as innerBaseException:
-							baseExceptions.append((filePath, 0o444, innerBaseException))
+						except Exception as innerException:
+							exceptions.append((filePath, 0o444, innerException))
 					elif "build.sh" == fileName:
 						try:
 							chmod(filePath, 0o744)
-						except BaseException as innerBaseException:
-							baseExceptions.append((filePath, 0o744, innerBaseException))
+						except Exception as innerException:
+							exceptions.append((filePath, 0o744, innerException))
 					else:
 						try:
 							chmod(filePath, 0o644)
-						except BaseException as innerBaseException:
-							baseExceptions.append((filePath, 0o644, innerBaseException))
-		except BaseException as outerBaseException:
-			baseExceptions.append((".", 0o755, outerBaseException))
-		if baseExceptions:
-			print("Failed to set permissions due to the following base exception(s). ")
-			for filePath, permission, baseException in baseExceptions:
-				print("{0} -> {1} -> {2}".format(repr(filePath), oct(permission), repr(baseException)))
+						except Exception as innerException:
+							exceptions.append((filePath, 0o644, innerException))
+		except Exception as outerException:
+			exceptions.append((".", 0o755, outerException))
+		if exceptions:
+			print("Failed to set permissions due to the following exception(s). ")
+			for index, (filePath, permission, exception) in enumerate(exceptions, start = 1):
+				print("[{0}] {1} -> {2} -> {3}".format(index, repr(filePath), oct(permission), repr(exception)))
 			return False
 		else:
 			if (
@@ -490,21 +538,21 @@ class RegularUpdater:
 			self.__flag, localFlag = self.__flag & 0b00100011 | 0b00001000, bool(targetURLs)
 			for key, value in targetURLs.items():
 				if key in ('D', 'M'):
-					validity, delta, d = self.__databaseManager.updateFromURLs(value, key)
+					validity, delta, exceptionMappings = self.__databaseManager.updateFromURLs(value, key)
 					if validity:
-						if d:
+						if exceptionMappings:
 							localFlag = False
-							print("Updated {0} package name(s) of ${1}$ from {2} with the following base exception(s). ".format(delta, key, value))
-							for key, value in d.items():
-								print("\t\"{0}\" -> {1}".format(key, repr(value) if isinstance(value, BaseException) else value))
+							print("Updated {0} package name(s) of ${1}$ from {2} with the following exception(s). ".format(delta, key, value))
+							for index, (exceptionKey, exceptionValue) in enumerate(exceptionMappings.items(), start = 1):
+								print("[{0}] {1} -> {2}".format(index, repr(exceptionKey), repr(exceptionValue) if isinstance(exceptionValue, Exception) else exceptionValue))
 						else:
 							print("Successfully updated {0} package name(s) of ${1}$ from {2}. ".format(delta, key, value))
 					else:
 						localFlag = False
-						print("Failed to update package names of ${0}$ from {1} due to {2}. ".format(key, value, repr(d)))
+						print("Failed to update package names of ${0}$ from {1} due to {2}. ".format(key, value, repr(exceptionMappings)))
 				else:
 					print("The key passed was neither \'D\' nor \'M\'. ")
-			print("Current $\\|D\\|$ is {0}, and $\\|M\\|$ is {1}. ".format(self.__databaseManager.summary('D'), self.__databaseManager.summary('M')))
+			print("Current $\\|D\\|$ is {0}, and $\\|M\\|$ is {1}. ".format(self.__databaseManager.summarize('D'), self.__databaseManager.summarize('M')))
 			if localFlag:
 				self.__flag += 0b00000100
 				return True
@@ -539,7 +587,7 @@ class RegularUpdater:
 					entryABI[2] = cppBinaryFilePath
 					if not isfile(cppBinaryFilePath):
 						localFlag = False
-				except:
+				except Exception:
 					localFlag = False
 			if localFlag:
 				try:
@@ -547,7 +595,7 @@ class RegularUpdater:
 						choice = True
 					else:
 						choice = input("CPP executable binaries existing, would you like to compile the CPP sources again [yN]? ").upper() in RegularUpdater.__PositiveAnswers
-				except:
+				except Exception:
 					choice = False
 			else:
 				choice = True
@@ -556,7 +604,7 @@ class RegularUpdater:
 					makedirs(self.__cppBinaryDirectroyPath, exist_ok = True)
 					localFlag = True
 					print("Successfully prepared the directory {0}. ".format(repr(self.__cppBinaryDirectroyPath)))
-				except BaseException as e:
+				except Exception as e:
 					localFlag = False
 					print("Failed to prepare the directory {0} due to {1}. ".format(repr(self.__cppBinaryDirectroyPath), repr(e)))
 				if localFlag:
@@ -578,7 +626,7 @@ class RegularUpdater:
 						except TimeoutExpired as e:
 							localFlag = False
 							print("Failed to compile the CPP due to {0}. ".format({"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout}))
-						except BaseException as e:
+						except Exception as e:
 							localFlag = False
 							print("Failed to compile the CPP due to {0}. ".format(repr(e)))
 				if localFlag:
@@ -608,7 +656,7 @@ class RegularUpdater:
 					self.__flag |= 0b00011100
 					print("Successfully compressed the web UI folder {0} to {1}. ".format(repr(self.__webrootDirectoryPath), repr(self.__webrootFilePath)))
 					return True
-				except BaseException as e:
+				except Exception as e:
 					print("Failed to compress the web UI folder {0} to {1} due to {2}. ".format(repr(self.__webrootDirectoryPath), repr(self.__webrootFilePath), repr(e)))
 			else:
 				print("The webroot folder path {0} does not exist or exists not as a folder. ".format(repr(self.__webrootDirectoryPath))) 
@@ -625,7 +673,7 @@ class RegularUpdater:
 						for fileName in fileNames:
 							if splitext(fileName)[1] == ".sh":
 								filePaths.append(join(root, fileName))
-				except BaseException as e:
+				except Exception as e:
 					print("Failed to walk {0} due to {1}. ".format(repr(self.__srcDirectoryPath), repr(e)))
 				filePaths.sort()
 				totalCount = len(filePaths)
@@ -645,7 +693,7 @@ class RegularUpdater:
 							print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), {
 								"cmd":e.cmd, "stderr":e.stderr, "stdout":e.stdout, "timeout":e.timeout
 							}))
-						except BaseException as e:
+						except Exception as e:
 							print("[{{0:0>{0}}}] {{1}} -> Failed (sh) -> {{2}}".format(length).format(i, repr(filePath), repr(e)))
 					try:
 						with open(self.__actionAFilePath, "rb") as f:
@@ -658,10 +706,8 @@ class RegularUpdater:
 								self.__flag |= 0b00100000
 								return True					
 						else:
-							localFlag = False
 							print("Failed to verify the differences between {0} and {1}. ".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath)))
-					except BaseException as e:
-						localFlag = False
+					except Exception as e:
 						print("Failed to verify the differences between {0} and {1} due to {2}".format(repr(self.__actionAFilePath), repr(self.__actionBFilePath), repr(e)))
 				else:
 					print("The source folder path {0} does not contain any shell scripts. ".format(repr(self.__srcDirectoryPath)))
@@ -681,11 +727,11 @@ class RegularUpdater:
 						if splitext(fileName)[1] == ".sha512":
 							try:
 								remove(filePath)
-							except:
+							except Exception:
 								pass
 						else:
 							filePaths.append(filePath)
-			except BaseException as e:
+			except Exception as e:
 				print("Failed to walk {0} due to {1}. ".format(repr(self.__srcDirectoryPath), repr(e)), end = "")
 			filePaths.sort()
 			totalCount = len(filePaths)
@@ -707,7 +753,7 @@ class RegularUpdater:
 						else:
 							with open(filePath, "rb") as f:
 								digest = sha512(f.read()).hexdigest()
-					except BaseException as e:
+					except Exception as e:
 						print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, e))
 						continue
 					try:
@@ -715,7 +761,7 @@ class RegularUpdater:
 							f.write(digest)
 						successCount += 1
 						print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, digest if digest.isalnum() else digest.split("\n")))
-					except BaseException as e:
+					except Exception as e:
 						print("[{{0:0>{0}}}] \"{{1}}\" -> {{2}}".format(length).format(i, filePath, e))
 				print("Successfully generated {0} / {1} SHA-512 value file(s) at the success rate of {2:.2f}%. ".format(successCount, totalCount, successCount * 100 / totalCount))
 				if successCount == totalCount:
@@ -738,7 +784,7 @@ class RegularUpdater:
 						choice = True
 					else:
 						choice = input("Would you like to upload the files to GitHub via ``git`` [yN]? ").upper() in RegularUpdater.__PositiveAnswers
-				except:
+				except Exception:
 					choice = False
 			else:
 				choice = False
@@ -766,34 +812,43 @@ def main() -> int:
 	actionAFileName, actionBFileName = "actionA.sh", "actionB.sh"
 	cacheFilePath = "caches.json"
 	selfURL = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
-	pluginURL = "https://modules.lsposed.org" # "https://modules.lsposed.org/modules.json"
+	pluginURL = "https://modules.lsposed.org/module-list/{page}.json" # "https://modules.lsposed.org/modules.json"
 	cppSourceDirectoryPath = "cpp"
 	cppSourceMainFileName = "generate"
 	extensionsExcluded = (".prop", ".sha512")
 	
 	# Updater #
-	regularUpdater = RegularUpdater(srcDirectoryPath, webrootName, databaseFileName, cppBinaryDirectoryName, actionAFileName, actionBFileName)
-	if regularUpdater.gitPull() and regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
-		DatabaseManager.loadCacheFile(cacheFilePath)
-		databaseFlag = (
-			regularUpdater.synchronizeDatabase({"D":selfURL, "M":pluginURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
-			and regularUpdater.compileCPP(cppSourceDirectoryPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
-		)
-		differenceFlag = regularUpdater.checkShell()
-		if databaseFlag and differenceFlag:
-			errorLevel = EXIT_SUCCESS if regularUpdater.updateSHA512() and regularUpdater.setPermissions() and regularUpdater.gitPush() else EXIT_FAILURE
+	try:
+		regularUpdater = RegularUpdater(srcDirectoryPath, webrootName, databaseFileName, cppBinaryDirectoryName, actionAFileName, actionBFileName)
+		if regularUpdater.gitPull() and regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
+			DatabaseManager.loadCacheFile(cacheFilePath)
+			databaseFlag = (
+				regularUpdater.synchronizeDatabase({"D":selfURL, "M":pluginURL}) and regularUpdater.checkDatabase() and regularUpdater.saveDatabase()
+				and regularUpdater.compileCPP(cppSourceDirectoryPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
+			)
+			differenceFlag = regularUpdater.checkShell()
+			if databaseFlag and differenceFlag:
+				exitStatus = EXIT_SUCCESS if regularUpdater.updateSHA512() and regularUpdater.setPermissions() and regularUpdater.gitPush() else EXIT_FAILURE
+			else:
+				exitStatus = EXIT_FAILURE
 		else:
-			errorLevel = EXIT_FAILURE
-	else:
-		errorLevel = EOF
+			exitStatus = EXIT_FAILURE
+	except KeyboardInterrupt:
+		print()
+		print("The synchronizing procedure was interrupted by users. ")
+		exitStatus = EXIT_INTERRUPTED
+	except BaseException as e:
+		print()
+		print("The synchronizing procedure was interrupted by {0}. ".format(repr(e)))
+		exitStatus = EXIT_SOFTWARE
 	
 	# Exit #
-	print("Please press the enter key to exit ({0}). ".format(errorLevel))
+	print("Please press the enter key to exit ({0}). ".format(exitStatus))
 	try:
 		getpass("")
 	except:
 		print()
-	return errorLevel
+	return exitStatus
 
 
 
