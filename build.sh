@@ -2,7 +2,6 @@
 # Module (11--12) #
 readonly EXIT_SUCCESS=0
 readonly EXIT_FAILURE=1
-readonly EOF=255
 readonly moduleName="Bypasser"
 readonly moduleID="bypasser"
 readonly moduleVersion="$(date +%Y%m%d%H)"

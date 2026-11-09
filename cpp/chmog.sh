@@ -72,7 +72,7 @@ do
 						exitStatus=${EXIT_FAILURE}
 						echo "        - Failed to change the mode to ${DEFAULT_FILE_MODE} for some or all of the files under \"${repositoryDirectoryPath}\". "
 					fi
-					if test -z "$(find "${repositoryDirectoryPath}" -maxdepth 2 -type f \( -name "*.bat" -o -name "*.cmd" -o -name "*.sh" \) -exec chmod ${DEFAULT_SHELL_MODE} {} \; 2>&1)";
+					if test -z "$(find "${repositoryDirectoryPath}" -type f \( -name "*.bat" -o -name "*.cmd" -o -name "*.sh" \) -exec chmod ${DEFAULT_SHELL_MODE} {} \; 2>&1)";
 					then
 						echo "        - Successfully changed the mode to ${DEFAULT_SHELL_MODE} for all the shell scripts under \"${repositoryDirectoryPath}\". "
 					else
@@ -99,4 +99,5 @@ then
 fi
 echo ""
 echo "The execution is finished (${exitStatus}). "
+echo ""
 exit ${exitStatus}

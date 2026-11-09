@@ -4,22 +4,15 @@ from sys import exit
 from codecs import lookup
 from collections import OrderedDict
 from datetime import datetime
+from enum import IntEnum
 from getpass import getpass
 from hashlib import sha512
 from json import dump, loads
 from re import compile
-from subprocess import TimeoutExpired, run
+from subprocess import Popen, TimeoutExpired
 from time import time_ns
 from urllib.parse import urlsplit
 from zipfile import ZipFile, ZipInfo
-try:
-	chdir(abspath(dirname(__file__)))
-except Exception:
-	pass
-EXIT_SUCCESS = 0
-EXIT_FAILURE = 1
-EXIT_SOFTWARE = 70
-EXIT_INTERRUPTED = 130
 
 
 class DatabaseManager:
@@ -376,10 +369,17 @@ class DatabaseManager:
 	def getDefaultConnectionTimeout() -> int|float:
 		return DatabaseManager.__DefaultConnectionTimeout
 
+class Status(IntEnum):
+	EXIT_SUCCESS = 0
+	EXIT_FAILURE = 1
+	EXIT_SOFTWARE = 70
+	EXIT_INTERRUPTED = 130
 
 class RegularUpdater:
 	__DefaultExecutionTimeout = 20
 	__PositiveAnswers = ("Y", "YES", "1", "T", "TRUE")
+	__PopenKwargs = None
+	__ProcessTreeTermination = None
 	def __init__(
 		self:object, srcDirectoryPath:str, webrootName:str, databaseFileName:str, cppBinaryDirectoryName:str, actionAFileName:str, actionBFileName:str, 
 		connectionTimeout:int|float = DatabaseManager.getDefaultConnectionTimeout(), executionTimeout:int|float = __DefaultExecutionTimeout
@@ -413,23 +413,57 @@ class RegularUpdater:
 		except Exception as e:
 			self.__flag = 0b00000000
 			print("Failed to initialize the updater with the parameters passed. ")
+	@staticmethod
+	def __initializePopenKwargs() -> None:
+		try:
+			from subprocess import CREATE_NEW_PROCESS_GROUP
+			RegularUpdater.__PopenKwargs = {"creationflags":CREATE_NEW_PROCESS_GROUP}
+		except ImportError:
+			RegularUpdater.__PopenKwargs = {"start_new_session":True}
+	@staticmethod
+	def __initializeProcessTreeTermination() -> None:
+		try:
+			from os import getpgid, killpg
+			from signal import SIGKILL
+			def terminate(PID:int) -> None:
+				try:
+					killpg(getpgid(PID), SIGKILL)
+				except ProcessLookupError:
+					pass
+			RegularUpdater.__ProcessTreeTermination = staticmethod(terminate)
+		except ImportError:
+			from subprocess import DEVNULL, call
+			def terminate(PID:int) -> None:
+				call(("taskkill", "/F", "/T", "/PID", str(PID)), stdout = DEVNULL, stderr = DEVNULL)
+			RegularUpdater.__ProcessTreeTermination = staticmethod(terminate)
 	def gitPull(self:object) -> bool: # 0b00000001 + 0b00000001 -> 0b00000010
 		if self.__flag & 0b00000011 >= 1:
 			self.__flag = self.__flag & 0b00000000 | 0b00000001
 			print("Pulling from the remote repository. ")
 			try:
-				result = run(("git", "pull"), timeout = self.__executionTimeout)
-				if EXIT_SUCCESS == result.returncode:
-					self.__flag += 0b00000001
-					print("Successfully pulled from the remote repository. ")
-					return True
-				else:
-					print("Failed to pull from the remote repository. ")
-					return False
-			except TimeoutExpired as e:
-				print("Failed tp pull from the remote repository due to {0}. ".format({"cmd":e.cmd, "timeout":e.timeout}))
+				if RegularUpdater.__PopenKwargs is None:
+					RegularUpdater.__initializePopenKwargs()
+				if RegularUpdater.__ProcessTreeTermination is None:
+					RegularUpdater.__initializeProcessTreeTermination()
+				with Popen(("git", "pull"), **RegularUpdater.__PopenKwargs) as process:
+					try:
+						process.communicate(timeout = self.__executionTimeout)
+					except TimeoutExpired as e:
+						RegularUpdater.__ProcessTreeTermination(process.pid)
+						print("Failed to pull from the remote repository due to {0}. ".format({"cmd": e.cmd, "timeout": e.timeout}))
+					except Exception:
+						RegularUpdater.__ProcessTreeTermination(process.pid)
+						raise
+					else:
+						if Status.EXIT_SUCCESS == process.returncode:
+							self.__flag += 0b00000001
+							print("Successfully pulled from the remote repository. ")
+							return True
+						else:
+							print("Failed to pull from the remote repository. ")
+							return False
 			except Exception as e:
-				print("Failed tp pull from the remote repository due to {0}. ".format(repr(e)))
+				print("Failed to pull from the remote repository due to {0}. ".format(repr(e)))
 		else:
 			print("Please initialize the updater before pulling. ")
 		return False
@@ -615,7 +649,7 @@ class RegularUpdater:
 								"{0}-clang++".format(keyABI), "-O3", "-Wall", "-Wextra", "-Wpedantic", "-I", cppSourceDirectoryPath, 
 								cppSourceFilePath, "-o", cppBinaryFilePath, "-static-libstdc++", "-fPIE", "-pie"
 							), capture_output = True, text = True, timeout = self.__executionTimeout)
-							if result.returncode != EXIT_SUCCESS:
+							if result.returncode != Status.EXIT_SUCCESS:
 								localFlag = False
 								print("Failed to compile {0} to {1} due to errors {2}. ".format(repr(cppSourceFilePath), repr(cppBinaryFilePath), repr(result)))
 							elif result.stdout or result.stderr:
@@ -684,7 +718,7 @@ class RegularUpdater:
 							result = run(
 								("bash" if "build.sh" == basename(filePath) else "sh", "-n", filePath), capture_output = True, text = True, timeout = self.__executionTimeout
 							)
-							if EXIT_SUCCESS == result.returncode:
+							if Status.EXIT_SUCCESS == result.returncode:
 								successCount += 1
 								print("[{{0:0>{0}}}] {{1}} -> Passed (sh/bash)".format(length).format(i, repr(filePath)))
 							else:
@@ -794,7 +828,7 @@ class RegularUpdater:
 				print("The commit message is \"{0}\". ".format(commitMessage))
 				commandlines = ("git add .", "git commit -m \"{0}\"".format(commitMessage), "git push")
 				for commandline in commandlines:
-					if system(commandline) != EXIT_SUCCESS:
+					if system(commandline) != Status.EXIT_SUCCESS:
 						return False
 				self.__flag |= 0b11000000
 			return True
@@ -804,6 +838,12 @@ class RegularUpdater:
 
 
 def main() -> int:
+	# Bootstrap #
+	try:
+		chdir(abspath(dirname(__file__)))
+	except:
+		pass
+	
 	# Parameters #
 	srcDirectoryPath = "src"
 	webrootName = "webroot"
@@ -812,12 +852,12 @@ def main() -> int:
 	actionAFileName, actionBFileName = "actionA.sh", "actionB.sh"
 	cacheFilePath = "caches.json"
 	selfURL = "https://raw.githubusercontent.com/LRFP-Team/LRFP/main/Detectors/README.json"
-	pluginURL = "https://modules.lsposed.org/module-list/{page}.json" # "https://modules.lsposed.org/modules.json"
+	pluginURL = "https://modules.lsposed.org/module-list/{page}.json"
 	cppSourceDirectoryPath = "cpp"
 	cppSourceMainFileName = "generate"
 	extensionsExcluded = (".prop", ".sha512")
 	
-	# Updater #
+	# Updating #
 	try:
 		regularUpdater = RegularUpdater(srcDirectoryPath, webrootName, databaseFileName, cppBinaryDirectoryName, actionAFileName, actionBFileName)
 		if regularUpdater.gitPull() and regularUpdater.setPermissions() and regularUpdater.loadDatabase() and regularUpdater.checkDatabase():
@@ -827,29 +867,28 @@ def main() -> int:
 				and regularUpdater.compileCPP(cppSourceDirectoryPath, cppSourceMainFileName) and regularUpdater.compress(extensionsExcluded)
 			)
 			differenceFlag = regularUpdater.checkShell()
-			if databaseFlag and differenceFlag:
-				exitStatus = EXIT_SUCCESS if regularUpdater.updateSHA512() and regularUpdater.setPermissions() and regularUpdater.gitPush() else EXIT_FAILURE
+			if databaseFlag and differenceFlag and regularUpdater.updateSHA512() and regularUpdater.setPermissions() and regularUpdater.gitPush():
+				exitStatus = Status.EXIT_SUCCESS
 			else:
-				exitStatus = EXIT_FAILURE
+				exitStatus = Status.EXIT_FAILURE
 		else:
-			exitStatus = EXIT_FAILURE
+			exitStatus = Status.EXIT_FAILURE
 	except KeyboardInterrupt:
 		print()
-		print("The synchronizing procedure was interrupted by users. ")
-		exitStatus = EXIT_INTERRUPTED
+		print("The updating process was interrupted by users. ")
+		exitStatus = Status.EXIT_INTERRUPTED
 	except BaseException as e:
 		print()
-		print("The synchronizing procedure was interrupted by {0}. ".format(repr(e)))
-		exitStatus = EXIT_SOFTWARE
+		print("The updating process was interrupted by {0}. ".format(repr(e)))
+		exitStatus = Status.EXIT_SOFTWARE
 	
 	# Exit #
-	print("Please press the enter key to exit ({0}). ".format(exitStatus))
+	print("Please press the Enter key to exit ({0}). ".format(exitStatus))
 	try:
 		getpass("")
 	except:
 		print()
 	return exitStatus
-
 
 
 if "__main__" == __name__:
